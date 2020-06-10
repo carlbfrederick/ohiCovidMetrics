@@ -20,3 +20,4 @@ Encoding: UTF-8
 LazyData: true
 Imports: 
     readr
+RoxygenNote: 7.0.2

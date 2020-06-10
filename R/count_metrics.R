@@ -3,9 +3,9 @@
 #' Calculates the ratio of the most current to previous period
 #' counts. Values greater than 1 indicate growing; less than one
 #' indicate shrinking. \emph{NOTE: Counts must have the same period
-#' (e.g. both summed over 7 consecutive days.) In order to avoid
+#' (e.g. both summed over 7 consecutive days.)} In order to avoid
 #' extreme values and dividing by zeros, the ratio includes unit offset
-#' for pseudocounts and is capped at 5 (i.e. a 400% increase).
+#' for pseudocounts and is capped at 5 (i.e. a 400\% increase).
 #'
 #' @param curr count for current period (must be non-negative integer)
 #' @param prev count for previous period (must be non-negative integer)
