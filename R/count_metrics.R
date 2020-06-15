@@ -52,7 +52,7 @@ class_trajectory <- function(curr, prev) {
 
   # effects: returns a 3-level ordinal classification (1 = shrinking, 2 = no call, 3 = growing )
   trajectory <- score_trajectory(curr, prev)
-  is_significant <- stats::poisson.test(curr, prev)$p.value < 0.025
+  is_significant <- stats::poisson.test(c(curr, prev))$p.value < 0.025
 
   out <- ifelse(trajectory <= 0.9 & is_significant, 1,
          ifelse(trajectory >=  1.1 & is_significant, 3, 2))
