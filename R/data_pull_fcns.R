@@ -41,7 +41,10 @@
 #' hdt <- pull_histTable()
 pull_histTable <- function() {
   #Pull down the data
-  hdt <- sf::st_set_geometry(sf::st_read("https://opendata.arcgis.com/datasets/b913e9591eae4912b33dc5b4e88646c5_10.geojson"), NULL)
+  #REsT API URL
+  api_url <- "https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'STATE'%20OR%20GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,LoadDttm,NEGATIVE,POSITIVE,POS_FEM,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
+  message("Downloading data from DHS ...")
+  hdt <- sf::st_set_geometry(sf::st_read(api_url, quiet = TRUE), NULL)
 
   #Basic Selection/wrangling
   hdt %>%
