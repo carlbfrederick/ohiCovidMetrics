@@ -20,7 +20,7 @@ counts. Values greater than 1 indicate growing; less than one
 indicate shrinking. \emph{NOTE: Counts must have the same period
 (e.g. both summed over 7 consecutive days.)} In order to avoid
 extreme values and dividing by zeros, the ratio includes unit offset
-for pseudocounts and is capped at 5 (i.e. a 400% increase).
+for pseudocounts and is capped at 5 (i.e. a 400\% increase).
 }
 \examples{
 traj_2020_06_10 <- score_trajectory(curr = 100L, prev = 80L)

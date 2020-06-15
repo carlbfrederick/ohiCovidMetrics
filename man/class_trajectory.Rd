@@ -17,7 +17,7 @@ an ordered factor "Shrinking" < "Not Statistically Significant" < "Growing"
 \description{
 This function tests to see if the count trajectory is statistically
 distinct from zero with a Poisson test for the ratio of two counts
-using \code{\link[stat]{posson.test}} at the two-sided p < .05 level.
+using \code{\link[stats]{posson.test}} at the two-sided p < .05 level.
 If it is and the ratio as calculated by \link{score_trajectory} is less
 than or equal to 0.9, the trajectory is classified as shrinking. If it is
 and the ration is greather than or equal to 1.1, the trajectory is
