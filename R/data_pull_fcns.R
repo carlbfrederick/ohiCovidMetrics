@@ -42,40 +42,76 @@
 pull_histTable <- function() {
   #Pull down the data
   #REsT API URL
-  api_url <- "https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'STATE'%20OR%20GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,LoadDttm,NEGATIVE,POSITIVE,POS_FEM,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
+  api_url <- "https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'STATE'%20OR%20GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,LoadDttm,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
   message("Downloading data from DHS ...")
   hdt <- sf::st_set_geometry(sf::st_read(api_url, quiet = TRUE), NULL)
 
   #Basic Selection/wrangling
-  hdt %>%
+  hdt <- hdt %>%
     dplyr::arrange(GEOID, LoadDttm) %>%
     dplyr::group_by(GEOID) %>%
     dplyr::transmute(
       fips = GEOID,
       geo_type = GEO,
       geo_name = NAME,
-      post_date = as.Date(LoadDttm),
+      post_date = as.Date(as.POSIXct(LoadDttm/1000, origin = "1970-01-01 00:00.000 UTC")),
       case_daily = dplyr::if_else(is.na(POS_NEW), POSITIVE, POS_NEW),
-      test_daily = dplyr::if_else(is.na(TEST_NEW), POSITIVE + NEGATIVE, TEST_NEW),
+      test_daily = dplyr::if_else(is.na(TEST_NEW), POSITIVE + ifelse(is.na(NEGATIVE),0L,NEGATIVE), TEST_NEW),
       death_daily = dplyr::if_else(is.na(DTH_NEW), DEATHS, DTH_NEW)
     )
 
   if (any(hdt$case_daily < 0)) {
     message("Cleaning reversals in daily confirmed cases")
     hdt$case_daily_raw <- hdt$case_daily
-    hdt$case_daily <- clean_reversals(hdt$case_daily)
+    hdt <- hdt %>%
+      dplyr::mutate(
+        case_daily = clean_reversals(case_daily)
+      )
+
+    num_negs <- sum(hdt$case_daily < 0)
+    i <- 1
+    while (num_negs > 0 & i < 101) {
+      hdt$case_daily <- suppressWarnings(clean_reversals(hdt$case_daily))
+      num_negs <- sum(hdt$case_daily < 0)
+      i <- i + 1
+    }
+    message("  I had to call clean_reversals() on case_daily ", i, " times.")
   }
 
   if (any(hdt$test_daily < 0)) {
     message("Cleaning reversals in daily tests")
     hdt$test_daily_raw <- hdt$test_daily
-    hdt$test_daily <- clean_reversals(hdt$test_daily)
+    hdt <- hdt %>%
+      dplyr::mutate(
+        test_daily = clean_reversals(test_daily)
+      )
+
+    num_negs <- sum(hdt$test_daily < 0)
+    i <- 1
+    while (num_negs > 0 & i < 101) {
+      hdt$test_daily <- suppressWarnings(clean_reversals(hdt$test_daily))
+      num_negs <- sum(hdt$test_daily < 0)
+      i <- i + 1
+    }
+    message("  I had to call clean_reversals() on test_daily ", i, " times.")
   }
 
   if (any(hdt$death_daily < 0)) {
     message("Cleaning reversals in daily deaths")
     hdt$death_daily_raw <- hdt$death_daily
-    hdt$death_daily <- clean_reversals(hdt$death_daily)
+    hdt <- hdt %>%
+      dplyr::mutate(
+        death_daily = clean_reversals(death_daily)
+      )
+
+    num_negs <- sum(hdt$death_daily < 0)
+    i <- 1
+    while (num_negs > 0 & i < 101) {
+      hdt$death_daily <- suppressWarnings(clean_reversals(hdt$death_daily))
+      num_negs <- sum(hdt$death_daily < 0)
+      i <- i + 1
+    }
+    message("  I had to call clean_reversals() on death_daily ", i, " times.")
   }
 
   hdt <- hdt %>%

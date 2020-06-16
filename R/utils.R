@@ -118,6 +118,10 @@ clean_reversals <- function(daily_time_series) {
   #identify negative value pattern, start and stop indexs to replace
   neg_pattern <- rle(sign(daily_time_series))
 
+  if (all(neg_pattern$value > -1)) {
+    return(daily_time_series)
+  }
+
   start_pos <- stats::diffinv(neg_pattern$lengths, xi = 1)
   end_pos <- stats::diffinv(neg_pattern$lengths, xi = 0)
 
