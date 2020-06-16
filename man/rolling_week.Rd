@@ -12,7 +12,7 @@ in Date format or something that can be coerced to
 Date by \code{\link[base]{as.Date}}.}
 
 \item{end_date}{the day on which to start counting backwards. Defaults to
-the current date, i.e. \code{\link[base]{Sys.Date}}.}
+the current date, i.e. \code{Sys.Date}.}
 }
 \value{
 a vector of weeks counting backward in time. The current week is

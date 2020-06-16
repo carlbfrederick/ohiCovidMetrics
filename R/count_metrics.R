@@ -29,7 +29,7 @@ score_trajectory <- function(curr, prev) {
 #'
 #' This function tests to see if the count trajectory is statistically
 #' distinct from zero with a Poisson test for the ratio of two counts
-#' using \code{\link[stats]{posson.test}} at the two-sided p < .05 level.
+#' using \code{\link[stats]{poisson.test}} at the two-sided p < .05 level.
 #' If it is and the ratio as calculated by \link{score_trajectory} is less
 #' than or equal to 0.9, the trajectory is classified as shrinking. If it is
 #' and the ration is greather than or equal to 1.1, the trajectory is
@@ -52,7 +52,7 @@ class_trajectory <- function(curr, prev) {
 
   # effects: returns a 3-level ordinal classification (1 = shrinking, 2 = no call, 3 = growing )
   trajectory <- score_trajectory(curr, prev)
-  is_significant <- stats::poisson.test(curr, prev)$p.value < 0.025
+  is_significant <- stats::poisson.test(c(curr, prev))$p.value < 0.025
 
   out <- ifelse(trajectory <= 0.9 & is_significant, 1,
          ifelse(trajectory >=  1.1 & is_significant, 3, 2))
