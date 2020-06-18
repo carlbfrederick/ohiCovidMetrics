@@ -7,12 +7,12 @@
 score_trajectory(curr, prev)
 }
 \arguments{
-\item{curr}{count for current period (must be non-negative integer)}
+\item{curr}{vector of counts for current period (must be non-negative integer)}
 
-\item{prev}{count for previous period (must be non-negative integer)}
+\item{prev}{vector of counts for previous period (must be non-negative integer)}
 }
 \value{
-a numeric scalar
+a numeric vector
 }
 \description{
 Calculates the ratio of the most current to previous period

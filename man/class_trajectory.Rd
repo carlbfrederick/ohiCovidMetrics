@@ -4,12 +4,12 @@
 \alias{class_trajectory}
 \title{Classify Trajectory Measure for County Data}
 \usage{
-class_trajectory(curr, prev)
+class_trajectory(traj, pval)
 }
 \arguments{
-\item{curr}{count for current period (must be non-negative integer)}
+\item{traj}{trajectory as calculated by \code{\link{score_trajectory}}}
 
-\item{prev}{count for previous period (must be non-negative integer)}
+\item{pval}{p-value as calculated by \code{\link{pval_trajectory}}}
 }
 \value{
 an ordered factor "Shrinking" < "Not Statistically Significant" < "Growing"
@@ -17,13 +17,17 @@ an ordered factor "Shrinking" < "Not Statistically Significant" < "Growing"
 \description{
 This function tests to see if the count trajectory is statistically
 distinct from zero with a Poisson test for the ratio of two counts
-using \code{\link[stats]{poisson.test}} at the two-sided p < .05 level.
-If it is and the ratio as calculated by \link{score_trajectory} is less
-than or equal to 0.9, the trajectory is classified as shrinking. If it is
-and the ration is greather than or equal to 1.1, the trajectory is
-classified as growing. If the test fails to reject the null hypothesis,
-the trajectory is classified as not statistically significant.
+using \code{\link[stats]{poisson.test}} as.calculated by \code{\link{pval_trajectory}}
+at the two-sided p < .05 level. If it is and the ratio as calculated by
+\link{score_trajectory} is less than or equal to 0.9, the trajectory is
+classified as shrinking. If it is and the ration is greather than or equal
+to 1.1, the trajectory is classified as growing. If the test fails to
+reject the null hypothesis, the trajectory is classified as not statistically
+significant.
 }
 \examples{
-traj_class_2020_06_10 <- class_trajectory(curr = 100L, prev = 80L)
+traj_score <- score_trajectory(curr = 100L, prev = 80L)
+traj_pval  <- pval_trajectory(curr = 100L, prev = 80L)
+
+traj_class_2020_06_10 <- class_trajectory(traj_score, traj_pval)
 }

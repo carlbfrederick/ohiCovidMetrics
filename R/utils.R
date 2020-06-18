@@ -5,14 +5,14 @@
 #'
 #' @return value
 check_nonneg <- function(val, arg.name) {
-  if (is.na(val)) {
-    stop("<<", arg.name, ">> is missing, please check your data.")
+  if (any(is.na(val))) {
+    stop("<<", arg.name, ">> has 1 or more missing values, please check your data.")
   }
-  if (!is.na(val) & val < 0 & !is.character(val)) {
-    stop("<<", arg.name, ">> is negative, please check your data.")
+  if (all(!is.na(val)) && any(val < 0) && !is.character(val)) {
+    stop("<<", arg.name, ">> has one ore more negative values, please check your data.")
   }
   if (!is.integer(val)) {
-    warning("<<", arg.name, ">> is not an integer.\n",
+    message("<<", arg.name, ">> is not an integer.\n",
             "  I am trying to coerce the value to integer, but this might cause unintended issues.\n",
             "  See ?as.integer for coercion behavior.")
     return(as.integer(val))

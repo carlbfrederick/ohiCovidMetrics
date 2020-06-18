@@ -22,7 +22,8 @@ Imports:
     sf,
     dplyr,
     lubridate,
-    tidyr
+    tidyr,
+    purrr
 RoxygenNote: 7.1.0
 Suggests: 
     tinytest,

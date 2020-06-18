@@ -168,7 +168,7 @@ shape_case_data <- function(case_df) {
      ) %>%
      dplyr::group_by(fips, geo_name, weeknum) %>%
      dplyr::summarize(
-       case_weekly = sum(case_daily),
+       case_weekly = as.integer(sum(case_daily)),
        week_end = max(post_date),
        .groups = "drop_last"
      ) %>%
@@ -192,6 +192,7 @@ shape_case_data <- function(case_df) {
      dplyr::select(fips, geo_name, case_weekly_1, case_weekly_2, week_end_1, week_end_2, pop_2018)
 
    out$pop_2018[out$fips == "55"] <- sum(county_data$pop_2018)
+   out$pop_2018 <- as.integer(out$pop_2018)
 
    out
  }

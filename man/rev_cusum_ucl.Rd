@@ -8,7 +8,7 @@
 rev_cusum_ucl(curr, delta_t)
 }
 \arguments{
-\item{curr}{count for current period (must be non-negative integer)}
+\item{curr}{vector of counts for current period (must be non-negative integer)}
 
 \item{delta_t}{number of time periods back in time.}
 }
