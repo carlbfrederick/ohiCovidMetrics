@@ -21,8 +21,9 @@ LazyData: true
 Imports: 
     sf,
     dplyr,
-    lubridate
-RoxygenNote: 7.0.2
+    lubridate,
+    tidyr
+RoxygenNote: 7.1.0
 Suggests: 
     tinytest,
     readr

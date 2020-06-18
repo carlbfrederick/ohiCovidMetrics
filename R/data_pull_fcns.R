@@ -49,9 +49,9 @@ pull_histTable <- function() {
   #Basic Selection/wrangling
   hdt <- hdt %>%
     dplyr::arrange(GEOID, LoadDttm) %>%
-    dplyr::group_by(GEOID) %>%
+    dplyr::rename(fips = GEOID) %>%
+    dplyr::group_by(fips) %>%
     dplyr::transmute(
-      fips = GEOID,
       geo_type = GEO,
       geo_name = NAME,
       post_date = as.Date(as.POSIXct(LoadDttm/1000, origin = "1970-01-01 00:00.000 UTC")),
@@ -122,3 +122,76 @@ pull_histTable <- function() {
     )
 
 }
+
+#' Reshape confirmed case data for producing Tableau extracts
+#'
+#' take case data (from WEDSS or historical data table) and put it in proper
+#' shape for metric tables to feed tableau
+#'
+#' @param case_df Confirmed case data.frame (e.g. produced by \link{pull_histTable})
+#'
+#' @return a data.frame with the following with one row per county, state, and
+#' HERC regions with the following columns
+#' \describe{
+#'   \item{fips}{FIPS Code and/or region identifier}
+#'   \item{geo_name}{Name of geography}
+#'   \item{case_weekly_1}{Total cases for \strong{current} 7 day period}
+#'   \item{case_weekly_2}{Total cases for \strong{prior} 7 day period}
+#'   \item{week_end_1}{End date for \strong{current} 7 day period}
+#'   \item{week_end_2}{End date for \strong{prior} 7 day period}
+#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#' }
+#'
+#' @export
+#'
+#' @importFrom dplyr group_by
+#' @importFrom dplyr mutate
+#' @importFrom dplyr summarize
+#' @importFrom dplyr filter
+#' @importFrom dplyr left_join
+#' @importFrom dplyr summarize_at
+#' @importFrom dplyr select
+#' @importFrom tidyr pivot_wider
+#'
+#' @examples
+#' \dontrun{
+#'   hdt <- pull_histTable()
+#'   hdt_clean <- shape_case_data(hdt)
+#' }
+shape_case_data <- function(case_df) {
+   max_date <- max(case_df$post_date)
+
+   out <- case_df %>%
+     dplyr::group_by(fips, geo_name) %>%
+     dplyr::mutate(
+       weeknum = rolling_week(date_vector = post_date, end_date = max_date)
+     ) %>%
+     dplyr::group_by(fips, geo_name, weeknum) %>%
+     dplyr::summarize(
+       case_weekly = sum(case_daily),
+       week_end = max(post_date),
+       .groups = "drop_last"
+     ) %>%
+     dplyr::filter(weeknum <= 2) %>%
+     tidyr::pivot_wider(id_cols = c(fips, geo_name),
+                        values_from = c(case_weekly, week_end),
+                        names_from = weeknum) %>%
+     dplyr::left_join(dplyr::select(county_data, fips, herc_region, pop_2018), by = "fips")
+
+
+   herc_regions <- out %>%
+     dplyr::filter(fips != "55") %>%
+     dplyr::group_by(week_end_1, week_end_2, herc_region) %>%
+     dplyr::summarize_at(vars(case_weekly_1, case_weekly_2, pop_2018), sum) %>%
+     dplyr::mutate(
+       fips = paste("HERC", herc_region, sep = "|"),
+       geo_name = herc_region
+     )
+
+   out <- dplyr::bind_rows(out, herc_regions) %>%
+     dplyr::select(fips, geo_name, case_weekly_1, case_weekly_2, week_end_1, week_end_2, pop_2018)
+
+   out$pop_2018[out$fips == "55"] <- sum(county_data$pop_2018)
+
+   out
+ }

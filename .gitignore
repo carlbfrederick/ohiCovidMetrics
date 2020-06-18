@@ -9,4 +9,4 @@ vignettes/*.pdf
 .httr-oauth
 *.utf8.md
 *.knit.md
-data/*
+
