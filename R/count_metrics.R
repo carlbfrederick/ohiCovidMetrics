@@ -4,14 +4,23 @@
 #' counts. Values greater than 1 indicate growing; less than one
 #' indicate shrinking. \emph{NOTE: Counts must have the same period
 #' (e.g. both summed over 7 consecutive days.)} In order to avoid
-#' extreme values and dividing by zeros, the ratio includes unit offset
-#' for pseudocounts and is capped at 5 (i.e. a 400\% increase).
+#' extreme values and dividing by zeros, the ratio uses an offset of 0.5
+#' for both the numerator and denominator as pseudocounts and is
+#' capped at 5 (i.e. a 400\% increase).
+#'
+#' The 0.5 offset was inspired by the \code{bayes.poisson.test} function from
+#' the {BayesianFirstAid} packages uses a non-informative prior distribution
+#' whose mean simplifies to approximately 0.5. For more information, see the
+#' reproducibility paper on the OHI Surveillance Team's SharePoint site.
+#'
 #'
 #' @param curr vector of counts for current period (must be non-negative integer)
 #' @param prev vector of counts for previous period (must be non-negative integer)
 #'
 #' @return a numeric vector
 #' @export
+#'
+#' @importFrom purrr map2_dbl
 #'
 #' @examples
 #' traj_2020_06_10 <- score_trajectory(curr = 100L, prev = 80L)
@@ -22,7 +31,8 @@ score_trajectory <- function(curr, prev) {
 
   # effects: returns an estimate of the ratio, moderated by pseudocounts and a cap (500%)
   # comment: A Bayesian estimate would be of higher quality but less transparent
-  min( ( curr + 1 ) / ( prev + 1 ) , 5 )
+  alpha <- 1
+  purrr::map2_dbl(curr, prev, ~min( ( .x + alpha ) / ( .y + alpha ) , 5 ))
 }
 
 #' Calculate p-value of trajectory current counts vs prior counts
@@ -33,6 +43,7 @@ score_trajectory <- function(curr, prev) {
 #' @export
 #'
 #' @importFrom stats poisson.test
+#' @importFrom purrr map2_dbl
 #'
 #' @examples
 #' pval_2020_06_10 <- pval_trajectory(curr = 100L, prev = 80L)
@@ -117,7 +128,9 @@ score_burden <- function(curr, prev, pop) {
   prev <- check_nonneg(prev, "prev")
   pop <- check_nonneg(pop, "pop")
 
-  burden <- 1e5 * (curr + prev) / pop
+  alpha <- 1
+
+  burden <- (1e5 / pop) * (curr + prev + alpha)
 
   burden
 }
@@ -288,6 +301,7 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #'
 #' @importFrom dplyr mutate
 #' @importFrom dplyr select
+#' @importFrom dplyr ungroup
 #'
 #' @examples
 #' library(dplyr)
@@ -296,7 +310,7 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #'   shape_case_data() %>%
 #'   process_confirmed_cases()
 process_confirmed_cases <- function(clean_case_df) {
-  clean_case_df %>%
+  dplyr::ungroup(clean_case_df) %>%
     dplyr::mutate(
       Burden = score_burden(curr = case_weekly_1,
                             prev = case_weekly_2,

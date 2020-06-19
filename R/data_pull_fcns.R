@@ -71,7 +71,7 @@ pull_histTable <- function() {
     num_negs <- sum(hdt$case_daily < 0)
     i <- 1
     while (num_negs > 0 & i < 101) {
-      hdt$case_daily <- suppressWarnings(clean_reversals(hdt$case_daily))
+      hdt$case_daily <- clean_reversals(hdt$case_daily, verbose = FALSE)
       num_negs <- sum(hdt$case_daily < 0)
       i <- i + 1
     }
@@ -89,7 +89,7 @@ pull_histTable <- function() {
     num_negs <- sum(hdt$test_daily < 0)
     i <- 1
     while (num_negs > 0 & i < 101) {
-      hdt$test_daily <- suppressWarnings(clean_reversals(hdt$test_daily))
+      hdt$test_daily <- clean_reversals(hdt$test_daily, verbose = FALSE)
       num_negs <- sum(hdt$test_daily < 0)
       i <- i + 1
     }
@@ -107,7 +107,7 @@ pull_histTable <- function() {
     num_negs <- sum(hdt$death_daily < 0)
     i <- 1
     while (num_negs > 0 & i < 101) {
-      hdt$death_daily <- suppressWarnings(clean_reversals(hdt$death_daily))
+      hdt$death_daily <- clean_reversals(hdt$death_daily, verbose = FALSE)
       num_negs <- sum(hdt$death_daily < 0)
       i <- i + 1
     }

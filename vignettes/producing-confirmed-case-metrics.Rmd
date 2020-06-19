@@ -1,0 +1,185 @@
+---
+title: "Producing Confirmed Case Metrics"
+date: "Last updated: 19 June 2020"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Producing Confirmed Case Metrics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This document provides an under-the-hood walk-through of the steps used to 
+produce an output for the confirmed case metrics for ingestion into Tableau
+using the functions in the {`ohiCovidMetrics`} package. These functions were
+written up to the specifications in the [Confirmed Case Metric Reproducibility 
+Document](https://share.health.wisconsin.gov/ph/inf/drrb/Meetings/BBB%20Metrics%20Discussions/Indicator%20Development/OHI_BBB_Surveillance_ConfirmedCaseMetric_Reproducibility_20200615.docx) 
+on the OHI Surveillance Team's SharePoint site.
+
+```{r setup}
+library(tidyverse)
+library(ohiCovidMetrics)
+```
+
+## Pulling the data
+
+Eventually, this package will contain multiple ways to pull the data depending 
+on the user's level of access. In this vignette, we will grab data from the 
+public facing [COVID-19 Historical Data Table](https://data.dhsgis.wi.gov/datasets/covid-19-historical-data-table) via
+an API call with the `pull_histTable()` function which takes no arguments. Note,
+I stopped the time series at 17 June 2020 to be able to comparet the results to the
+official file prepared by Jeff Bond for the dashboard.
+
+```{r pull-hist-table}
+hdt_raw <- pull_histTable() %>% 
+  filter(post_date <= as.Date("2020-06-17"))
+```
+
+This function does four things: 
+
+1. Imports data from the REST API <https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'STATE'%20OR%20GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,LoadDttm,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson> 
+   using the `st_read()` function from the {`sf`} package.
+2. Some basic data wrangling to convert the date into the correct format and
+   create the daily new confirmed cases time series.[^1]
+3. Recursively corrects any reversals in the confirmed cases time series using 
+   the `clean_reversals()` function. Note: this is done at the county level and 
+   then aggregated up to the State level.
+4. Finally, it produces a cumulative case time-series based on the cleaned version. 
+
+[^1]: It pulls down the new deaths and tests time series as well for more context.
+
+The result is a data.frame where there is one row per county/state per day.
+
+## Preparing the data to calculate metrics
+
+The confirmed case metrics are all based on 7 day bins looking back from the 
+current date, e.g., For data ending on 10 June 2020, the 7 day bins are:
+
+- 4 June 2020 through 10 June 2020,
+- 28 May 2020 through 3 June 2020,
+- 21 May 2020 through 27 May 2020,
+
+and so on. To make things easier, we need to aggregate the daily counts 
+within geographies, or regions, and 7 day bins. This can be done with 
+the `shape_case_data()` function: 
+
+```{r shape_case_data}
+hdt_clean <- shape_case_data(hdt_raw)
+```
+
+This function:
+
+1. Calculates the 7 day bins based on the mosts recent date in the 
+   case time-series data.frame using `rolling_week()`.
+2. Aggregates the case count within these bins for each region.
+3. Keeps the two most recent 7 day bins and reshapes the data.frame
+   to 'wide' format so that there is one row per region and one column
+   per case counts in the current and previous 7-day case count.
+4. Appends the region populations using the `county_data` data.frame
+   that is built into the package.
+5. Aggregates the counts for each HERC region and appends it to the
+   bottom of the output data.frame so that there are 80 rows (72 
+   counties + 1 state + 7 HERC regions).
+   
+Thus the data are in a format that is ready for Tableau ingestion and
+that facilitates the calculations of each metric in its own column.
+
+## Calculating Metrics
+
+Finally, we can calculate the metrics. For production purposes, I have
+wrapped all of these calcuations into the `process_confirmed_cases()`
+function, which takes the cleaned case time-series data as it's only
+argument:
+
+```{r metrics-all}
+hdt_out <- process_confirmed_cases(hdt_clean)
+```
+
+Since this is the meat of the analysis, I want to go through them 
+each, step-by-step.
+
+### Burden metrics
+
+See the top panel of Table 1 in the [Confirmed Case Metric Reproducibility 
+Document](https://share.health.wisconsin.gov/ph/inf/drrb/Meetings/BBB%20Metrics%20Discussions/Indicator%20Development/OHI_BBB_Surveillance_ConfirmedCaseMetric_Reproducibility_20200615.docx) 
+for the definitions. Following the CDC's State Indicator Report, we calculate
+Burden based on the number of confirmed cases over the past 14 days per 100,000
+population in the region. The numerical value of burden is calculated with the
+`score_burden()` function and mapped onto the 4 categories using `class_burden()`
+as shown below.
+
+```{r metrics-burden}
+burden <- score_burden(curr = hdt_clean$case_weekly_1, 
+                       prev = hdt_clean$case_weekly_2,
+                       pop  = hdt_clean$pop_2018)
+
+burden_c <- class_burden(burden)
+```
+
+### Trajectory metrics
+
+The definitions for the confirmed case metrics are shown in the middle panel
+of Table 1 and the methods are described in the text that follows it. In short,
+we want to pay attention both to the statistical significance of the changing 
+case counts as well as the substantive significance, or magnitude, of the 
+change. Thus, we calculate the trajectory as the ratio of cases in the current 
+7 day period to the previous 7 day period using the `score_trajectory()` 
+function. We calculate the statistical significance  using a two-sided exact 
+test for equality of these two counts via the `poisson.test()` function from 
+the {`stats`} package with the `pval_trajectory()` function. Once we have these
+two quantities, we can classify the trajectory using `class_trajectory()`
+
+The final trajectory based metric that we calculate is the Benjemini and Hochman's
+False Discovery Rate (with the `p.adjust(method = 'fdr')` function from the {`stats`}
+package). This is of most use to us at DHS since by calculating 80 p-values we should
+expect 4 statistically significant trajectories to occur each week just by chance.
+
+```{r metrics_trajectory}
+trajectory <- score_trajectory(curr = hdt_clean$case_weekly_1, 
+                               prev = hdt_clean$case_weekly_2)
+
+trajectory_p <- pval_trajectory(curr = hdt_clean$case_weekly_1, 
+                                prev = hdt_clean$case_weekly_2)
+
+trajectory_c <- class_trajectory(traj = trajectory,
+                                 pval = trajectory_p)
+
+trajectory_f <- fdr_trajectory(pval = trajectory_p)
+```
+
+### Composite (Summary) confirmed case metric
+
+The bottom panel of Table 1 illustrates how we summarize a regions 
+confirmed case burden and trajectory into a single composite status.
+This status is based on the cross-classification of the burden classification
+and the trajectory classification and takes on one of the following three
+values: Low (light blue), Moderate (blue), High (dark blue). This 
+cross-classification is done with the `confirmed_case_composite()` function.
+
+```{r metrics-composite}
+composite <- confirmed_case_composite(traj_class = trajectory_c,
+                                      burd_class = burden_c)
+```
+
+### Final cleaning and renaming for output to .csv
+
+The `process_confirmed_cases()` function also does some final
+cleaning: expressing trajectory in percentage point changes, rounding
+burden and trajectory, renaming columns, and reordering columns to fit the 
+Tableau team's requirements.
+
+The final product is:
+
+
+```{r final-output}
+knitr::kable(hdt_out, 
+             caption = "Confirmed case metrics output for the period ending 17 June 2020")
+```
+
+## Comparing against Jeff's calculations

@@ -2,9 +2,10 @@
 #'
 #' @param val value
 #' @param arg.name argument name for warning/error message.
+#' @param verbose a logical where FALSE means messages are suppressed. Default = TRUE
 #'
 #' @return value
-check_nonneg <- function(val, arg.name) {
+check_nonneg <- function(val, arg.name, verbose = TRUE) {
   if (any(is.na(val))) {
     stop("<<", arg.name, ">> has 1 or more missing values, please check your data.")
   }
@@ -90,6 +91,7 @@ rolling_week <- function(date_vector, end_date = as.Date(Sys.Date())){
 #' is equal to what it was originally.
 #'
 #' @param daily_time_series a time series of count data in chronological order
+#' @param verbose a logical where FALSE means messages are suppressed. Default = TRUE
 #'
 #' @return a vector of counts of the same length as the original
 #' @export
@@ -110,7 +112,7 @@ rolling_week <- function(date_vector, end_date = as.Date(Sys.Date())){
 #'       tests_daily_clean = clean_reversals(tests_daily)
 #'     )
 #' }
-clean_reversals <- function(daily_time_series) {
+clean_reversals <- function(daily_time_series, verbose = TRUE) {
   if (sum(is.na(daily_time_series)) > 0) {
     stop("The vector of counts you supplied contains missing data, please fix this and try again.")
   }
@@ -148,8 +150,8 @@ clean_reversals <- function(daily_time_series) {
   }
 
   #warn if this introduced other negative counts
-  if (any(daily_time_series < 0)) {
-    warning("cleaning reversals introduced additional reversals (negative daily change).\n",
+  if (any(daily_time_series < 0) && verbose) {
+    message("cleaning reversals introduced additional reversals (negative daily change).\n",
             "---------------------------------------------------------------------------\n",
             "  You can re-run this cleaning step to try and correct it, but this indicates\n",
             "  there was a serious data issue that resulted in a reversal that was greater\n",
