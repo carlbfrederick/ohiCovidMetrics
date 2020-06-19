@@ -224,10 +224,13 @@ confirmed_case_composite <- function(traj_class, burd_class) {
 #' #For 3 weeks into the past using 7-day binned counts
 #' rev_cusum_ucl(curr = 100L, delta_t = 3)
 rev_cusum_ucl <- function(curr, delta_t) {
-  warning("THIS FUNCTION DOESN'T WORK PROPERLY")
   # requires: non-negative integer count, curr,  and positive integer weight, delta_t
   curr <- check_nonneg(curr, "curr")
   delta_t <- check_nonneg(delta_t, "delta_t")
+
+  if (delta_t == 0L) {
+    return(NA_real_)
+  }
 
   # effects: returns the smallest count greater than curr that would provide significance at 3-sigma probability
   cum_lim <- delta_t * curr + 1
@@ -237,7 +240,7 @@ rev_cusum_ucl <- function(curr, delta_t) {
     p <- stats::poisson.test( c( curr , cum_lim ) , T = c( 1 , delta_t ) )$p.value
   }
 
-  out <- curr + cum_lim/delta_t
+  out <- cum_lim/delta_t - curr
 
   out
 }
@@ -258,23 +261,30 @@ rev_cusum_ucl <- function(curr, delta_t) {
 #' #For 3 weeks into the past using 7-day binned counts
 #' rev_cusum_lcl(curr = 100L, delta_t = 3)
 rev_cusum_lcl <- function( curr , delta_t = 1 ) {
-  warning("THIS FUNCTION DOESN'T WORK PROPERLY")
   # requires: non-negative integer count, curr,  and positive integer weight, delta_t
   curr <- check_nonneg(curr, "curr")
   delta_t <- check_nonneg(delta_t, "delta_t")
+
+  if (delta_t == 0L) {
+    return(NA_real_)
+  }
+
   # effects: returns the largest count less than curr that would provide significance at 3-sigma probability
   cum_lim <- NA
-  try(
-    {
-      cum_lim <- delta_t * curr - 1
+
+
+  if (curr == 0) {
+      cum_lim <- 0
+    } else {
+      cum_lim <- delta_t * curr - 1L
       p <- stats::poisson.test( c( curr , cum_lim ) , T = c( 1 , delta_t ) ) $p.value
-      while( p > stats::pnorm(-3) ) {
+      while( p > stats::pnorm(-3) & cum_lim > 0) {
         cum_lim <- cum_lim - 1
         p <- stats::poisson.test( c( curr , cum_lim ) , T = c( 1 , delta_t ) )$p.value
       }
     }
-  )
-  out <- curr - cum_lim/delta_t
+
+  out <- cum_lim/delta_t - curr
 
   out
 }
