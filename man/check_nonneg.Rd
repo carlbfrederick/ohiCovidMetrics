@@ -4,12 +4,14 @@
 \alias{check_nonneg}
 \title{Checks that input values are non-negative, non-missing integers}
 \usage{
-check_nonneg(val, arg.name)
+check_nonneg(val, arg.name, verbose = TRUE)
 }
 \arguments{
 \item{val}{value}
 
 \item{arg.name}{argument name for warning/error message.}
+
+\item{verbose}{a logical where FALSE means messages are suppressed. Default = TRUE}
 }
 \value{
 value

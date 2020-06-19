@@ -15,11 +15,11 @@ HERC regions with the following columns
 \describe{
   \item{fips}{FIPS Code and/or region identifier}
   \item{geo_name}{Name of geography}
+  \item{pop_2018}{2018 Population Numbers pulled from WISH}
   \item{case_weekly_1}{Total cases for \strong{current} 7 day period}
   \item{case_weekly_2}{Total cases for \strong{prior} 7 day period}
   \item{week_end_1}{End date for \strong{current} 7 day period}
   \item{week_end_2}{End date for \strong{prior} 7 day period}
-  \item{pop_2018}{2018 Population Numbers pulled from WISH}
 }
 }
 \description{

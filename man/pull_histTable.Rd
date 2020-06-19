@@ -7,8 +7,8 @@
 pull_histTable()
 }
 \value{
-a cleaned version of the COVID-19 Historical Data Table with the
-  following columns
+a cleaned version of the COVID-19 Historical Data Table including
+HERC regions with the following columns
   \describe{
     \item{fips}{renamed from GEOID}
     \item{geo_type}{renamed from GEO}
@@ -17,11 +17,12 @@ a cleaned version of the COVID-19 Historical Data Table with the
     \item{case_daily}{cleaned daily new positive cases from POS_NEW except for the first day which is from POSITIVE}
     \item{test_daily}{cleaned daily new total tests from TEST_NEW except for the first day which is from POSITIve + NEGATIVE}
     \item{death_daily}{cleaned daily new deaths from DTH_NEW except for the first day which is from DEATHS}
+    \item{pop_2018}{2018 Population Numbers pulled from WISH}
     \item{case_cum}{daily cumulative positive cases calculated from case_daily}
     \item{test_cum}{daily cumulative total tests calculated from test_daily}
     \item{death_cum}{daily cumulative deaths calculated from death_daily}
   }
-  and possibly one or more of the following columns if applicable
+  and likely one or more of the following columns if applicable
   \describe{
     \item{case_daily_raw}{original daily new positive cases before cleaning}
     \item{test_daily_raw}{original daily new total tests before cleaning}

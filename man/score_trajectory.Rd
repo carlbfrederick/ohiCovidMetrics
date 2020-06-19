@@ -19,8 +19,15 @@ Calculates the ratio of the most current to previous period
 counts. Values greater than 1 indicate growing; less than one
 indicate shrinking. \emph{NOTE: Counts must have the same period
 (e.g. both summed over 7 consecutive days.)} In order to avoid
-extreme values and dividing by zeros, the ratio includes unit offset
-for pseudocounts and is capped at 5 (i.e. a 400\% increase).
+extreme values and dividing by zeros, the ratio uses an offset of 0.5
+for both the numerator and denominator as pseudocounts and is
+capped at 5 (i.e. a 400\% increase).
+}
+\details{
+The 0.5 offset was inspired by the \code{bayes.poisson.test} function from
+the {BayesianFirstAid} packages uses a non-informative prior distribution
+whose mean simplifies to approximately 0.5. For more information, see the
+reproducibility paper on the OHI Surveillance Team's SharePoint site.
 }
 \examples{
 traj_2020_06_10 <- score_trajectory(curr = 100L, prev = 80L)

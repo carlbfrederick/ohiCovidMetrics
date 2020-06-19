@@ -4,10 +4,12 @@
 \alias{clean_reversals}
 \title{Clean up reversals in daily count time series}
 \usage{
-clean_reversals(daily_time_series)
+clean_reversals(daily_time_series, verbose = TRUE)
 }
 \arguments{
 \item{daily_time_series}{a time series of count data in chronological order}
+
+\item{verbose}{a logical where FALSE means messages are suppressed. Default = TRUE}
 }
 \value{
 a vector of counts of the same length as the original

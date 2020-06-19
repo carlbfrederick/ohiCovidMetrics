@@ -12,7 +12,7 @@ class_trajectory(traj, pval)
 \item{pval}{p-value as calculated by \code{\link{pval_trajectory}}}
 }
 \value{
-an ordered factor "Shrinking" < "Not Statistically Significant" < "Growing"
+an ordered factor "Shrinking" < "No statistically significant change" < "Growing"
 }
 \description{
 This function tests to see if the count trajectory is statistically

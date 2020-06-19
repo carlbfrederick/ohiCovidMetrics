@@ -42,7 +42,7 @@ hdt_raw <- pull_histTable() %>%
   filter(post_date <= as.Date("2020-06-17"))
 ```
 
-This function does four things: 
+This function does six things: 
 
 1. Imports data from the REST API <https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,LoadDttm,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson> 
    using the `st_read()` function from the {`sf`} package.
@@ -189,7 +189,10 @@ compare the our results to his. *Note: I am not comparing the Count or Rate
 columns because the Tableau team just removes them.*
 
 ```{r import-jeff}
-metrics_jeff <- read_xlsx("../inst/file_for_vignette/OHI_BBB_Surveillance_CaseMetric_20200617.xlsx")
+metrics_jeff <- read_xlsx("../inst/file_for_vignette/OHI_BBB_Surveillance_CaseMetric_20200617.xlsx") %>% 
+  mutate(
+    Region = ifelse(Region == "Saint Croix", "St. Croix", Region)
+  )
 
 #Identical Date
 identical(as.Date(unique(metrics_jeff$Date)), unique(hdt_out$Date))
@@ -199,6 +202,37 @@ identical(sort(unique(metrics_jeff$Region_ID)), sort(unique(hdt_out$Region_ID)))
 
 #Identical Region
 identical(sort(unique(metrics_jeff$Region)), sort(unique(hdt_out$Region)))
+
+#Burden
+inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Burden = Burden),
+           select(hdt_out, Region_ID, Region, My_Burden = Burden),
+           by = c("Region_ID", "Region")) %>% 
+  mutate(diff = Jeff_Burden - My_Burden) %>% 
+  pull(diff) %>% 
+  summary
+
+#Trajectory
+inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Trajectory = Trajectory),
+           select(hdt_out, Region_ID, Region, My_Trajectory = Trajectory),
+           by = c("Region_ID", "Region")) %>% 
+  mutate(diff = Jeff_Trajectory - My_Trajectory) %>% 
+  pull(diff) %>% 
+  summary
+
+#Burden_Class
+inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Burden_Class = Burden_Class),
+           select(hdt_out, Region_ID, Region, My_Burden_Class = Burden_Class),
+           by = c("Region_ID", "Region")) %>% 
+  mutate(same = Jeff_Burden_Class == My_Burden_Class) %>% 
+  filter(same == FALSE) 
+  
+
+#Trajectory_Class
+inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Trajectory_Class = Trajectory_Class),
+           select(hdt_out, Region_ID, Region, My_Trajectory_Class = Trajectory_Class),
+           by = c("Region_ID", "Region")) %>% 
+  mutate(same = Jeff_Trajectory_Class == My_Trajectory_Class) %>% 
+  filter(same == FALSE) 
 
 ```
 
@@ -218,7 +252,7 @@ with the raw data and re-aggregate it into weekly counts within regions.
 last_date <- max(hdt_raw$post_date)
 
 #Prep Data for CUSUM functions
-hdt_cusum_cty <- hdt_raw %>% 
+hdt_cusum <- hdt_raw %>% 
   group_by(fips, geo_name) %>% 
   mutate(
     week_num = rolling_week(date_vector = post_date,
@@ -230,21 +264,6 @@ hdt_cusum_cty <- hdt_raw %>%
     week_end = max(post_date),
     .groups = "keep"
   ) %>% 
-  dplyr::left_join(dplyr::select(county_data, fips, herc_region), by = "fips")
-
-herc <- hdt_cusum_cty %>% 
-   dplyr::filter(fips != "55") %>%
-   dplyr::group_by(week_num, herc_region) %>%
-   dplyr::summarize(
-     case_weekly = sum(case_weekly),
-     week_end = first(week_end)
-   ) %>%
-   dplyr::mutate(
-     fips = paste("HERC", herc_region, sep = "|"),
-     geo_name = herc_region
-   )
-
-hdt_cusum <- bind_rows(hdt_cusum_cty, herc) %>% 
   group_by(fips, geo_name) %>% 
   arrange(fips, geo_name, week_num) %>% 
   filter(!is.na(week_num)) %>%
@@ -274,7 +293,7 @@ plot_rev_cusum <- function(rev_cusum_df, region_name) {
              title = paste("Reverse CUSUM Chart for", region_name))
 }
 
-plot_rev_cusum(hdt_cusum, "WI")
+plot_rev_cusum(hdt_cusum, "Wisconsin")
 ```
 
 ```{r rev-cusum-chart-lax}

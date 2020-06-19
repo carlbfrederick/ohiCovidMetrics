@@ -92,7 +92,7 @@ fdr_trajectory <- function(pval) {
 #' @param traj trajectory as calculated by \code{\link{score_trajectory}}
 #' @param pval p-value as calculated by \code{\link{pval_trajectory}}
 #'
-#' @return an ordered factor "Shrinking" < "Not Statistically Significant" < "Growing"
+#' @return an ordered factor "Shrinking" < "No statistically significant change" < "Growing"
 #' @export
 #'
 #' @examples
@@ -106,7 +106,7 @@ class_trajectory <- function(traj, pval) {
 
   out <- factor(out,
                 levels = 1:3,
-                labels = c("Shrinking", "Not Statistically Significant", "Growing"),
+                labels = c("Shrinking", "No statistically significant change", "Growing"),
                 ordered = TRUE)
 
   return(out)
@@ -195,7 +195,7 @@ confirmed_case_composite <- function(traj_class, burd_class) {
     burd_class == "Moderate" & traj_class == "Growing" ~ 3,
     burd_class == "Moderately High" & traj_class == "Shrinking" ~ 2,
     burd_class == "Moderately High" & traj_class > "Shrinking" ~ 3,
-    burd_class == "High" & traj_class %in% c("Shrinking", "Not Statistically Significant", "Growing") ~ 3,
+    burd_class == "High" & traj_class %in% c("Shrinking", "No statistically significant change", "Growing") ~ 3,
     TRUE ~ NA_real_
   )
 
