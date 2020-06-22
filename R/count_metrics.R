@@ -20,8 +20,6 @@
 #' @return a numeric vector
 #' @export
 #'
-#' @importFrom purrr map2_dbl
-#'
 #' @examples
 #' traj_2020_06_10 <- score_trajectory(curr = 100L, prev = 80L)
 score_trajectory <- function(curr, prev) {
@@ -32,7 +30,9 @@ score_trajectory <- function(curr, prev) {
   # effects: returns an estimate of the ratio, moderated by pseudocounts and a cap (500%)
   # comment: A Bayesian estimate would be of higher quality but less transparent
   alpha <- 1
-  purrr::map2_dbl(curr, prev, ~min( ( .x + alpha ) / ( .y + alpha ) , 5 ))
+
+  traj <- ((curr + alpha)/(prev + alpha)) - 1
+  100 * ifelse(traj <= 5, traj, 5)
 }
 
 #' Calculate p-value of trajectory current counts vs prior counts
@@ -128,7 +128,8 @@ score_burden <- function(curr, prev, pop) {
   prev <- check_nonneg(prev, "prev")
   pop <- check_nonneg(pop, "pop")
 
-  alpha <- 1
+  #Currently not using pseudocount/offset for burden
+  alpha <- 0
 
   burden <- (1e5 / pop) * (curr + prev + alpha)
 
@@ -338,8 +339,8 @@ process_confirmed_cases <- function(clean_case_df) {
 
     ) %>%
     dplyr::mutate(
-      Trajectory = round(100*(Trajectory - 1), .1),
-      Burden = round(Burden, .1)
+      Trajectory = signif(Trajectory, 2),
+      Burden = signif(Burden, 2)
     ) %>%
     dplyr::select(
       Date = week_end_1,

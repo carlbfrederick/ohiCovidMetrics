@@ -11,7 +11,9 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4
 )
 ```
 
@@ -208,16 +210,14 @@ inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Burden = Burden),
            select(hdt_out, Region_ID, Region, My_Burden = Burden),
            by = c("Region_ID", "Region")) %>% 
   mutate(diff = Jeff_Burden - My_Burden) %>% 
-  pull(diff) %>% 
-  summary
+  filter(diff != 0) 
 
 #Trajectory
 inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Trajectory = Trajectory),
            select(hdt_out, Region_ID, Region, My_Trajectory = Trajectory),
            by = c("Region_ID", "Region")) %>% 
   mutate(diff = Jeff_Trajectory - My_Trajectory) %>% 
-  pull(diff) %>% 
-  summary
+  filter(diff != 0) 
 
 #Burden_Class
 inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Burden_Class = Burden_Class),
@@ -233,6 +233,22 @@ inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Trajectory_Class = Traje
            by = c("Region_ID", "Region")) %>% 
   mutate(same = Jeff_Trajectory_Class == My_Trajectory_Class) %>% 
   filter(same == FALSE) 
+
+#Trajectory P-value
+inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Trajectory_P = Trajectory_P),
+           select(hdt_out, Region_ID, Region, My_Trajectory_P = Trajectory_P),
+           by = c("Region_ID", "Region")) %>% 
+  mutate(diff = Jeff_Trajectory_P - My_Trajectory_P) %>% 
+  filter(diff  > 1e-15) 
+
+
+#Trajectory FDR
+inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Trajectory_FDR = Trajectory_FDR),
+           select(hdt_out, Region_ID, Region, My_Trajectory_FDR = Trajectory_FDR),
+           by = c("Region_ID", "Region")) %>% 
+  mutate(diff = Jeff_Trajectory_FDR - My_Trajectory_FDR) %>% 
+  filter(diff > 1e-15) 
+
 
 ```
 
