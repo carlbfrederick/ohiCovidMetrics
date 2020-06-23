@@ -13,9 +13,11 @@ check_nonneg <- function(val, arg.name, verbose = TRUE) {
     stop("<<", arg.name, ">> has one ore more negative values, please check your data.")
   }
   if (!is.integer(val)) {
-    message("<<", arg.name, ">> is not an integer.\n",
-            "  I am trying to coerce the value to integer, but this might cause unintended issues.\n",
-            "  See ?as.integer for coercion behavior.")
+    if (verbose) {
+      message("<<", arg.name, ">> is not an integer.\n",
+              "  I am trying to coerce the value to integer, but this might cause unintended issues.\n",
+              "  See ?as.integer for coercion behavior.")
+    }
     return(as.integer(val))
   }
   return(val)

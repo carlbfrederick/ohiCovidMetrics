@@ -30,7 +30,8 @@ Suggests:
     readr,
     knitr,
     rmarkdown,
-    readxl
+    readxl,
+    tidyverse
 Depends: 
     R (>= 2.10)
 VignetteBuilder: knitr

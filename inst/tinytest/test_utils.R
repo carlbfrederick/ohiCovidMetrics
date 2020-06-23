@@ -10,11 +10,13 @@ expect_identical(ohiCovidMetrics:::check_nonneg(val = curr_int, arg.name = "curr
 
 ##. . returns integer for coercible values ----
 ### dbl
-suppressWarnings(expect_identical(ohiCovidMetrics:::check_nonneg(val = curr_dbl, arg.name = "curr"), 123L))
-expect_warning(ohiCovidMetrics:::check_nonneg(val = curr_dbl, arg.name = "curr"))
+expect_identical(ohiCovidMetrics:::check_nonneg(val = curr_dbl, arg.name = "curr", verbose = FALSE), 123L)
+expect_silent(ohiCovidMetrics:::check_nonneg(val = curr_dbl, arg.name = "curr", verbose = FALSE), 123L)
+expect_message(ohiCovidMetrics:::check_nonneg(val = curr_dbl, arg.name = "curr"))
 ### str
-suppressWarnings(expect_identical(ohiCovidMetrics:::check_nonneg(val = curr_str, arg.name = "curr"), 123L))
-expect_warning(ohiCovidMetrics:::check_nonneg(val = curr_str, arg.name = "curr"))
+expect_identical(ohiCovidMetrics:::check_nonneg(val = curr_str, arg.name = "curr", verbose = FALSE), 123L)
+expect_silent(ohiCovidMetrics:::check_nonneg(val = curr_str, arg.name = "curr", verbose = FALSE), 123L)
+expect_message(ohiCovidMetrics:::check_nonneg(val = curr_str, arg.name = "curr"))
 
 #. . Fails correctly----
 ## NA value
@@ -61,14 +63,15 @@ expect_identical(observed$week_consec, observed$week_miss)
 set.seed(321234)
 testvec <- sample(-100:500, size = 90)
 
-clean_testvec_bad <- suppressWarnings(clean_reversals(testvec))
+clean_testvec_bad <- clean_reversals(testvec, verbose = FALSE)
 clean_testvec_good <- clean_reversals(clean_testvec_bad)
 
 expect_equal(sum(testvec), sum(clean_testvec_bad))
 expect_equal(sum(testvec), sum(clean_testvec_good))
 expect_equal(length(testvec), length(clean_testvec_good))
 expect_true(all(clean_testvec_good >= 0))
-expect_warning(clean_reversals(testvec))
+expect_message(clean_reversals(testvec))
+expect_silent(clean_reversals(testvec, verbose = FALSE))
 expect_error(clean_reversals(c(10, 2, 13, -4, 3, NA, 3, 18, -3, 3, 3, 3)))
 
 #test that vector is of same length

@@ -61,21 +61,21 @@ pull_histTable <- function(end_date = NULL) {
 
   #Basic Selection/wrangling
   hdt <- hdt %>%
-    dplyr::arrange(GEOID, LoadDttm) %>%
-    dplyr::rename(fips = GEOID) %>%
-    dplyr::group_by(fips) %>%
+    dplyr::arrange(.data$GEOID, .data$LoadDttm) %>%
+    dplyr::rename(fips = .data$GEOID) %>%
+    dplyr::group_by(.data$fips) %>%
     dplyr::transmute(
-      geo_type = GEO,
-      geo_name = NAME,
-      post_date = as.Date(as.POSIXct(LoadDttm/1000, origin = "1970-01-01 00:00.000 UTC")),
-      case_daily = dplyr::if_else(is.na(POS_NEW), POSITIVE, POS_NEW),
-      test_daily = dplyr::if_else(is.na(TEST_NEW), POSITIVE + dplyr::if_else(is.na(NEGATIVE), 0L, as.integer(NEGATIVE)), as.integer(TEST_NEW)),
-      death_daily = dplyr::if_else(is.na(DTH_NEW), DEATHS, DTH_NEW)
+      geo_type = .data$GEO,
+      geo_name = .data$NAME,
+      post_date = as.Date(as.POSIXct(.data$LoadDttm/1000, origin = "1970-01-01 00:00.000 UTC")),
+      case_daily = dplyr::if_else(is.na(.data$POS_NEW), .data$POSITIVE, .data$POS_NEW),
+      test_daily = dplyr::if_else(is.na(.data$TEST_NEW), .data$POSITIVE + dplyr::if_else(is.na(.data$NEGATIVE), 0L, as.integer(.data$NEGATIVE)), as.integer(.data$TEST_NEW)),
+      death_daily = dplyr::if_else(is.na(.data$DTH_NEW), .data$DEATHS, .data$DTH_NEW)
     ) %>%
-    dplyr::left_join(dplyr::select(county_data, fips, herc_region, pop_2018), by = "fips")
+    dplyr::left_join(dplyr::select(county_data, .data$fips, .data$herc_region, .data$pop_2018), by = "fips")
 
   if (!is.null(end_date)) {
-    hdt <- dplyr::filter(hdt, post_date <= as.Date(end_date))
+    hdt <- dplyr::filter(hdt, .data$post_date <= as.Date(end_date))
   }
 
   #Clean reversals at county level
@@ -84,7 +84,7 @@ pull_histTable <- function(end_date = NULL) {
     hdt$case_daily_raw <- hdt$case_daily
     hdt <- hdt %>%
       dplyr::mutate(
-        case_daily = clean_reversals(case_daily, verbose = FALSE)
+        case_daily = clean_reversals(.data$case_daily, verbose = FALSE)
       )
 
     num_negs <- sum(hdt$case_daily < 0)
@@ -102,7 +102,7 @@ pull_histTable <- function(end_date = NULL) {
     hdt$test_daily_raw <- hdt$test_daily
     hdt <- hdt %>%
       dplyr::mutate(
-        test_daily = clean_reversals(test_daily, verbose = FALSE)
+        test_daily = clean_reversals(.data$test_daily, verbose = FALSE)
       )
 
     num_negs <- sum(hdt$test_daily < 0)
@@ -120,7 +120,7 @@ pull_histTable <- function(end_date = NULL) {
     hdt$death_daily_raw <- hdt$death_daily
     hdt <- hdt %>%
       dplyr::mutate(
-        death_daily = clean_reversals(death_daily, verbose = FALSE)
+        death_daily = clean_reversals(.data$death_daily, verbose = FALSE)
       )
 
     num_negs <- sum(hdt$death_daily < 0)
@@ -135,16 +135,16 @@ pull_histTable <- function(end_date = NULL) {
 
   #Add in HERC and STATE rows
   herc <- hdt %>%
-    dplyr::group_by(post_date, herc_region) %>%
+    dplyr::group_by(.data$post_date, .data$herc_region) %>%
     dplyr::summarize_at(dplyr::vars(case_daily, test_daily, death_daily, pop_2018), sum) %>%
     dplyr::mutate(
-      fips = paste("HERC", herc_region, sep = "|"),
-      geo_name = herc_region,
+      fips = paste("HERC", .data$herc_region, sep = "|"),
+      geo_name = .data$herc_region,
       geo_type = "HERC Region"
     )
 
   state <- hdt %>%
-    group_by(post_date) %>%
+    group_by(.data$post_date) %>%
     dplyr::summarize_at(dplyr::vars(case_daily, test_daily, death_daily, pop_2018), sum) %>%
     dplyr::mutate(
       fips = "55",
@@ -154,11 +154,11 @@ pull_histTable <- function(end_date = NULL) {
 
   hdt <- bind_rows(hdt, herc, state) %>%
     dplyr::mutate(
-      case_cum = cumsum(case_daily),
-      test_cum = cumsum(test_daily),
-      death_cum = cumsum(death_daily)
+      case_cum = cumsum(.data$case_daily),
+      test_cum = cumsum(.data$test_daily),
+      death_cum = cumsum(.data$death_daily)
     ) %>%
-    select(-herc_region)
+    select(-.data$herc_region)
 
 }
 
