@@ -189,6 +189,8 @@ Jeff produced ([link here](https://share.health.wisconsin.gov/ph/inf/drrb/Meetin
 compare the our results to his. *Note: I am not comparing the Count or Rate 
 columns because the Tableau team just removes them.*
 
+***Note: I have updated the output file to meet the Tableau Team's Specifications***
+
 ```{r import-jeff}
 metrics_jeff <- read_xlsx("../inst/file_for_vignette/OHI_BBB_Surveillance_CaseMetric_20200617.xlsx") %>% 
   mutate(

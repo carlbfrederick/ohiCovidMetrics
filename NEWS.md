@@ -1,3 +1,8 @@
+# ohiCovidMetrics 0.1.1
+
+Minor patch to make output from `process_case_metrics()` more suitable
+for Tableau Ingestion.  
+
 # ohiCovidMetrics 0.1.0
 
 This is a minimally viable product that can download the Historical Data 

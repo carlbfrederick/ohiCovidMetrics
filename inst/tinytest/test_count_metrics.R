@@ -19,15 +19,15 @@ expect_equal(score_trajectory(curr_int, 10L), 500)
 ### growing
 expect_identical(class_trajectory(score_trajectory(curr_int, gprev_int),
                                   pval_trajectory(curr_int, gprev_int)),
-                 ordered(3, levels = 1:3, labels = c("Shrinking", "No statistically significant change", "Growing")))
+                 ordered(3, levels = 1:3, labels = c("Shrinking", "No significant change", "Growing")))
 ### not statistically significant
 expect_identical(class_trajectory(score_trajectory(curr_int, nprev_int),
                                   pval_trajectory(curr_int, nprev_int)),
-                 ordered(2, levels = 1:3, labels = c("Shrinking", "No statistically significant change", "Growing")))
+                 ordered(2, levels = 1:3, labels = c("Shrinking", "No significant change", "Growing")))
 ### shrinking
 expect_identical(class_trajectory(score_trajectory(curr_int, sprev_int),
                                   pval_trajectory(curr_int, sprev_int)),
-                 ordered(1, levels = 1:3, labels = c("Shrinking", "No statistically significant change", "Growing")))
+                 ordered(1, levels = 1:3, labels = c("Shrinking", "No significant change", "Growing")))
 
 #rev_cusum_ucl ----
 ##. .Test that upper limit really is smallest 3sigma integer

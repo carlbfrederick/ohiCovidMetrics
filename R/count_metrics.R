@@ -106,7 +106,7 @@ class_trajectory <- function(traj, pval) {
 
   out <- factor(out,
                 levels = 1:3,
-                labels = c("Shrinking", "No statistically significant change", "Growing"),
+                labels = c("Shrinking", "No significant change", "Growing"),
                 ordered = TRUE)
 
   return(out)
@@ -196,13 +196,13 @@ confirmed_case_composite <- function(traj_class, burd_class) {
     burd_class == "Moderate" & traj_class == "Growing" ~ 3,
     burd_class == "Moderately High" & traj_class == "Shrinking" ~ 2,
     burd_class == "Moderately High" & traj_class > "Shrinking" ~ 3,
-    burd_class == "High" & traj_class %in% c("Shrinking", "No statistically significant change", "Growing") ~ 3,
+    burd_class == "High" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 3,
     TRUE ~ NA_real_
   )
 
   out <- factor(out,
                 levels = 1:3,
-                labels = c("Low", "Moderate", "High"),
+                labels = c("Low", "Medium", "High"),
                 ordered = TRUE)
 
   out
@@ -313,6 +313,7 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #' @importFrom dplyr mutate
 #' @importFrom dplyr select
 #' @importFrom dplyr ungroup
+#' @importFrom dplyr if_else
 #' @importFrom rlang .data
 #'
 #' @examples
@@ -324,6 +325,7 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 process_confirmed_cases <- function(clean_case_df) {
   dplyr::ungroup(clean_case_df) %>%
     dplyr::mutate(
+      Count = .data$case_weekly_1 + .data$case_weekly_2,
       Burden = score_burden(curr = .data$case_weekly_1,
                             prev = .data$case_weekly_2,
                             pop = .data$pop_2018),
@@ -341,12 +343,15 @@ process_confirmed_cases <- function(clean_case_df) {
     ) %>%
     dplyr::mutate(
       Trajectory = signif(.data$Trajectory, 2),
+      Trajectory = dplyr::if_else(.data$Trajectory_Class == "No significant change", "N/A",
+                                  as.character(.data$Trajectory_Class)),
       Burden = signif(.data$Burden, 2)
     ) %>%
     dplyr::select(
       Date = .data$week_end_1,
       Region_ID = .data$fips,
       Region = .data$geo_name,
+      .data$Count,
       .data$Burden,
       .data$Trajectory,
       .data$Burden_Class,
