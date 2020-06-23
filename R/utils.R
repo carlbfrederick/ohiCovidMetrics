@@ -50,15 +50,17 @@ check_nonneg <- function(val, arg.name, verbose = TRUE) {
 #'
 #' @examples
 #' #General
+#' suppressPackageStartupMessages(library(dplyr))
+#'
 #' date_vector1 <- seq.Date(from = as.Date("2020-01-01"), to = as.Date("2020-06-09"), by = 1)
 #' data.frame(date = date_vector1,
 #'            weeknum = rolling_week(date_vector = date_vector1,
-#'                                   end_date = as.Date(Sys.Date())))
+#'                                   end_date = Sys.Date()))
 #'
 #' #In a tidyverse pipe
 #' tibble(tv_date = date_vector1) %>%
 #'   mutate(
-#'     tv_weeknum = rolling_week(tv_date, end_Date = as.Date(Sys.Date()))
+#'     tv_weeknum = rolling_week(tv_date, end_date = Sys.Date())
 #'   )
 rolling_week <- function(date_vector, end_date = as.Date(Sys.Date())){
   #Coerce to dates
@@ -102,7 +104,7 @@ rolling_week <- function(date_vector, end_date = as.Date(Sys.Date())){
 #' @importFrom dplyr filter
 #' @importFrom dplyr mutate
 #' @importFrom stats diffinv
-#'
+#' @importFrom rlang .data
 #'
 #' @examples
 #' \dontrun{
@@ -133,14 +135,14 @@ clean_reversals <- function(daily_time_series, verbose = TRUE) {
   end_pos <- end_pos[-1]
 
   np_tbl <- dplyr::tibble(
-    start = start_pos,
-    end = end_pos,
-    sign = neg_pattern$values,
-    length = neg_pattern$lengths
+    "start" = start_pos,
+    "end" = end_pos,
+    "sign" = neg_pattern$values,
+    "length" = neg_pattern$lengths
     ) %>%
     dplyr::filter(sign == -1) %>%
     dplyr::mutate(
-      replace_position = end + (sign * length)
+      replace_position = .data$end + (.data$sign * .data$length)
     )
 
   #for each instance of negative counts, replace the negatives with zero and subtract from most recent non-negative value

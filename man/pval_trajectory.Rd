@@ -18,5 +18,5 @@ a p.value extracted from the results of \code{\link[stats]{poisson.test}}
 Calculate p-value of trajectory current counts vs prior counts
 }
 \examples{
-pval_2020_06_10 <- pval_trajectory(curr = 100L, prev = 80L)
+traj_pval <- pval_trajectory(curr = 100L, prev = 80L)
 }

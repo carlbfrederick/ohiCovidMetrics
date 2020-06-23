@@ -21,7 +21,7 @@
 #' @export
 #'
 #' @examples
-#' traj_2020_06_10 <- score_trajectory(curr = 100L, prev = 80L)
+#' traj <- score_trajectory(curr = 100L, prev = 80L)
 score_trajectory <- function(curr, prev) {
   # requires: pair of non-negative integers, coerce if possible?
   curr <- check_nonneg(curr, "curr")
@@ -46,7 +46,7 @@ score_trajectory <- function(curr, prev) {
 #' @importFrom purrr map2_dbl
 #'
 #' @examples
-#' pval_2020_06_10 <- pval_trajectory(curr = 100L, prev = 80L)
+#' traj_pval <- pval_trajectory(curr = 100L, prev = 80L)
 pval_trajectory <- function(curr, prev) {
   # requires: pair of non-negative integers, coerce if possible?
   curr <- check_nonneg(curr, "curr")
@@ -69,8 +69,8 @@ pval_trajectory <- function(curr, prev) {
 #' @importFrom stats p.adjust
 #'
 #' @examples
-#' pval_2020_06_10 <- pval_trajectory(curr = 100L, prev = 80L)
-#' fdr_2020_06_10 <- fdr_trajectory(pval_2020_06_10)
+#' traj_pval <- pval_trajectory(curr = 100L, prev = 80L)
+#' traj_fdr <- fdr_trajectory(traj_pval)
 fdr_trajectory <- function(pval) {
   fdr <- stats::p.adjust(pval, method = "fdr")
   fdr
@@ -96,10 +96,10 @@ fdr_trajectory <- function(pval) {
 #' @export
 #'
 #' @examples
-#' traj_score <- score_trajectory(curr = 100L, prev = 80L)
+#' traj <- score_trajectory(curr = 100L, prev = 80L)
 #' traj_pval  <- pval_trajectory(curr = 100L, prev = 80L)
 #'
-#' traj_class_2020_06_10 <- class_trajectory(traj_score, traj_pval)
+#' traj_class <- class_trajectory(traj, traj_pval)
 class_trajectory <- function(traj, pval) {
   out <- ifelse(traj <= 0.9 & pval < 0.025, 1,
          ifelse(traj >=  1.1 & pval < 0.025, 3, 2))
@@ -121,7 +121,7 @@ class_trajectory <- function(traj, pval) {
 #' @export
 #'
 #' @examples
-#' burd <- score_burden(curr = 100L, prev = 80L, population = 65432)
+#' burd <- score_burden(curr = 100L, prev = 80L, pop = 65432L)
 score_burden <- function(curr, prev, pop) {
   # requires: pair of non-negative integers
   curr <- check_nonneg(curr, "curr")
@@ -153,8 +153,8 @@ score_burden <- function(curr, prev, pop) {
 #' @export
 #'
 #' @examples
-#' burd <- score_burden(curr = 100L, prev = 80L, population = 65432)
-#' burd_c <- class_burden(burd)
+#' burd <- score_burden(curr = 100L, prev = 80L, pop = 65432L)
+#' burd_class <- class_burden(burd)
 class_burden <- function(burden) {
   out <- ifelse(burden <= 10, 1,
          ifelse(burden <= 50, 2,
@@ -181,13 +181,13 @@ class_burden <- function(burden) {
 #' @importFrom dplyr case_when
 #'
 #' @examples
-#' burd <- score_burden(curr = 100L, prev = 80L, population = 65432)
-#' burd_c <- class_burden(burd)
-#' traj_score <- score_trajectory(curr = 100L, prev = 80L)
+#' burd <- score_burden(curr = 100L, prev = 80L, pop = 65432L)
+#' burd_class <- class_burden(burd)
+#' traj <- score_trajectory(curr = 100L, prev = 80L)
 #' traj_pval  <- pval_trajectory(curr = 100L, prev = 80L)
-#' traj_class_2020_06_10 <- class_trajectory(traj_score, traj_pval)
+#' traj_class <- class_trajectory(traj, traj_pval)
 #'
-#' comp_2020_06_10 <- confirmed_case_composite(traj_class_2020_06_10, burd_c)
+#' composite <- confirmed_case_composite(traj_class, burd_class)
 confirmed_case_composite <- function(traj_class, burd_class) {
   out <- dplyr::case_when(
     burd_class == "Low" & traj_class < "Growing" ~ 1,
@@ -223,7 +223,7 @@ confirmed_case_composite <- function(traj_class, burd_class) {
 #'
 #' @examples
 #' #For 3 weeks into the past using 7-day binned counts
-#' rev_cusum_ucl(curr = 100L, delta_t = 3)
+#' rev_cusum_ucl(curr = 100L, delta_t = 3L)
 rev_cusum_ucl <- function(curr, delta_t) {
   # requires: non-negative integer count, curr,  and positive integer weight, delta_t
   curr <- check_nonneg(curr, "curr")
@@ -260,7 +260,7 @@ rev_cusum_ucl <- function(curr, delta_t) {
 #'
 #' @examples
 #' #For 3 weeks into the past using 7-day binned counts
-#' rev_cusum_lcl(curr = 100L, delta_t = 3)
+#' rev_cusum_lcl(curr = 100L, delta_t = 3L)
 rev_cusum_lcl <- function( curr , delta_t = 1 ) {
   # requires: non-negative integer count, curr,  and positive integer weight, delta_t
   curr <- check_nonneg(curr, "curr")
@@ -313,6 +313,7 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #' @importFrom dplyr mutate
 #' @importFrom dplyr select
 #' @importFrom dplyr ungroup
+#' @importFrom rlang .data
 #'
 #' @examples
 #' library(dplyr)
@@ -323,36 +324,36 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 process_confirmed_cases <- function(clean_case_df) {
   dplyr::ungroup(clean_case_df) %>%
     dplyr::mutate(
-      Burden = score_burden(curr = case_weekly_1,
-                            prev = case_weekly_2,
-                            pop = pop_2018),
-      Burden_Class = class_burden(Burden),
-      Trajectory = score_trajectory(curr = case_weekly_1,
-                                    prev = case_weekly_2),
-      Trajectory_P = pval_trajectory(curr = case_weekly_1,
-                                     prev = case_weekly_2),
-      Trajectory_Class = class_trajectory(traj = Trajectory,
-                                          pval = Trajectory_P),
-      Trajectory_FDR = fdr_trajectory(pval = Trajectory_P),
-      Composite_Class = confirmed_case_composite(traj_class = Trajectory_Class,
-                                                 burd_class = Burden_Class)
+      Burden = score_burden(curr = .data$case_weekly_1,
+                            prev = .data$case_weekly_2,
+                            pop = .data$pop_2018),
+      Burden_Class = class_burden(.data$Burden),
+      Trajectory = score_trajectory(curr = .data$case_weekly_1,
+                                    prev = .data$case_weekly_2),
+      Trajectory_P = pval_trajectory(curr = .data$case_weekly_1,
+                                     prev = .data$case_weekly_2),
+      Trajectory_Class = class_trajectory(traj = .data$Trajectory,
+                                          pval = .data$Trajectory_P),
+      Trajectory_FDR = fdr_trajectory(pval = .data$Trajectory_P),
+      Composite_Class = confirmed_case_composite(traj_class = .data$Trajectory_Class,
+                                                 burd_class = .data$Burden_Class)
 
     ) %>%
     dplyr::mutate(
-      Trajectory = signif(Trajectory, 2),
-      Burden = signif(Burden, 2)
+      Trajectory = signif(.data$Trajectory, 2),
+      Burden = signif(.data$Burden, 2)
     ) %>%
     dplyr::select(
-      Date = week_end_1,
-      Region_ID = fips,
-      Region = geo_name,
-      Burden,
-      Trajectory,
-      Burden_Class,
-      Trajectory_Class,
-      Composite_Class,
-      Trajectory_P,
-      Trajectory_FDR
+      Date = .data$week_end_1,
+      Region_ID = .data$fips,
+      Region = .data$geo_name,
+      .data$Burden,
+      .data$Trajectory,
+      .data$Burden_Class,
+      .data$Trajectory_Class,
+      .data$Composite_Class,
+      .data$Trajectory_P,
+      .data$Trajectory_FDR
     )
 }
 

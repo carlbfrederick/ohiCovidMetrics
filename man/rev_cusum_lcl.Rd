@@ -22,5 +22,5 @@ Calculates lower control limits for the reverse cusum control chart based on a
 }
 \examples{
 #For 3 weeks into the past using 7-day binned counts
-rev_cusum_lcl(curr = 100L, delta_t = 3)
+rev_cusum_lcl(curr = 100L, delta_t = 3L)
 }

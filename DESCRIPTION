@@ -23,7 +23,8 @@ Imports:
     dplyr,
     lubridate,
     tidyr,
-    purrr
+    purrr,
+    rlang
 RoxygenNote: 7.1.0
 Suggests: 
     tinytest,

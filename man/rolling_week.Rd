@@ -30,14 +30,16 @@ if the vector of dates is missing one or more dates in the series.
 }
 \examples{
 #General
+suppressPackageStartupMessages(library(dplyr))
+
 date_vector1 <- seq.Date(from = as.Date("2020-01-01"), to = as.Date("2020-06-09"), by = 1)
 data.frame(date = date_vector1,
            weeknum = rolling_week(date_vector = date_vector1,
-                                  end_date = as.Date(Sys.Date())))
+                                  end_date = Sys.Date()))
 
 #In a tidyverse pipe
 tibble(tv_date = date_vector1) \%>\%
   mutate(
-    tv_weeknum = rolling_week(tv_date, end_Date = as.Date(Sys.Date()))
+    tv_weeknum = rolling_week(tv_date, end_date = Sys.Date())
   )
 }

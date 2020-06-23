@@ -30,5 +30,5 @@ whose mean simplifies to approximately 0.5. For more information, see the
 reproducibility paper on the OHI Surveillance Team's SharePoint site.
 }
 \examples{
-traj_2020_06_10 <- score_trajectory(curr = 100L, prev = 80L)
+traj <- score_trajectory(curr = 100L, prev = 80L)
 }

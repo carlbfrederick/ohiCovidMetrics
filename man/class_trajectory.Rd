@@ -26,8 +26,8 @@ reject the null hypothesis, the trajectory is classified as not statistically
 significant.
 }
 \examples{
-traj_score <- score_trajectory(curr = 100L, prev = 80L)
+traj <- score_trajectory(curr = 100L, prev = 80L)
 traj_pval  <- pval_trajectory(curr = 100L, prev = 80L)
 
-traj_class_2020_06_10 <- class_trajectory(traj_score, traj_pval)
+traj_class <- class_trajectory(traj, traj_pval)
 }

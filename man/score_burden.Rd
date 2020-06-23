@@ -20,5 +20,5 @@ a numeric vector of population adjusted burden
 calculate the burden
 }
 \examples{
-burd <- score_burden(curr = 100L, prev = 80L, population = 65432)
+burd <- score_burden(curr = 100L, prev = 80L, pop = 65432L)
 }

@@ -23,6 +23,6 @@ the ones used in the CDC State Indicators report:
 }
 }
 \examples{
-burd <- score_burden(curr = 100L, prev = 80L, population = 65432)
-burd_c <- class_burden(burd)
+burd <- score_burden(curr = 100L, prev = 80L, pop = 65432L)
+burd_class <- class_burden(burd)
 }

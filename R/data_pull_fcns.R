@@ -44,6 +44,9 @@
 #' @importFrom dplyr if_else
 #' @importFrom dplyr left_join
 #' @importFrom dplyr filter
+#' @importFrom dplyr bind_rows
+#' @importFrom rlang .data
+#' @importFrom utils data
 #'
 #' @examples
 #' #for all available data
@@ -58,6 +61,8 @@ pull_histTable <- function(end_date = NULL) {
   api_url <- "https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,LoadDttm,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
   message("Downloading data from DHS ...")
   hdt <- sf::st_set_geometry(sf::st_read(api_url, quiet = TRUE), NULL)
+
+  utils::data("county_data")
 
   #Basic Selection/wrangling
   hdt <- hdt %>%
@@ -136,7 +141,7 @@ pull_histTable <- function(end_date = NULL) {
   #Add in HERC and STATE rows
   herc <- hdt %>%
     dplyr::group_by(.data$post_date, .data$herc_region) %>%
-    dplyr::summarize_at(dplyr::vars(case_daily, test_daily, death_daily, pop_2018), sum) %>%
+    dplyr::summarize_at(dplyr::vars("case_daily", "test_daily", "death_daily", "pop_2018"), sum) %>%
     dplyr::mutate(
       fips = paste("HERC", .data$herc_region, sep = "|"),
       geo_name = .data$herc_region,
@@ -144,15 +149,15 @@ pull_histTable <- function(end_date = NULL) {
     )
 
   state <- hdt %>%
-    group_by(.data$post_date) %>%
-    dplyr::summarize_at(dplyr::vars(case_daily, test_daily, death_daily, pop_2018), sum) %>%
+    dplyr::group_by(.data$post_date) %>%
+    dplyr::summarize_at(dplyr::vars("case_daily", "test_daily", "death_daily", "pop_2018"), sum) %>%
     dplyr::mutate(
       fips = "55",
       geo_name = "Wisconsin",
       geo_type = "State"
     )
 
-  hdt <- bind_rows(hdt, herc, state) %>%
+  hdt <- dplyr::bind_rows(hdt, herc, state) %>%
     dplyr::mutate(
       case_cum = cumsum(.data$case_daily),
       test_cum = cumsum(.data$test_daily),
@@ -190,6 +195,7 @@ pull_histTable <- function(end_date = NULL) {
 #' @importFrom dplyr summarize_at
 #' @importFrom dplyr select
 #' @importFrom tidyr pivot_wider
+#' @importFrom rlang .data
 #'
 #' @examples
 #' \dontrun{
@@ -200,20 +206,20 @@ shape_case_data <- function(case_df) {
    max_date <- max(case_df$post_date)
 
    out <- case_df %>%
-     dplyr::group_by(fips, geo_name, pop_2018) %>%
+     dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018) %>%
      dplyr::mutate(
-       weeknum = rolling_week(date_vector = post_date, end_date = max_date)
+       weeknum = rolling_week(date_vector = .data$post_date, end_date = max_date)
      ) %>%
-     dplyr::group_by(fips, geo_name, pop_2018, weeknum) %>%
+     dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018, .data$weeknum) %>%
      dplyr::summarize(
-       case_weekly = as.integer(sum(case_daily)),
-       week_end = max(post_date),
+       case_weekly = as.integer(sum(.data$case_daily)),
+       week_end = max(.data$post_date),
        .groups = "drop_last"
      ) %>%
-     dplyr::filter(weeknum <= 2) %>%
-     tidyr::pivot_wider(id_cols = c(fips, geo_name, pop_2018),
-                        values_from = c(case_weekly, week_end),
-                        names_from = weeknum)
+     dplyr::filter(.data$weeknum <= 2) %>%
+     tidyr::pivot_wider(id_cols = c("fips", "geo_name", "pop_2018"),
+                        values_from = c("case_weekly", "week_end"),
+                        names_from = "weeknum")
 
 
    out$pop_2018[out$fips == "55"] <- sum(county_data$pop_2018)

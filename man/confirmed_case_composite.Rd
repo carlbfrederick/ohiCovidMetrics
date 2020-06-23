@@ -18,11 +18,11 @@ an ordered factor for the composite confirmed case summary
 Source: Jeff's Design Doc as confirmed by SEOC
 }
 \examples{
-burd <- score_burden(curr = 100L, prev = 80L, population = 65432)
-burd_c <- class_burden(burd)
-traj_score <- score_trajectory(curr = 100L, prev = 80L)
+burd <- score_burden(curr = 100L, prev = 80L, pop = 65432L)
+burd_class <- class_burden(burd)
+traj <- score_trajectory(curr = 100L, prev = 80L)
 traj_pval  <- pval_trajectory(curr = 100L, prev = 80L)
-traj_class_2020_06_10 <- class_trajectory(traj_score, traj_pval)
+traj_class <- class_trajectory(traj, traj_pval)
 
-comp_2020_06_10 <- confirmed_case_composite(traj_class_2020_06_10, burd_c)
+composite <- confirmed_case_composite(traj_class, burd_class)
 }

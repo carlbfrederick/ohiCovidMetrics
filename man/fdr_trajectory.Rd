@@ -16,6 +16,6 @@ the false discovery rate
 According to method of Benjamini & Hochberg (1995) via \code{\link[stats]{p.adjust}}
 }
 \examples{
-pval_2020_06_10 <- pval_trajectory(curr = 100L, prev = 80L)
-fdr_2020_06_10 <- fdr_trajectory(pval_2020_06_10)
+traj_pval <- pval_trajectory(curr = 100L, prev = 80L)
+traj_fdr <- fdr_trajectory(traj_pval)
 }
