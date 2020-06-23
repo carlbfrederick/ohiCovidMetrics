@@ -5,6 +5,11 @@
 #' using the GeoJSON REST API. \emph{Note: currently it does not pull down any
 #' geometry data used to produce maps.}
 #'
+#' @param end_date (default = NULL) If specified it is the end date of the
+#'                 time series that you wish to analyze. It should be something
+#'                 coercible to Date format with as.Date. If you want all data
+#'                 leave it blank.
+#'
 #' @return a cleaned version of the COVID-19 Historical Data Table including
 #' HERC regions with the following columns
 #'   \describe{
@@ -38,10 +43,16 @@
 #' @importFrom dplyr %>%
 #' @importFrom dplyr if_else
 #' @importFrom dplyr left_join
+#' @importFrom dplyr filter
 #'
 #' @examples
+#' #for all available data
 #' hdt <- pull_histTable()
-pull_histTable <- function() {
+#'
+#' #for data through a certain date
+#' hdt_old <- pull_histTable(end_date = "2020-06-17")
+#'
+pull_histTable <- function(end_date = NULL) {
   #Pull down the data
   #REsT API URL
   api_url <- "https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,LoadDttm,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
@@ -62,6 +73,10 @@ pull_histTable <- function() {
       death_daily = dplyr::if_else(is.na(DTH_NEW), DEATHS, DTH_NEW)
     ) %>%
     dplyr::left_join(dplyr::select(county_data, fips, herc_region, pop_2018), by = "fips")
+
+  if (!is.null(end_date)) {
+    hdt <- dplyr::filter(hdt, post_date <= as.Date(end_date))
+  }
 
   #Clean reversals at county level
   if (any(hdt$case_daily < 0)) {

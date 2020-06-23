@@ -40,8 +40,7 @@ I stopped the time series at 17 June 2020 to be able to comparet the results to 
 official file prepared by Jeff Bond for the dashboard.
 
 ```{r pull-hist-table}
-hdt_raw <- pull_histTable() %>% 
-  filter(post_date <= as.Date("2020-06-17"))
+hdt_raw <- pull_histTable(end_date = "2020-06-17") 
 ```
 
 This function does six things: 

@@ -4,7 +4,13 @@
 \alias{pull_histTable}
 \title{Pull down DHS COVID-19 Historical Data Table}
 \usage{
-pull_histTable()
+pull_histTable(end_date = NULL)
+}
+\arguments{
+\item{end_date}{(default = NULL) If specified it is the end date of the
+time series that you wish to analyze. It should be something
+coercible to Date format with as.Date. If you want all data
+leave it blank.}
 }
 \value{
 a cleaned version of the COVID-19 Historical Data Table including
@@ -36,5 +42,10 @@ using the GeoJSON REST API. \emph{Note: currently it does not pull down any
 geometry data used to produce maps.}
 }
 \examples{
+#for all available data
 hdt <- pull_histTable()
+
+#for data through a certain date
+hdt_old <- pull_histTable(end_date = "2020-06-17")
+
 }
