@@ -344,7 +344,7 @@ process_confirmed_cases <- function(clean_case_df) {
     dplyr::mutate(
       Trajectory = signif(.data$Trajectory, 2),
       Trajectory = dplyr::if_else(.data$Trajectory_Class == "No significant change", "N/A",
-                                  as.character(.data$Trajectory_Class)),
+                                  as.character(.data$Trajectory)),
       Burden = signif(.data$Burden, 2)
     ) %>%
     dplyr::select(
