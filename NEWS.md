@@ -1,3 +1,8 @@
+# ohiCovidMetrics 0.1.2
+
+This patch fixes a small bug in the process_case_metrics() function that
+wrote over the trajectory scores with trajectory classifications.
+
 # ohiCovidMetrics 0.1.1
 
 Minor patch to make output from `process_case_metrics()` more suitable
