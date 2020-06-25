@@ -3,6 +3,11 @@
 This patch fixes a small bug in the process_case_metrics() function that
 wrote over the trajectory scores with trajectory classifications.
 
+Also:
+
+- Fixes bug where some numeric columns were downloaded as factors in 
+  `pull_histTable()`
+
 # ohiCovidMetrics 0.1.1
 
 Minor patch to make output from `process_case_metrics()` more suitable

@@ -60,7 +60,11 @@ pull_histTable <- function(end_date = NULL) {
   #REsT API URL
   api_url <- "https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,LoadDttm,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
   message("Downloading data from DHS ...")
-  hdt <- sf::st_set_geometry(sf::st_read(api_url, quiet = TRUE), NULL)
+  hdt <- sf::st_set_geometry(sf::st_read(api_url, quiet = TRUE, stringsAsFactors = FALSE), NULL)
+
+  #Protect
+  hdt$NEGATIVE <- as.integer(hdt$NEGATIVE)
+  hdt$TEST_NEW <- as.integer(hdt$TEST_NEW)
 
   utils::data("county_data")
 
