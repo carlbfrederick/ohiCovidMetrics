@@ -7,6 +7,7 @@ Also:
 
 - Fixes bug where some numeric columns were downloaded as factors in 
   `pull_histTable()`
+- Change license to GPL 3
 
 # ohiCovidMetrics 0.1.1
 

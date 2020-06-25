@@ -15,7 +15,7 @@ Description: This package contains functions to pull and clean the necessary
     data and functions to calculate the metrics developed by OHI to monitor 
     the COVID19 pandemic. The primary product of this package is a table of
     metrics by region/county that is used for dashboard display.
-License: file LICENSE
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports: 
