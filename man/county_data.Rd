@@ -4,16 +4,14 @@
 \name{county_data}
 \alias{county_data}
 \title{County Level Data to Facilitate Metric Calculation and Aggregation}
-\format{
-A data.frame with 72 observations (one per WI county) and 3 variables:
+\format{A data.frame with 72 observations (one per WI county) and 3 variables:
 \describe{
   \item{fips}{5 digit FIPS county code}
   \item{county}{County name}
   \item{pop_2018}{WISH 2018 population figures}
   \item{dph_region}{DPH Region}
   \item{herc_region}{HERC Region}
-}
-}
+}}
 \source{
 FIPS County codes taken from ACS downloads via \code{\link[tidycensus]{get_acs}}
 

@@ -36,6 +36,17 @@
 #'
 #' @importFrom sf st_read
 #' @importFrom sf st_set_geometry
+#' @importFrom dplyr group_by
+#' @importFrom dplyr transmute
+#' @importFrom dplyr mutate
+#' @importFrom dplyr arrange
+#' @importFrom dplyr %>%
+#' @importFrom dplyr if_else
+#' @importFrom dplyr left_join
+#' @importFrom dplyr filter
+#' @importFrom dplyr bind_rows
+#' @importFrom rlang .data
+#' @importFrom utils data
 #'
 #' @examples
 #' #for all available data
@@ -51,138 +62,10 @@ pull_histTable <- function(end_date = NULL) {
   message("Downloading data from DHS ...")
   hdt <- sf::st_set_geometry(sf::st_read(api_url, quiet = TRUE, stringsAsFactors = FALSE), NULL)
 
-  #Protect against funky data import issues.
+  #Protect
   hdt$NEGATIVE <- as.integer(hdt$NEGATIVE)
   hdt$TEST_NEW <- as.integer(hdt$TEST_NEW)
 
-  clean_histTable(hdt, end_date)
-}
-
-#' Pull Confirmed Case data from WEDSS
-#'
-#' This function supplies a wrapper to fetch the results from a SQL query
-#' from WEDSS and then performs basic data cleaning to calculate the
-#' confirmed case metrics.
-#'
-#' @param query query to pull data from WEDSS. This call should only pull
-#'              counties or jurisdictions that will automatically be
-#'              aggregated into HERC regions and Statewide.
-#' @param conn connection to database (see \code{\link[RODBC]{odbcConnect}})
-#' @inheritParams pull_histTable
-#'
-#' @return a cleaned version of the COVID-19 Historical Data Table including
-#' HERC regions with the following columns
-#'   \describe{
-#'     \item{fips}{renamed from GEOID}
-#'     \item{geo_type}{renamed from GEO}
-#'     \item{geo_name}{renamed from NAME}
-#'     \item{post_date}{LoadDttm converted to Date format}
-#'     \item{case_daily}{cleaned daily new positive cases from POS_NEW except for the first day which is from POSITIVE}
-#'     \item{test_daily}{cleaned daily new total tests from TEST_NEW except for the first day which is from POSITIve + NEGATIVE}
-#'     \item{death_daily}{cleaned daily new deaths from DTH_NEW except for the first day which is from DEATHS}
-#'     \item{pop_2018}{2018 Population Numbers pulled from WISH}
-#'     \item{case_cum}{daily cumulative positive cases calculated from case_daily}
-#'     \item{test_cum}{daily cumulative total tests calculated from test_daily}
-#'     \item{death_cum}{daily cumulative deaths calculated from death_daily}
-#'   }
-#'   and likely one or more of the following columns if applicable
-#'   \describe{
-#'     \item{case_daily_raw}{original daily new positive cases before cleaning}
-#'     \item{test_daily_raw}{original daily new total tests before cleaning}
-#'     \item{death_daily_raw}{cleaned daily new deaths before cleaning}
-#'   }
-#'
-#' @export
-#'
-#' @importFrom RODBC sqlQuery
-pull_wedss <- function(query, conn, end_date) {
-  hdt <- RODBC::sqlQuery(conn, query)
-
-  #Might need to do some basic data cleaning in here
-
-  clean_histTable(hdt, end_date)
-}
-
-#' Reshape confirmed case data for producing Tableau extracts
-#'
-#' take case data (from WEDSS or historical data table) and put it in proper
-#' shape for metric tables to feed tableau
-#'
-#' @param case_df Confirmed case data.frame (e.g. produced by \link{pull_histTable})
-#'
-#' @return a data.frame with the following with one row per county, state, and
-#' HERC regions with the following columns
-#' \describe{
-#'   \item{fips}{FIPS Code and/or region identifier}
-#'   \item{geo_name}{Name of geography}
-#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
-#'   \item{case_weekly_1}{Total cases for \strong{current} 7 day period}
-#'   \item{case_weekly_2}{Total cases for \strong{prior} 7 day period}
-#'   \item{week_end_1}{End date for \strong{current} 7 day period}
-#'   \item{week_end_2}{End date for \strong{prior} 7 day period}
-#' }
-#'
-#' @export
-#'
-#' @importFrom dplyr group_by
-#' @importFrom dplyr mutate
-#' @importFrom dplyr summarize
-#' @importFrom dplyr filter
-#' @importFrom dplyr summarize_at
-#' @importFrom dplyr select
-#' @importFrom tidyr pivot_wider
-#' @importFrom rlang .data
-#'
-#' @examples
-#' \dontrun{
-#'   hdt <- pull_histTable()
-#'   hdt_clean <- shape_case_data(hdt)
-#' }
-shape_case_data <- function(case_df) {
-   max_date <- max(case_df$post_date)
-
-   out <- case_df %>%
-     dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018) %>%
-     dplyr::mutate(
-       weeknum = rolling_week(date_vector = .data$post_date, end_date = max_date)
-     ) %>%
-     dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018, .data$weeknum) %>%
-     dplyr::summarize(
-       case_weekly = as.integer(sum(.data$case_daily)),
-       week_end = max(.data$post_date),
-       .groups = "drop_last"
-     ) %>%
-     dplyr::filter(.data$weeknum <= 2) %>%
-     tidyr::pivot_wider(id_cols = c("fips", "geo_name", "pop_2018"),
-                        values_from = c("case_weekly", "week_end"),
-                        names_from = "weeknum")
-
-
-   out$pop_2018[out$fips == "55"] <- sum(county_data$pop_2018)
-   out$pop_2018 <- as.integer(out$pop_2018)
-
-   out
- }
-
-#' INTERNAL function to clean case data for metrics
-#'
-#' @param hdt a data.frame from the historical data table
-#' @inheritParams pull_histTable
-#'
-#' @importFrom dplyr group_by
-#' @importFrom dplyr transmute
-#' @importFrom dplyr mutate
-#' @importFrom dplyr arrange
-#' @importFrom dplyr %>%
-#' @importFrom dplyr if_else
-#' @importFrom dplyr left_join
-#' @importFrom dplyr filter
-#' @importFrom dplyr bind_rows
-#' @importFrom rlang .data
-#' @importFrom utils data
-#'
-#' @return raw historical case data ready for cleaning
-clean_histTable <- function(hdt, end_date) {
   utils::data("county_data")
 
   #Basic Selection/wrangling
@@ -285,4 +168,66 @@ clean_histTable <- function(hdt, end_date) {
       death_cum = cumsum(.data$death_daily)
     ) %>%
     select(-.data$herc_region)
+
 }
+
+#' Reshape confirmed case data for producing Tableau extracts
+#'
+#' take case data (from WEDSS or historical data table) and put it in proper
+#' shape for metric tables to feed tableau
+#'
+#' @param case_df Confirmed case data.frame (e.g. produced by \link{pull_histTable})
+#'
+#' @return a data.frame with the following with one row per county, state, and
+#' HERC regions with the following columns
+#' \describe{
+#'   \item{fips}{FIPS Code and/or region identifier}
+#'   \item{geo_name}{Name of geography}
+#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#'   \item{case_weekly_1}{Total cases for \strong{current} 7 day period}
+#'   \item{case_weekly_2}{Total cases for \strong{prior} 7 day period}
+#'   \item{week_end_1}{End date for \strong{current} 7 day period}
+#'   \item{week_end_2}{End date for \strong{prior} 7 day period}
+#' }
+#'
+#' @export
+#'
+#' @importFrom dplyr group_by
+#' @importFrom dplyr mutate
+#' @importFrom dplyr summarize
+#' @importFrom dplyr filter
+#' @importFrom dplyr summarize_at
+#' @importFrom dplyr select
+#' @importFrom tidyr pivot_wider
+#' @importFrom rlang .data
+#'
+#' @examples
+#' \dontrun{
+#'   hdt <- pull_histTable()
+#'   hdt_clean <- shape_case_data(hdt)
+#' }
+shape_case_data <- function(case_df) {
+   max_date <- max(case_df$post_date)
+
+   out <- case_df %>%
+     dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018) %>%
+     dplyr::mutate(
+       weeknum = rolling_week(date_vector = .data$post_date, end_date = max_date)
+     ) %>%
+     dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018, .data$weeknum) %>%
+     dplyr::summarize(
+       case_weekly = as.integer(sum(.data$case_daily)),
+       week_end = max(.data$post_date),
+       .groups = "drop_last"
+     ) %>%
+     dplyr::filter(.data$weeknum <= 2) %>%
+     tidyr::pivot_wider(id_cols = c("fips", "geo_name", "pop_2018"),
+                        values_from = c("case_weekly", "week_end"),
+                        names_from = "weeknum")
+
+
+   out$pop_2018[out$fips == "55"] <- sum(county_data$pop_2018)
+   out$pop_2018 <- as.integer(out$pop_2018)
+
+   out
+ }
