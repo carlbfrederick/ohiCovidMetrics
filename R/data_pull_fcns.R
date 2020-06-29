@@ -95,6 +95,17 @@ pull_histTable <- function(end_date = NULL) {
 #' @export
 #'
 #' @importFrom RODBC sqlQuery
+#'
+#' @examples
+#' \dontrun{
+#'    library(RODBC)
+#'    channel <- odbcConnect("databasename", ...)
+#'
+#'    sql_query <- "SELECT * FROM TABLE WHERE GEO = 'COUNTY'"
+#'
+#'    hdt <- pull_wedss(query = sql_query, conn = channel, end_date = as.Date("2020-06-24"))
+#' }
+#'
 pull_wedss <- function(query, conn, end_date) {
   hdt <- RODBC::sqlQuery(conn, query)
 
@@ -286,3 +297,5 @@ clean_histTable <- function(hdt, end_date) {
     ) %>%
     select(-.data$herc_region)
 }
+
+

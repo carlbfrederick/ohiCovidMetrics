@@ -46,3 +46,14 @@ This function supplies a wrapper to fetch the results from a SQL query
 from WEDSS and then performs basic data cleaning to calculate the
 confirmed case metrics.
 }
+\examples{
+\dontrun{
+   library(RODBC)
+   channel <- odbcConnect("databasename", ...)
+
+   sql_query <- "SELECT * FROM TABLE WHERE GEO = 'COUNTY'"
+
+   hdt <- pull_wedss(query = sql_query, conn = channel, end_date = as.Date("2020-06-24"))
+}
+
+}
