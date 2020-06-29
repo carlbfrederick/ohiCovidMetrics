@@ -36,6 +36,17 @@
 #'
 #' @importFrom sf st_read
 #' @importFrom sf st_set_geometry
+#' @importFrom dplyr group_by
+#' @importFrom dplyr transmute
+#' @importFrom dplyr mutate
+#' @importFrom dplyr arrange
+#' @importFrom dplyr %>%
+#' @importFrom dplyr if_else
+#' @importFrom dplyr left_join
+#' @importFrom dplyr filter
+#' @importFrom dplyr bind_rows
+#' @importFrom rlang .data
+#' @importFrom utils data
 #'
 #' @examples
 #' #for all available data
@@ -51,7 +62,7 @@ pull_histTable <- function(end_date = NULL) {
   message("Downloading data from DHS ...")
   hdt <- sf::st_set_geometry(sf::st_read(api_url, quiet = TRUE, stringsAsFactors = FALSE), NULL)
 
-  #Protect against funky data import issues.
+  #Protect
   hdt$NEGATIVE <- as.integer(hdt$NEGATIVE)
   hdt$TEST_NEW <- as.integer(hdt$TEST_NEW)
 
@@ -296,6 +307,5 @@ clean_histTable <- function(hdt, end_date) {
       death_cum = cumsum(.data$death_daily)
     ) %>%
     select(-.data$herc_region)
+
 }
-
-

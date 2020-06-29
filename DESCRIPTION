@@ -24,8 +24,7 @@ Imports:
     lubridate,
     tidyr,
     purrr,
-    rlang,
-    RODBC
+    rlang
 RoxygenNote: 7.1.0
 Suggests: 
     tinytest,
