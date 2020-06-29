@@ -12,3 +12,6 @@ It can be installed via:
 library(remotes)
 remotes::install_github("carlbfrederick/ohiCovidMetrics")
 ```
+
+*Note: Some MacOS users have found that they need to re-install their version of Xcode to 
+avoid errors installing the dependency `Rcpp`.*
