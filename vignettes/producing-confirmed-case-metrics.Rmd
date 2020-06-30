@@ -194,7 +194,8 @@ columns because the Tableau team just removes them.*
 ```{r import-jeff}
 metrics_jeff <- read_xlsx("../inst/file_for_vignette/OHI_BBB_Surveillance_CaseMetric_20200617.xlsx") %>% 
   mutate(
-    Region = ifelse(Region == "Saint Croix", "St. Croix", Region)
+    Region = ifelse(Region == "Saint Croix", "St. Croix", Region),
+    Trajectory_Class = ifelse(Trajectory_Class == "No statistically significant change", "No significant change", Trajectory_Class)
   )
 
 #Identical Date
@@ -214,8 +215,10 @@ inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Burden = Burden),
   filter(diff != 0) 
 
 #Trajectory
+#re-create original trajectory calculation before cleaning
+hdt_out$Trajectory_Orig <- signif(trajectory, 2)
 inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Trajectory = Trajectory),
-           select(hdt_out, Region_ID, Region, My_Trajectory = Trajectory),
+           select(hdt_out, Region_ID, Region, My_Trajectory = Trajectory_Orig),
            by = c("Region_ID", "Region")) %>% 
   mutate(diff = Jeff_Trajectory - My_Trajectory) %>% 
   filter(diff != 0) 
@@ -229,6 +232,7 @@ inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Burden_Class = Burden_Cl
   
 
 #Trajectory_Class
+#Change Jeff's labels to new wording
 inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Trajectory_Class = Trajectory_Class),
            select(hdt_out, Region_ID, Region, My_Trajectory_Class = Trajectory_Class),
            by = c("Region_ID", "Region")) %>% 
