@@ -195,7 +195,8 @@ columns because the Tableau team just removes them.*
 metrics_jeff <- read_xlsx("../inst/file_for_vignette/OHI_BBB_Surveillance_CaseMetric_20200617.xlsx") %>% 
   mutate(
     Region = ifelse(Region == "Saint Croix", "St. Croix", Region),
-    Trajectory_Class = ifelse(Trajectory_Class == "No statistically significant change", "No significant change", Trajectory_Class)
+    Trajectory_Class = ifelse(Trajectory_Class == "No statistically significant change", "No significant change", Trajectory_Class),
+    Composite_Class = ifelse(Composite_Class == "Moderate", "Medium", Composite_Class)
   )
 
 #Identical Date
@@ -254,6 +255,12 @@ inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Trajectory_FDR = Traject
   mutate(diff = Jeff_Trajectory_FDR - My_Trajectory_FDR) %>% 
   filter(diff > 1e-15) 
 
+#Composite
+inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Composite_Class = Composite_Class),
+           select(hdt_out, Region_ID, Region, My_Composite_Class = Composite_Class),
+           by = c("Region_ID", "Region")) %>% 
+  mutate(diff = Jeff_Composite_Class != My_Composite_Class) %>% 
+  filter(diff == TRUE) 
 
 ```
 

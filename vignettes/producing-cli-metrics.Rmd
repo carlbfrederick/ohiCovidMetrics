@@ -1,0 +1,26 @@
+---
+title: "Producing CLI Metrics"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Producing CLI Metrics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This document explains how we calculate the Covid Like Illness (CLI) metrics 
+for ingestion into Tableau. The process described below is similar to the one
+used for the confirmed case metrics. *NOTE: These data are not currently publicly 
+posted, so this document includes a simulated data source in place of the 
+real data.*
+
+```{r setup}
+library(ohiCovidMetrics)
+```
+  

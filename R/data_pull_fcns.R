@@ -79,6 +79,7 @@ pull_histTable <- function(end_date = NULL) {
 #'              counties or jurisdictions that will automatically be
 #'              aggregated into HERC regions and Statewide.
 #' @param conn connection to database (see \code{\link[RODBC]{odbcConnect}})
+#'              or \code{\link[odbc]{OdbcConnection}}
 #' @inheritParams pull_histTable
 #'
 #' @return a cleaned version of the COVID-19 Historical Data Table including
@@ -106,6 +107,7 @@ pull_histTable <- function(end_date = NULL) {
 #' @export
 #'
 #' @importFrom RODBC sqlQuery
+#' @importFrom odbc dbGetQuery
 #'
 #' @examples
 #' \dontrun{
@@ -118,7 +120,11 @@ pull_histTable <- function(end_date = NULL) {
 #' }
 #'
 pull_wedss <- function(query, conn, end_date) {
-  hdt <- RODBC::sqlQuery(conn, query)
+  if (inherits(conn, "RODBC")) {
+    hdt <- RODBC::sqlQuery(conn, query)
+  } else if (inherits(conn, "DBIConnection")) {
+    hdt <- odbc::dbGetQuery(conn, query)
+  }
 
   #Might need to do some basic data cleaning in here
 
@@ -215,7 +221,8 @@ clean_histTable <- function(hdt, end_date) {
     dplyr::transmute(
       geo_type = .data$GEO,
       geo_name = .data$NAME,
-      post_date = as.Date(as.POSIXct(.data$LoadDttm/1000, origin = "1970-01-01 00:00.000 UTC")),
+      post_date = dplyr::if_else(inherits(.data$LoadDttm, "POSIXt"), as.Date(.data$LoadDttm),
+                          as.Date(as.POSIXct(.data$LoadDttm/1000, origin = "1970-01-01 00:00.000 UTC"))),
       case_daily = dplyr::if_else(is.na(.data$POS_NEW), .data$POSITIVE, .data$POS_NEW),
       test_daily = dplyr::if_else(is.na(.data$TEST_NEW), .data$POSITIVE + dplyr::if_else(is.na(.data$NEGATIVE), 0L, as.integer(.data$NEGATIVE)), as.integer(.data$TEST_NEW)),
       death_daily = dplyr::if_else(is.na(.data$DTH_NEW), .data$DEATHS, .data$DTH_NEW)
@@ -308,4 +315,54 @@ clean_histTable <- function(hdt, end_date) {
     ) %>%
     select(-.data$herc_region)
 
+}
+
+#' Imports Hospitalization file produced from EM Resource
+#'
+#' @param file path to EM Resource hospitalization summary .csv file
+#' @inheritParams pull_histTable
+#'
+#'
+#' @return a data.frame suitable for metric calculations
+#' @export
+#'
+#' @importFrom readr read_csv
+#' @importFrom readr cols
+#' @importFrom readr col_date
+#' @importFrom readr col_datetime
+#' @importFrom readr col_character
+#' @importFrom readr col_double
+#'
+#' @examples
+#' \dontrun{
+#'   pull_hospital("hospdtatafile.csv")
+#' }
+pull_hospital <- function(file, end_date) {
+  #Enforce correct column types and names
+  hosp_cols <- readr::cols(
+    Report_Date = readr::col_date(format = "%m/%d/%Y"),
+    BBB_Facility_Use_Status = readr::col_character(),
+    BBB_Testing_Status = readr::col_character(),
+    BBB_Crit_Supply_Status = readr::col_character(),
+    BBB_Staff_Status = readr::col_character(),
+    Total_ICU_Beds = readr::col_double(),
+    Region = readr::col_double(),
+    Most_Recent_Report_Date = readr::col_date(format = "%m/%d/%Y"),
+    County = readr::col_character(),
+    Run_Date = readr::col_datetime(format = "%m/%d/%Y %H:%M"),
+    Hospital = readr::col_character(),
+    `__Gen_Use_Bedside_Vent` = readr::col_double(),
+    IBA__ICU = readr::col_double(),
+    IBA__Intermediate_Care = readr::col_double(),
+    IBA__Medical_Surgical = readr::col_double(),
+    IBA__Neg_Flow_Isolation = readr::col_double(),
+    Total___COVID_patients = readr::col_double(),
+    `__ICU_COVID_patients` = readr::col_double(),
+    Total_Intermediate_Care_Beds = readr::col_double(),
+    Total_Medical_Surgical_Beds = readr::col_double(),
+    Total_Neg_Flow_Isolation_Beds = readr::col_double(),
+    Number_of_Ventilated_Patients = readr::col_double()
+  )
+
+  file_in <- readr::read_csv(file, col_types = hosp_cols)
 }

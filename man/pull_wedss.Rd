@@ -11,7 +11,8 @@ pull_wedss(query, conn, end_date)
 counties or jurisdictions that will automatically be
 aggregated into HERC regions and Statewide.}
 
-\item{conn}{connection to database (see \code{\link[RODBC]{odbcConnect}})}
+\item{conn}{connection to database (see \code{\link[RODBC]{odbcConnect}})
+or \code{\link[odbc]{OdbcConnection}}}
 
 \item{end_date}{(default = NULL) If specified it is the end date of the
 time series that you wish to analyze. It should be something
