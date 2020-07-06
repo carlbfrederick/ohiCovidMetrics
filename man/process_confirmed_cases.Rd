@@ -10,7 +10,7 @@ process_confirmed_cases(clean_case_df)
 \item{clean_case_df}{shaped case data produced by \code{\link{shape_case_data}}}
 }
 \value{
-a Tableau ready data.framed with the following columns:
+a Tableau ready data.frame with the following columns:
 \describe{
   \item{}{}
   \item{}{}

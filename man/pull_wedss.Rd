@@ -4,7 +4,7 @@
 \alias{pull_wedss}
 \title{Pull Confirmed Case data from WEDSS}
 \usage{
-pull_wedss(query, conn, end_date)
+pull_wedss(query, conn, end_date = NULL)
 }
 \arguments{
 \item{query}{query to pull data from WEDSS. This call should only pull

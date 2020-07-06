@@ -294,7 +294,7 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #'
 #' @param clean_case_df shaped case data produced by \code{\link{shape_case_data}}
 #'
-#' @return a Tableau ready data.framed with the following columns:
+#' @return a Tableau ready data.frame with the following columns:
 #' \describe{
 #'   \item{}{}
 #'   \item{}{}
@@ -360,6 +360,111 @@ process_confirmed_cases <- function(clean_case_df) {
       .data$Trajectory_P,
       .data$Trajectory_FDR
     )
+}
+
+#' Process the shaped hospital data into a Tableau ready format
+#'
+#' @param clean_hosp_df a list shaped case data produced by \code{\link{shape_hospital_data}}
+#'
+#' @return a Tableau ready data.frame with the following columns:
+#' \describe{
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#' }
+#'
+#' @export
+#'
+#' @importFrom dplyr mutate
+#' @importFrom dplyr select
+#' @importFrom dplyr rename
+#' @importFrom dplyr ungroup
+#' @importFrom dplyr if_else
+#' @importFrom dplyr everything
+#' @importFrom dplyr bind_rows
+#' @importFrom rlang .data
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#'
+#' output <- pull_hospital("path-to-hospital-extract") %>%
+#'   shape_hospital_data() %>%
+#'   process_hospital()
+#' }
+process_hospital <- function(clean_hosp_df) {
+
+  hosp_daily <- clean_hosp_df$daily %>%
+    dplyr::select(RunDate = Run_Date,
+                  Date = Report_Date,
+                  Region = County,
+                  Region_ID = fips,
+                  RowType,
+                  dailyCOVID_px,
+                  dailyCOVID_UCU_px,
+                  totalbeds,
+                  beds_IBA,
+                  totalICU,
+                  ICU_IBA,
+                  num_px_vent,
+                  total_vents,
+                  intermed_beds_IBA,
+                  negflow_beds_IBA,
+                  medsurg_beds_IBA,
+                  PrctBeds_IBA,
+                  PrctICU_IBA,
+                  PrctVent_Used)
+
+  hosp_summary <- dplyr::ungroup(clean_hosp_df$summary) %>%
+    dplyr::mutate(
+
+      COVID_px_Trajectory = score_trajectory(curr = .data$covid_reg_weekly_1,
+                                              prev = .data$covid_reg_weekly_2),
+      COVID_px_Trajectory_P = pval_trajectory(curr = .data$covid_reg_weekly_1,
+                                               prev = .data$covid_reg_weekly_2),
+      COVID_px_Trajectory_Class = class_trajectory(traj = .data$COVID_px_Trajectory,
+                                                    pval = .data$COVID_px_Trajectory_P),
+      COVID_ICUpx_Trajectory = score_trajectory(curr = .data$covid_reg_weekly_1,
+                                              prev = .data$covid_reg_weekly_2),
+      COVID_ICUpx_Trajectory_P = pval_trajectory(curr = .data$covid_reg_weekly_1,
+                                               prev = .data$covid_reg_weekly_2),
+      COVID_ICUpx_Trajectory_Class = class_trajectory(traj = .data$COVID_ICUpx_Trajectory,
+                                                    pval = .data$COVID_ICUpx_Trajectory_P)
+    ) %>%
+    dplyr::mutate(
+      COVID_px_Trajectory = signif(.data$COVID_px_Trajectory, 2),
+      COVID_ICUpx_Trajectory = signif(.data$COVID_ICUpx_Trajectory, 2),
+      COVID_px_Trajectory = dplyr::if_else(.data$COVID_px_Trajectory_Class == "No significant change", "N/A",
+                                           as.character(.data$COVID_px_Trajectory)),
+      COVID_ICUpx_Trajectory = dplyr::if_else(.data$COVID_ICUpx_Trajectory_Class == "No significant change", "N/A",
+                                           as.character(.data$COVID_ICUpx_Trajectory))
+    ) %>%
+    dplyr::select(
+      Date = .data$week_end_1,
+      Region_ID = .data$fips,
+      Region = .data$geo_name,
+      .data$COVID_px_Trajectory,
+      .data$COVID_px_Trajectory_Class,
+      .data$COVID_ICUpx_Trajectory,
+      .data$COVID_ICUpx_Trajectory_Class,
+      .data$RowType,
+      RunDate = .data$Run_Date
+    )
+
+  out <- dplyr::bind_rows(hosp_daily, hosp_summary) %>%
+    dplyr::select(RunDate,
+           Date,
+           Region,
+           Region_ID,
+           RowType,
+           dplyr::everything())
 }
 
 

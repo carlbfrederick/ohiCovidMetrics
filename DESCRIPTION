@@ -25,11 +25,11 @@ Imports:
     tidyr,
     purrr,
     rlang,
-    odbc
+    odbc,
+    readr
 RoxygenNote: 7.1.0
 Suggests: 
     tinytest,
-    readr,
     knitr,
     rmarkdown,
     readxl,

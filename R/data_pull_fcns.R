@@ -119,7 +119,7 @@ pull_histTable <- function(end_date = NULL) {
 #'    hdt <- pull_wedss(query = sql_query, conn = channel, end_date = as.Date("2020-06-24"))
 #' }
 #'
-pull_wedss <- function(query, conn, end_date) {
+pull_wedss <- function(query, conn, end_date = NULL) {
   if (inherits(conn, "RODBC")) {
     hdt <- RODBC::sqlQuery(conn, query)
   } else if (inherits(conn, "DBIConnection")) {
@@ -337,7 +337,7 @@ clean_histTable <- function(hdt, end_date) {
 #' \dontrun{
 #'   pull_hospital("hospdtatafile.csv")
 #' }
-pull_hospital <- function(file, end_date) {
+pull_hospital <- function(file, end_date = NULL) {
   #Enforce correct column types and names
   hosp_cols <- readr::cols(
     Report_Date = readr::col_date(format = "%m/%d/%Y"),
@@ -364,5 +364,189 @@ pull_hospital <- function(file, end_date) {
     Number_of_Ventilated_Patients = readr::col_double()
   )
 
-  file_in <- readr::read_csv(file, col_types = hosp_cols)
+  hosp_in <- readr::read_csv(file, col_types = hosp_cols)
+
+  clean_hospital(hosp_in, end_date)
+}
+
+#' Clean Hospital Data for metric calculation
+#'
+#' @param hosp a data.frame from EMResource
+#' @inheritParams pull_histTable
+#'
+#' @return a cleaned data.frame
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   #example here
+#' }
+clean_hospital <- function(hosp, end_date) {
+  #Grab Run date to append when we are finished
+  run_date <- unique(as.Date(hosp$Run_Date))
+  if (length(run_date) > 1) {
+    stop("The input file has more than one Run_Date. Fix this and try again.")
+  }
+
+  #Basic Wrangling/Agg to County
+  hosp <- hosp %>%
+    mutate(
+      Region = dplyr::case_when(
+        Region == 1 ~ "Northwest",
+        Region == 2 ~ "North Central",
+        Region == 3 ~	"Northeast",
+        Region == 4 ~ "Western" ,
+        Region == 5 ~ "South Central",
+        Region == 6 ~ "Fox Valley Area",
+        Region == 7 ~ "Southeast"
+      )
+    )
+
+  if (!is.null(end_date)) {
+    hosp <- dplyr::filter(hosp, .data$Report_Date <= as.Date(end_date))
+  }
+
+  hosp_clean <- hosp  %>%
+    dplyr::group_by(County, Report_Date) %>%
+    dplyr::summarise(
+      dailyCOVID_px = sum(Total___COVID_patients, na.rm=TRUE),
+      dailyCOVID_ICUpx = sum(`__ICU_COVID_patients`, na.rm=TRUE)
+    )
+
+  hosp_cty <- fill_dates(hosp_clean, grouping_vars = "County", date_var = "Report_Date") %>%
+    dplyr::mutate(
+      dailyCOVID_px = dplyr::if_else(is.na(dailyCOVID_px), 0, dailyCOVID_px),
+      geo_type = "County"
+    ) %>%
+    dplyr::left_join(select(county_data, fips, county, pop_2018, herc_region),
+              by = c("County" = "county")) %>%
+    dplyr::ungroup()
+
+  hosp_herc <- hosp_cty %>%
+    dplyr::group_by(herc_region, Report_Date) %>%
+    dplyr::summarize_if(is.numeric, sum) %>%
+    dplyr::mutate(
+      County = herc_region,
+      geo_type = "Region",
+      fips = herc_region,
+    )
+
+  hosp_state <- hosp_cty %>%
+    dplyr::group_by(Report_Date) %>%
+    dplyr::summarize_if(is.numeric, sum) %>%
+    dplyr::mutate(
+      County = "Wisconsin",
+      geo_type = "State",
+      fips = "55",
+    )
+
+  hosp_summary <- bind_rows(hosp_cty, hosp_herc, hosp_state) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-.data$herc_region)
+
+  #HERC Daily Counts
+  herc_daily <- hosp %>%
+    dplyr::group_by(Report_Date, Region) %>%
+    dplyr::summarize(
+      totalbeds = sum(Total_Intermediate_Care_Beds
+                      + Total_ICU_Beds
+                      + Total_Neg_Flow_Isolation_Beds
+                      + Total_Medical_Surgical_Beds, na.rm=TRUE),
+
+      beds_IBA = sum(IBA__Intermediate_Care +
+                       IBA__Medical_Surgical +
+                       IBA__Neg_Flow_Isolation +
+                       IBA__ICU, na.rm=TRUE),
+
+      dailyCOVID_px = sum(Total___COVID_patients, na.rm=TRUE),
+
+      totalICU = sum(Total_ICU_Beds, na.rm=TRUE),
+
+      ICU_IBA = sum(IBA__ICU, na.rm=TRUE),
+
+      dailyCOVID_ICUpx = sum(`__ICU_COVID_patients`, na.rm=TRUE),
+
+      num_px_vent = sum(Number_of_Ventilated_Patients, na.rm=TRUE),
+
+      total_vents = sum(`__Gen_Use_Bedside_Vent`, na.rm=TRUE),
+
+      intermed_beds_IBA = sum(IBA__Intermediate_Care, na.rm=TRUE),
+
+      negflow_beds_IBA = sum(IBA__Neg_Flow_Isolation, na.rm=TRUE),
+
+      medsurg_beds_IBA = sum(IBA__Medical_Surgical, na.rm=TRUE),
+    ) %>%
+    ungroup() %>%
+    rename(County = Region)
+
+  #Agg HERC daily to State Daily
+  state_daily <- herc_daily %>%
+    dplyr::group_by(Report_Date) %>%
+    dplyr::summarize_if(is.numeric, sum, na.rm=TRUE) %>%
+    dplyr::mutate(
+      County = "Wisconsin"
+    )
+
+  #Calc final vars for combined daily series
+  hosp_daily <- dplyr::bind_rows(state_daily, herc_daily) %>%
+    dplyr::mutate(
+      PrctBeds_IBA = (beds_IBA/totalbeds)*100,
+      PrctICU_IBA = (ICU_IBA/totalICU)*100,
+      PrctVent_Used = (num_px_vent/total_vents)*100
+    )
+
+  rm(state_daily, herc_daily)
+
+  #Bind summary and Daily
+  out <- bind_rows(
+    mutate(hosp_summary, RowType = "Summary"),
+    mutate(hosp_daily, RowType = "Daily")
+  ) %>%
+    mutate(Run_Date = run_date)
+}
+
+#' Shape EM Resource summary data for metric calculations
+#'
+#' @param hosp_df data.frame output by \code{\link{pull_hospital}}
+#'
+#' @return a list of data.frames (one summary and one daily)
+#' @export
+#'
+#' @importFrom lubridate days
+#'
+#' @examples
+#' \dontrun{
+#'   #Add examples here
+#' }
+shape_hospital_data <- function(hosp_df) {
+  #Find max date for weekly calculations
+  max_date <- max(hosp_df$Report_Date)
+
+  hosp_daily <- filter(hosp_df,
+                       RowType == "Daily",
+                       Report_Date >= Report_Date - lubridate::days(13))
+
+  hosp_summary <- hosp_df %>%
+    filter(RowType == "Summary") %>%
+    group_by(Run_Date, RowType, fips, County, pop_2018) %>%
+    arrange(Report_Date) %>%
+    mutate(
+      weeknum = rolling_week(date_vector = Report_Date, end_date = max_date)
+    ) %>%
+    group_by(Run_Date, RowType, fips, County, pop_2018, weeknum) %>%
+    summarize(
+      covid_reg_weekly = sum(dailyCOVID_px),
+      covid_icu_weekly = sum(dailyCOVID_ICUpx),
+      week_end = max(Report_Date)
+    ) %>%
+    filter(weeknum <= 2) %>%
+    pivot_wider(id_cols = c("Run_Date", "RowType", "fips", "County", "pop_2018"),
+                values_from = c("covid_reg_weekly", "covid_icu_weekly", "week_end"),
+                names_from = c("weeknum")) %>%
+    rename(geo_name = "County")
+
+  out <- list(summary = hosp_summary,
+              daily = hosp_daily)
+
+  return(out)
 }

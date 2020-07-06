@@ -19,3 +19,15 @@
 #' @source HERC Regions hand coded from \url{https://www.dhs.wisconsin.gov/preparedness/healthcare/index.htm}
 #'
 "county_data"
+
+#' Fake hospitalization data inspired by the source data for hospitalization metrics
+#'
+#' These data are fake
+#'
+#' @format A data.frame with ??? observations ??? variables:
+#' \describe{
+#'   \item{}{}
+#' }
+#'
+#'
+"hosp_sim"

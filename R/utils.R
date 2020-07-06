@@ -164,3 +164,50 @@ clean_reversals <- function(daily_time_series, verbose = TRUE) {
 
   daily_time_series
 }
+
+#' Ensure that all units of observation have all dates within the max and min
+#' of the date variable.
+#'
+#' @param df the data.frame to fill in
+#' @param grouping_vars a character vector with the variable
+#'        names that define the grouping structure that will
+#'        uniquely identify the relavant units of observation
+#' @param date_var
+#'
+#' @return the same data.frame with any required dates filled in for each
+#'         unit. Variables without grouping_vars will be missing.
+#' @export
+#'
+#' @examples
+#' set.seed(123)
+#' tmp <- tibble(County = sample(LETTERS[1:3], 15, replace = TRUE),
+#'               Date = sample(seq(as.Date("2020-07-01"), as.Date("2020-07-07"), by = 1),
+#'                             15, replace = TRUE)) %>%
+#'   distinct(.) %>%
+#'   arrange(County, Date)
+#'
+#' #Compare
+#'
+#' tmp
+#'
+#' #To
+#'
+#' arrange(fill_dates(tmp, grouping_vars = "County", date_var = "Date"),
+#'         County, Date)
+#'
+fill_dates <- function(df, grouping_vars, date_var) {
+  min_date <- as.Date(min(df[[date_var]], na.rm=TRUE))
+  max_date <- as.Date(max(df[[date_var]], na.rm=TRUE))
+
+  skeleton_df <- dplyr::full_join(
+    dplyr::distinct(dplyr::select(df, dplyr::all_of(grouping_vars))),
+    dplyr::tibble(alldates = seq(min_date, max_date, by = 1)),
+    by = character()
+  )
+
+  merge_by <- c(grouping_vars, "alldates")
+  names(merge_by) <- c(grouping_vars, date_var)
+
+  out <- dplyr::full_join(df, skeleton_df, by = merge_by)
+  return(out)
+}
