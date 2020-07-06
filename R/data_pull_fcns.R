@@ -493,7 +493,8 @@ clean_hospital <- function(hosp, end_date) {
       PrctBeds_IBA = (beds_IBA/totalbeds)*100,
       PrctICU_IBA = (ICU_IBA/totalICU)*100,
       PrctVent_Used = (num_px_vent/total_vents)*100
-    )
+    ) %>%
+    dplyr::left_join(dplyr::select(county_data, fips, County = county), by = "County")
 
   rm(state_daily, herc_daily)
 
@@ -502,7 +503,11 @@ clean_hospital <- function(hosp, end_date) {
     mutate(hosp_summary, RowType = "Summary"),
     mutate(hosp_daily, RowType = "Daily")
   ) %>%
-    mutate(Run_Date = run_date)
+  mutate(Run_Date = run_date) %>%
+  group_by(County) %>%
+  mutate(
+    fips = unique(fips[!is.na(fips)])
+  )
 }
 
 #' Shape EM Resource summary data for metric calculations
@@ -524,7 +529,7 @@ shape_hospital_data <- function(hosp_df) {
 
   hosp_daily <- filter(hosp_df,
                        RowType == "Daily",
-                       Report_Date >= Report_Date - lubridate::days(13))
+                       Report_Date >= max_date - lubridate::days(13))
 
   hosp_summary <- hosp_df %>%
     filter(RowType == "Summary") %>%
@@ -535,8 +540,8 @@ shape_hospital_data <- function(hosp_df) {
     ) %>%
     group_by(Run_Date, RowType, fips, County, pop_2018, weeknum) %>%
     summarize(
-      covid_reg_weekly = sum(dailyCOVID_px),
-      covid_icu_weekly = sum(dailyCOVID_ICUpx),
+      covid_reg_weekly = as.integer(sum(dailyCOVID_px)),
+      covid_icu_weekly = as.integer(sum(dailyCOVID_ICUpx)),
       week_end = max(Report_Date)
     ) %>%
     filter(weeknum <= 2) %>%

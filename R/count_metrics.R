@@ -408,7 +408,7 @@ process_hospital <- function(clean_hosp_df) {
                   Region_ID = fips,
                   RowType,
                   dailyCOVID_px,
-                  dailyCOVID_UCU_px,
+                  dailyCOVID_ICUpx,
                   totalbeds,
                   beds_IBA,
                   totalICU,
