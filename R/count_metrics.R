@@ -345,20 +345,22 @@ process_confirmed_cases <- function(clean_case_df) {
       Trajectory = signif(.data$Trajectory, 2),
       Trajectory = dplyr::if_else(.data$Trajectory_Class == "No significant change", "N/A",
                                   as.character(.data$Trajectory)),
-      Burden = signif(.data$Burden, 2)
+      Burden = signif(.data$Burden, 2),
+      RowType = "Summary"
     ) %>%
     dplyr::select(
       Date = .data$week_end_1,
       Region_ID = .data$fips,
       Region = .data$geo_name,
-      .data$Count,
-      .data$Burden,
-      .data$Trajectory,
-      .data$Burden_Class,
-      .data$Trajectory_Class,
-      .data$Composite_Class,
-      .data$Trajectory_P,
-      .data$Trajectory_FDR
+      RowType = .data$RowType,
+      Conf_Case_Count = .data$Count,
+      Conf_Case_Burden = .data$Burden,
+      Conf_Case_Trajectory = .data$Trajectory,
+      Conf_Case_Burden_Class = .data$Burden_Class,
+      Conf_Case_Trajectory_Class = .data$Trajectory_Class,
+      Conf_Case_Composite_Class = .data$Composite_Class,
+      Conf_Case_Trajectory_P = .data$Trajectory_P,
+      Conf_Case_Trajectory_FDR = .data$Trajectory_FDR
     )
 }
 
@@ -431,10 +433,11 @@ process_hospital <- function(clean_hosp_df) {
                                                prev = .data$covid_reg_weekly_2),
       COVID_px_Trajectory_Class = class_trajectory(traj = .data$COVID_px_Trajectory,
                                                     pval = .data$COVID_px_Trajectory_P),
-      COVID_ICUpx_Trajectory = score_trajectory(curr = .data$covid_reg_weekly_1,
-                                              prev = .data$covid_reg_weekly_2),
-      COVID_ICUpx_Trajectory_P = pval_trajectory(curr = .data$covid_reg_weekly_1,
-                                               prev = .data$covid_reg_weekly_2),
+
+      COVID_ICUpx_Trajectory = score_trajectory(curr = .data$covid_icu_weekly_1,
+                                              prev = .data$covid_icu_weekly_2),
+      COVID_ICUpx_Trajectory_P = pval_trajectory(curr = .data$covid_icu_weekly_1,
+                                               prev = .data$covid_icu_weekly_2),
       COVID_ICUpx_Trajectory_Class = class_trajectory(traj = .data$COVID_ICUpx_Trajectory,
                                                     pval = .data$COVID_ICUpx_Trajectory_P)
     ) %>%
@@ -459,12 +462,29 @@ process_hospital <- function(clean_hosp_df) {
     )
 
   out <- dplyr::bind_rows(hosp_daily, hosp_summary) %>%
-    dplyr::select(RunDate,
-           Date,
-           Region,
-           Region_ID,
-           RowType,
-           dplyr::everything())
+    dplyr::select(Hosp_RunDate = RunDate,
+                  Date,
+                  Region,
+                  Region_ID,
+                  RowType,
+                  Hosp_dailyCOVID_px = dailyCOVID_px,
+                  Hosp_dailyCOVID_ICUpx = dailyCOVID_ICUpx,
+                  Hosp_totalbeds = totalbeds,
+                  Hosp_beds_IBA = beds_IBA,
+                  Hosp_totalICU = totalICU,
+                  Hosp_ICU_IBA = ICU_IBA,
+                  Hosp_num_px_vent = num_px_vent,
+                  Hosp_total_vents = total_vents,
+                  Hosp_intermed_beds_IBA = intermed_beds_IBA,
+                  Hosp_negflow_beds_IBA = negflow_beds_IBA,
+                  Hosp_medsurg_beds_IBA = medsurg_beds_IBA,
+                  Hosp_PrctBeds_IBA = PrctBeds_IBA,
+                  Hosp_PrctICU_IBA = PrctICU_IBA,
+                  Hosp_PrctVent_Used = PrctVent_Used,
+                  Hosp_COVID_px_Trajectory = COVID_px_Trajectory,
+                  Hosp_COVID_px_Trajectory_Class = COVID_px_Trajectory_Class,
+                  Hosp_COVID_ICUpx_Trajectory = COVID_ICUpx_Trajectory,
+                  Hosp_COVID_ICUpx_Trajectory_Class = COVID_ICUpx_Trajectory_Class)
 }
 
 

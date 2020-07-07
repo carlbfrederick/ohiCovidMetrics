@@ -211,3 +211,39 @@ fill_dates <- function(df, grouping_vars, date_var) {
   out <- dplyr::full_join(df, skeleton_df, by = merge_by)
   return(out)
 }
+
+#' Combine metric data into a single output file
+#'
+#' @param case data.frame produced by \code{\link{pull_histTable}} or \code{\link{pull_wedss}}
+#' @param hosp data.frame produced by \code{\link{pull_hospital}}
+#' @param test data.frame produced by
+#' @param cli  data.frame produced by
+#' @param ili  data.frame produced by
+#' @param outfile file name (including path) for output data file
+#'
+#' @return invisibly returns the combined data
+#' @export
+#'
+#' @imporFrom readr write_csv
+#'
+#' @examples
+#' \dontrun{
+#'   #add examples to me please,
+#' }
+merge_metric_files <- function(case, hosp, test, cli, ili, outfile) {
+  #Start with Cases and Testing
+  out <- inner_join(case, test, by = c("Region" = "Area", "Date" = "date", "RowType" = "RowType"))
+  #Add in Hospitalization
+  out <- full_join(out, hosp, by = c("Date", "Region_ID", "Region", "RowType"))
+  #Add in CLI
+  out <- full_join(out, cli, by = c("Date", "Region", "RowType"))
+  #Add in ILI
+  out <- full_join(out, ili, by = c("Date", "Region", "RowType"))
+  #Any data cleaning necessary?
+
+  #Write out a .csv
+  message("Writing file to ", outfile, na = "")
+  write_csv(out, outfile)
+
+  return(invisible(out))
+}

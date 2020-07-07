@@ -221,13 +221,18 @@ clean_histTable <- function(hdt, end_date) {
     dplyr::transmute(
       geo_type = .data$GEO,
       geo_name = .data$NAME,
-      post_date = dplyr::if_else(inherits(.data$LoadDttm, "POSIXt"), as.Date(.data$LoadDttm),
-                          as.Date(as.POSIXct(.data$LoadDttm/1000, origin = "1970-01-01 00:00.000 UTC"))),
+      post_date = .data$LoadDttm,
       case_daily = dplyr::if_else(is.na(.data$POS_NEW), .data$POSITIVE, .data$POS_NEW),
       test_daily = dplyr::if_else(is.na(.data$TEST_NEW), .data$POSITIVE + dplyr::if_else(is.na(.data$NEGATIVE), 0L, as.integer(.data$NEGATIVE)), as.integer(.data$TEST_NEW)),
       death_daily = dplyr::if_else(is.na(.data$DTH_NEW), .data$DEATHS, .data$DTH_NEW)
     ) %>%
     dplyr::left_join(dplyr::select(county_data, .data$fips, .data$herc_region, .data$pop_2018), by = "fips")
+
+  if (inherits(hdt$post_date, "POSIXt")) {
+    hdt$post_date <- as.Date(.data$post_date)
+  } else {
+    hdt$post_date <- as.Date(as.POSIXct(hdt$post_date/1000, origin = "1970-01-01 00:00.000 UTC"))
+  }
 
   if (!is.null(end_date)) {
     hdt <- dplyr::filter(hdt, .data$post_date <= as.Date(end_date))
@@ -293,7 +298,7 @@ clean_histTable <- function(hdt, end_date) {
     dplyr::group_by(.data$post_date, .data$herc_region) %>%
     dplyr::summarize_at(dplyr::vars("case_daily", "test_daily", "death_daily", "pop_2018"), sum) %>%
     dplyr::mutate(
-      fips = paste("HERC", .data$herc_region, sep = "|"),
+      fips = .data$herc_region,
       geo_name = .data$herc_region,
       geo_type = "HERC Region"
     )
@@ -375,7 +380,6 @@ pull_hospital <- function(file, end_date = NULL) {
 #' @inheritParams pull_histTable
 #'
 #' @return a cleaned data.frame
-#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -416,6 +420,7 @@ clean_hospital <- function(hosp, end_date) {
   hosp_cty <- fill_dates(hosp_clean, grouping_vars = "County", date_var = "Report_Date") %>%
     dplyr::mutate(
       dailyCOVID_px = dplyr::if_else(is.na(dailyCOVID_px), 0, dailyCOVID_px),
+      dailyCOVID_ICUpx = dplyr::if_else(is.na(dailyCOVID_ICUpx), 0, dailyCOVID_ICUpx),
       geo_type = "County"
     ) %>%
     dplyr::left_join(select(county_data, fips, county, pop_2018, herc_region),
@@ -554,4 +559,52 @@ shape_hospital_data <- function(hosp_df) {
               daily = hosp_daily)
 
   return(out)
+}
+
+#' Pull data from WEDSS for Testing Metrics
+#'
+#' @param bcd_query SQL query string for data from BCD table
+#' @param lab_query SQL query string for data from Lab table
+#' @inheritParams pull_wedss
+#'
+#' @return a data.frame
+#' @export
+#'
+#' @importFrom odbc dbGetQuery
+#' @importFrom RODBC sqlQuery
+#' @importFrom dplyr inner_join
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example please.
+#' }
+pull_testing <- function(bcd_query, lab_query, conn, end_date = NULL) {
+  if (inherits(conn, "RODBC")) {
+    bcd <- RODBC::sqlQuery(conn, bcd_query)
+    lab <- RODBC::sqlQuery(conn, lab_query)
+  } else if (inherits(conn, "DBIConnection")) {
+    bcd <- odbc::dbGetQuery(conn, bcd_query)
+    lab <- odbc::dbGetQuery(conn, lab_query)
+  }
+
+  #Potential Data Cleaning?
+  testraw <- dplyr::inner_join(bcd, lab, by = "IncidentID")
+
+  clean_testing(testraw, end_date)
+}
+
+#' Internal function to clean testing data
+#'
+#' @param testing data.frame produced by \code{\link{pull_hospital}}
+#' @inheritParams pull_testing
+#'
+#' @return a data.frame
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+clean_testing <- function(testing, end_date) {
+  #Determine Case Resolution Status & separate into two data.frames
+
 }
