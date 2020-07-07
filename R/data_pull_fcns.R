@@ -229,7 +229,7 @@ clean_histTable <- function(hdt, end_date) {
     dplyr::left_join(dplyr::select(county_data, .data$fips, .data$herc_region, .data$pop_2018), by = "fips")
 
   if (inherits(hdt$post_date, "POSIXt")) {
-    hdt$post_date <- as.Date(.data$post_date)
+    hdt$post_date <- as.Date(hdt$post_date)
   } else {
     hdt$post_date <- as.Date(as.POSIXct(hdt$post_date/1000, origin = "1970-01-01 00:00.000 UTC"))
   }
@@ -600,11 +600,18 @@ pull_testing <- function(bcd_query, lab_query, conn, end_date = NULL) {
 #'
 #' @return a data.frame
 #'
+#' @importFrom dplyr filter
+#' @importFrom tidyr pivot_wider
+#'
 #' @examples
 #' \dontrun{
 #'   #write me an example
 #' }
 clean_testing <- function(testing, end_date) {
   #Determine Case Resolution Status & separate into two data.frames
-
+  ## Not a case ----
+  notacase <- dplyr::filter(testing, ResolutionStatus=="Not A Case")
+  ### Bucket 1 (Incident IDs with no positive result)
+  notacase_wide <- tidyr::pivot_wider(id_cols = "IncidentID",
+                                      )
 }
