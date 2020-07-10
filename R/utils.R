@@ -178,6 +178,13 @@ clean_reversals <- function(daily_time_series, verbose = TRUE) {
 #'         unit. Variables without grouping_vars will be missing.
 #' @export
 #'
+#' @importFrom dplyr distinct
+#' @importFrom dplyr select
+#' @importFrom dplyr ungroup
+#' @importFrom dplyr full_join
+#' @importFrom dplyr tibble
+#' @importFrom dplyr all_of
+#'
 #' @examples
 #' set.seed(123)
 #' tmp <- tibble(County = sample(LETTERS[1:3], 15, replace = TRUE),
@@ -199,16 +206,32 @@ fill_dates <- function(df, grouping_vars, date_var) {
   min_date <- as.Date(min(df[[date_var]], na.rm=TRUE))
   max_date <- as.Date(max(df[[date_var]], na.rm=TRUE))
 
+  #Grab lists of variables names
+  other_vars <- setdiff(names(df), c(grouping_vars, date_var))
+  merge_by <- c(grouping_vars, "alldates")
+  names(merge_by) <- c(grouping_vars, date_var)
+
   skeleton_df <- dplyr::full_join(
-    dplyr::distinct(dplyr::select(df, dplyr::all_of(grouping_vars))),
+    dplyr::distinct(dplyr::select(dplyr::ungroup(df), dplyr::all_of(grouping_vars))),
     dplyr::tibble(alldates = seq(min_date, max_date, by = 1)),
     by = character()
   )
 
-  merge_by <- c(grouping_vars, "alldates")
-  names(merge_by) <- c(grouping_vars, date_var)
+  #missing indicators
+  df <- df %>%
+    dplyr::mutate(dplyr::across(other_vars, is.na, .names = "miss_{col}"))
 
-  out <- dplyr::full_join(df, skeleton_df, by = merge_by)
+  #merge and fill all missing with zeros
+  out <- dplyr::full_join(df, skeleton_df, by = merge_by) %>%
+    dplyr::mutate(dplyr::across(other_vars, ~ifelse(is.na(.x), 0, .x))) %>%
+    dplyr::mutate(dplyr::across(paste("miss", other_vars, sep = "_"), ~ifelse(is.na(.x), FALSE, .x)))
+
+  #replace missing values
+  for (var in other_vars) {
+    out[[var]][out[[paste("miss", var, sep = "_")]]] <- NA
+    out[[paste("miss", var, sep = "_")]] <- NULL
+  }
+
   return(out)
 }
 
@@ -224,7 +247,7 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' @return invisibly returns the combined data
 #' @export
 #'
-#' @imporFrom readr write_csv
+#' @importFrom readr write_csv
 #'
 #' @examples
 #' \dontrun{

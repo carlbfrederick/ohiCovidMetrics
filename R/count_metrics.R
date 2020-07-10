@@ -487,4 +487,100 @@ process_hospital <- function(clean_hosp_df) {
                   Hosp_COVID_ICUpx_Trajectory_Class = COVID_ICUpx_Trajectory_Class)
 }
 
+#' Process the shaped hospital data into a Tableau ready format
+#'
+#' @param clean_testing_df a list shaped case data produced by \code{\link{shape_testing_data}}
+#'
+#' @return a Tableau ready data.frame with the following columns:
+#' \describe{
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#' }
+#'
+#' @export
+#'
+#' @importFrom dplyr mutate
+#' @importFrom dplyr select
+#' @importFrom dplyr rename
+#' @importFrom dplyr ungroup
+#' @importFrom dplyr if_else
+#' @importFrom dplyr everything
+#' @importFrom dplyr bind_rows
+#' @importFrom rlang .data
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+process_testing <- function(clean_testing_df) {
 
+  test_daily <- clean_testing_df$daily %>%
+    dplyr::mutate(
+      total_specimens = NotPositive + Positive,
+      percent_positive = 100 * (Positive / total_specimens),
+    ) %>%
+    dplyr::select(Date = resultdateonly,
+                  Region = Area,
+                  Region_ID,
+                  RowType,
+                  Testing_Positive_Specimens = Positive,
+                  Testing_Nonpositive_Specimens = NotPositive,
+                  Testing_Total_Specimens = total_specimens,
+                  Testing_Percent_Positive = percent_positive,
+                  Testing_Incident_Tests = Tests)
+
+  test_summary <- clean_testing_df$summary %>%
+    dplyr::mutate(
+      total_specimens = NotPositive + Positive,
+      percent_positive = 100 * (Positive / total_specimens),
+      percent_positive_class = dplyr::case_when(
+        percent_positive >= 10.0                          ~ ">= 10% positive",
+        percent_positive >= 5.0 & percent_positive < 10.0 ~ ">= 5% & < 10% positive",
+        percent_positive >= 0.0 & percent_positive < 5.0  ~ "< 5% positive",
+        TRUE                                              ~ "ERROR"
+      ),
+      percent_volume = 100 * Tests/Testing_Volume,
+      percent_volume_class = dplyr::case_when(
+        percent_volume >= 100.0                         ~ ">= 100% testing goal",
+        percent_volume >= 75.0 & percent_volume < 100.0 ~ ">= 75% & < 100% testing goal",
+        percent_volume >= 0.0 & percent_volume < 75.0   ~ "< 75% testing goal",
+        TRUE                                            ~ "ERROR"
+      ),
+      testing_composite = dplyr::case_when(
+        percent_positive_class == "< 5% positive" & percent_volume_class == ">= 100% testing goal"                   ~ "Robust",
+        percent_positive_class == "< 5% positive" & percent_volume_class ==  ">= 75% & < 100% testing goal"          ~ "Adequate",
+        percent_positive_class == "< 5% positive" & percent_volume_class ==  "< 75% testing goal"                    ~ "Inadequate",
+        percent_positive_class == ">= 5% & < 10% positive" & percent_volume_class ==  ">= 100% testing goal"         ~ "Adequate",
+        percent_positive_class == ">= 5% & < 10% positive" & percent_volume_class ==  ">= 75% & < 100% testing goal" ~ "Adequate",
+        percent_positive_class == ">= 5% & < 10% positive" & percent_volume_class ==  "< 75% testing goal"           ~ "Inadequate",
+        percent_positive_class == ">= 10% positive" & percent_volume_class ==  ">= 100% testing goal"                ~ "Inadequate",
+        percent_positive_class == ">= 10% positive" & percent_volume_class ==  ">= 75% & < 100% testing goal"        ~ "Inadequate",
+        percent_positive_class == ">= 10% positive" & percent_volume_class ==  "< 75% testing goal"                  ~ "Inadequate",
+        TRUE                                                                                                         ~ "ERROR"
+      )
+    ) %>%
+    dplyr::select(Date = resultdateonly,
+                  Region = Area,
+                  Region_ID,
+                  RowType,
+                  Testing_Positive_Specimens = Positive,
+                  Testing_Nonpositive_Specimens = NotPositive,
+                  Testing_Total_Specimens = total_specimens,
+                  Testing_Percent_Positive = percent_positive,
+                  Testing_Incident_Tests = Tests,
+                  Testing_Incident_Test_Target = Testing_Volume,
+                  Testing_Percent_of_Target = percent_volume,
+                  Testing_Composite_Class = testing_composite)
+
+  dplyr::bind_rows(test_summary,
+                   test_daily)
+
+}

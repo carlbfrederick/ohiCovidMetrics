@@ -26,13 +26,13 @@ Imports:
     purrr,
     rlang,
     odbc,
-    readr
+    readr,
+    readxl
 RoxygenNote: 7.1.0
 Suggests: 
     tinytest,
     knitr,
     rmarkdown,
-    readxl,
     tidyverse
 Depends: 
     R (>= 2.10)

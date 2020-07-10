@@ -16,7 +16,7 @@
 #'     \item{fips}{renamed from GEOID}
 #'     \item{geo_type}{renamed from GEO}
 #'     \item{geo_name}{renamed from NAME}
-#'     \item{post_date}{LoadDttm converted to Date format}
+#'     \item{post_date}{DATE converted to Date format}
 #'     \item{case_daily}{cleaned daily new positive cases from POS_NEW except for the first day which is from POSITIVE}
 #'     \item{test_daily}{cleaned daily new total tests from TEST_NEW except for the first day which is from POSITIve + NEGATIVE}
 #'     \item{death_daily}{cleaned daily new deaths from DTH_NEW except for the first day which is from DEATHS}
@@ -58,7 +58,7 @@
 pull_histTable <- function(end_date = NULL) {
   #Pull down the data
   #REsT API URL
-  api_url <- "https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,LoadDttm,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
+  api_url <- "https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,DATE,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
   message("Downloading data from DHS ...")
   hdt <- sf::st_set_geometry(sf::st_read(api_url, quiet = TRUE, stringsAsFactors = FALSE), NULL)
 
@@ -215,13 +215,13 @@ clean_histTable <- function(hdt, end_date) {
 
   #Basic Selection/wrangling
   hdt <- hdt %>%
-    dplyr::arrange(.data$GEOID, .data$LoadDttm) %>%
+    dplyr::arrange(.data$GEOID, .data$DATE) %>%
     dplyr::rename(fips = .data$GEOID) %>%
     dplyr::group_by(.data$fips) %>%
     dplyr::transmute(
       geo_type = .data$GEO,
       geo_name = .data$NAME,
-      post_date = .data$LoadDttm,
+      post_date = .data$DATE,
       case_daily = dplyr::if_else(is.na(.data$POS_NEW), .data$POSITIVE, .data$POS_NEW),
       test_daily = dplyr::if_else(is.na(.data$TEST_NEW), .data$POSITIVE + dplyr::if_else(is.na(.data$NEGATIVE), 0L, as.integer(.data$NEGATIVE)), as.integer(.data$TEST_NEW)),
       death_daily = dplyr::if_else(is.na(.data$DTH_NEW), .data$DEATHS, .data$DTH_NEW)
@@ -565,6 +565,11 @@ shape_hospital_data <- function(hosp_df) {
 #'
 #' @param bcd_query SQL query string for data from BCD table
 #' @param lab_query SQL query string for data from Lab table
+#' @param test_Vol_path .xlsx file containing testing volume target this
+#'                      file must have a worksheet named weekly and it
+#'                      pulls the second (Area) and third column (Current
+#'                      Month Targets).
+#'
 #' @inheritParams pull_wedss
 #'
 #' @return a data.frame
@@ -572,13 +577,14 @@ shape_hospital_data <- function(hosp_df) {
 #'
 #' @importFrom odbc dbGetQuery
 #' @importFrom RODBC sqlQuery
-#' @importFrom dplyr inner_join
+#' @importFrom dplyr %>%
+#' @importFrom readxl read_excel
 #'
 #' @examples
 #' \dontrun{
 #'   #write me an example please.
 #' }
-pull_testing <- function(bcd_query, lab_query, conn, end_date = NULL) {
+pull_testing <- function(bcd_query, lab_query, conn, test_vol_path, end_date = NULL) {
   if (inherits(conn, "RODBC")) {
     bcd <- RODBC::sqlQuery(conn, bcd_query)
     lab <- RODBC::sqlQuery(conn, lab_query)
@@ -587,15 +593,18 @@ pull_testing <- function(bcd_query, lab_query, conn, end_date = NULL) {
     lab <- odbc::dbGetQuery(conn, lab_query)
   }
 
-  #Potential Data Cleaning?
-  testraw <- dplyr::inner_join(bcd, lab, by = "IncidentID")
+  #read in test_volume
+  test_vol <- readxl::read_excel(test_vol_path, sheet = "Weekly") %>%
+    select(2:3)
 
-  clean_testing(testraw, end_date)
+  clean_testing(bcd, lab, test_vol, end_date)
 }
 
 #' Internal function to clean testing data
 #'
-#' @param testing data.frame produced by \code{\link{pull_hospital}}
+#' @param bcd data.frame
+#' @param lab data.frame
+#' @param test_vol data.frame
 #' @inheritParams pull_testing
 #'
 #' @return a data.frame
@@ -607,11 +616,327 @@ pull_testing <- function(bcd_query, lab_query, conn, end_date = NULL) {
 #' \dontrun{
 #'   #write me an example
 #' }
-clean_testing <- function(testing, end_date) {
-  #Determine Case Resolution Status & separate into two data.frames
-  ## Not a case ----
-  notacase <- dplyr::filter(testing, ResolutionStatus=="Not A Case")
-  ### Bucket 1 (Incident IDs with no positive result)
-  notacase_wide <- tidyr::pivot_wider(id_cols = "IncidentID",
-                                      )
+clean_testing <- function(bcd, lab, test_vol, end_date) {
+  message("  Counting the number of incident tests...")
+  total_tests <- calc_num_tests(bcd, lab)
+
+  message("  Counting the number of positive and negative specimens...")
+  specimens <- calc_pos_neg(lab)
+
+  message("  Final wrangling on the testing data ...")
+
+  test_raw <- dplyr::full_join(total_tests, specimens, by = c("Area", "resultdateonly")) %>%
+    dplyr::arrange(Area, resultdateonly)
+
+  #filter up to end date and discard dates before Jan 01, 2020 and missing dates
+  if (!is.null(end_date)) {
+    test_raw <- dplyr::filter(test_raw, .data$resultdateonly <= as.Date(end_date),
+                                        .data$resultdateonly >= as.Date('2020-01-01'),
+                                        !is.na(.data$resultdateonly))
+  } else {
+    test_raw <- dplyr::filter(test_raw, .data$resultdateonly >= as.Date('2020-01-01'),
+                                        !is.na(.data$resultdateonly))
+  }
+
+  #run thru fill_dates ... might not be necessary since we don't need daily or weekly counts
+  test_raw <- fill_dates(test_raw, "Area", "resultdateonly")
+
+  #add volume targets
+  names(test_vol) <- c("Area", "Testing_Volume")
+
+  test_vol <- test_vol %>%
+    dplyr::mutate(
+      Testing_Volume = 2 * Testing_Volume
+    )
+
+  test_cty <- dplyr::left_join(test_raw, test_vol, by = "Area") %>%
+    dplyr::left_join(dplyr::select(county_data, Area = county, Region_ID = fips, herc_region),
+                     by = "Area")
+
+  #add on HERC rows and WI rows by date
+  test_herc <- test_cty %>%
+    dplyr::group_by(herc_region, resultdateonly) %>%
+    dplyr::summarize_if(is.numeric, sum) %>%
+    dplyr::mutate(
+      Area = herc_region,
+      Region_ID = herc_region
+    )
+
+  test_state <- test_cty %>%
+    dplyr::group_by(resultdateonly) %>%
+    dplyr::summarize_if(is.numeric, sum) %>%
+    dplyr::mutate(
+      Area = "Wisconsin",
+      Region_ID = "55"
+    )
+
+  bind_rows(test_cty, test_herc, test_state) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-herc_region) %>%
+    arrange(Area, resultdateonly)
+
+}
+
+#' INTERNAL function to calculate total tests per county per day
+#'
+#' @inheritParams clean_testing
+#'
+#' @return data.frame
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+calc_num_tests <- function(bcd, lab) {
+  mergedf <- dplyr::inner_join(bcd, lab, by = "IncidentID")
+
+  #NOT A CASE
+  notacase <- mergedf[which(mergedf$ResolutionStatus=="Not A Case"),]
+
+  ##Bucket 1 ----
+  ##  incident ids that don't have a positive result
+  bucket1.ids <- mergedf %>%
+    filter(ResolutionStatus == "Not A Case") %>%
+    group_by(IncidentID, result) %>%
+    count() %>%
+    pivot_wider(id_cols = c("IncidentID"),
+                names_from = c("result"),
+                values_from = c("n"), values_fill = 0) %>%
+    filter(Positive == 0) %>%
+    pull(IncidentID)
+
+  bucket1 <- notacase %>%
+    filter(IncidentID %in% bucket1.ids) %>%
+    group_by(IncidentID) %>%
+    arrange(ResultDate) %>%
+    slice(1L) %>%
+    rename(date = ResultDate)
+
+  ##Bucket 5 ----
+  ##  incident ids that have a positive results
+  bucket5.ids <- mergedf %>%
+    filter(ResolutionStatus == "Not A Case") %>%
+    group_by(IncidentID, result) %>%
+    count() %>%
+    pivot_wider(id_cols = c("IncidentID"),
+                names_from = c("result"),
+                values_from = c("n"), values_fill = 0) %>%
+    filter(Positive >= 1) %>%
+    pull(IncidentID)
+
+  bucket5 <- notacase %>%
+    filter(IncidentID %in% bucket5.ids) %>%
+    group_by(IncidentID) %>%
+    arrange(ResultDate) %>%
+    slice(1L) %>%
+    rename(date = ResultDate)
+
+  #CONFIRMED CASES
+  confirmed <- mergedf[which(mergedf$ResolutionStatus=="Confirmed"),]
+
+  ##Bucket 4 ----
+  ##  Incident ids don't have a positive result at all
+  bucket4.ids <- mergedf %>%
+    filter(ResolutionStatus == "Confirmed") %>%
+    group_by(IncidentID, result) %>%
+    count() %>%
+    pivot_wider(id_cols = c("IncidentID"),
+                names_from = c("result"),
+                values_from = c("n"), values_fill = 0) %>%
+    filter(Positive == 0) %>%
+    pull(IncidentID)
+
+  bucket4 <- confirmed %>%
+    filter(IncidentID %in% bucket4.ids) %>%
+    mutate(
+      date = DateSentCDC
+    ) %>%
+    group_by(IncidentID) %>%
+    arrange(date) %>%
+    slice(1L)
+
+  ##Buckets 2 and 3
+  confirmed.positive <- confirmed %>%
+    filter(!IncidentID %in% bucket4.ids)
+
+  confirmed.firstresult <- confirmed.positive %>%
+    group_by(IncidentID) %>%
+    arrange(ResultDate) %>%
+    slice(1L)
+
+  ##Bucket 2 ----
+  ##  incident ids have positive on first result date
+  bucket2 <- confirmed.firstresult %>%
+    filter(result == "Positive") %>%
+    rename(date = ResultDate)
+
+  ##Bucket 3 ----
+  ##  incident ids have positive on subsequent result date
+  bucket3.ids <- confirmed.firstresult %>%
+    filter(is.na(result) | result != "Positive") %>%
+    pull(IncidentID)
+
+  bucket3 <- confirmed %>%
+    filter(IncidentID %in% bucket3.ids,
+           result == "Positive") %>%
+    group_by(IncidentID) %>%
+    arrange(ResultDate) %>%
+    slice(1L) %>%
+    rename(date = ResultDate)
+
+  #Assemble buckets ----
+  bind_rows(bucket1, bucket2, bucket3, bucket4, bucket5) %>%
+    mutate(
+      DerivedCounty = if_else(trimws(DerivedCounty)== "Fond Du Lac",
+                              "Fond du Lac", trimws(DerivedCounty)),
+      resultdateonly = as.Date(date)
+    ) %>%
+    group_by(resultdateonly, DerivedCounty) %>%
+    count(name = "Tests") %>%
+    filter(!is.na(DerivedCounty), !DerivedCounty %in% c("Non-Wisconsin", "Unknown")) %>%
+    rename(Area = DerivedCounty)
+}
+
+#' INTERNAL function to calculate ingredients for percent positive per county per day
+#'
+#' @inheritParams clean_testing
+#'
+#' @return data.frame
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+calc_pos_neg <- function(lab) {
+  lab.result <- lab %>%
+    dplyr::filter(!is.na(result)) %>%
+    dplyr::mutate(
+      scdflag = dplyr::if_else(is.na(SpecCollectedDate),
+                                "missing.scd", "present.scd")
+    )
+
+  lab.cast <- lab.result %>%
+    group_by(IncidentID, scdflag) %>%
+    count() %>%
+    pivot_wider(id_cols = "IncidentID",
+                names_from = "scdflag",
+                values_from = "n",
+                values_fill = 0)
+
+  #Divide into three groups
+  ##Basin 1 ----
+  ##  incident ids that have all scds
+  basin1.ids <- lab.cast %>%
+    filter(missing.scd == 0) %>%
+    pull(IncidentID)
+
+  basin1 <- lab.result %>%
+    filter(IncidentID %in% basin1.ids) %>%
+    mutate(
+      date = SpecCollectedDate
+    )
+
+  ##Basin 2 ----
+  ##  incident ids that have at least one scd and is missing some other scds
+  basin2.ids <- lab.cast %>%
+    filter(missing.scd >= 1, present.scd >= 1) %>%
+    pull(IncidentID)
+
+  basin2 <- lab.result %>%
+    filter(IncidentID %in% basin2.ids) %>%
+    mutate(
+      date = if_else(is.na(ResultDate), SpecReceivedDate, ResultDate)
+    ) %>%
+    filter(!is.na(date))
+
+  ##Basin 3 ----
+  ##  incident ids that don't have any scds
+  basin3.ids <- lab.cast %>%
+    filter(present.scd == 0) %>%
+    pull(IncidentID)
+
+  basin3 <- lab.result %>%
+    filter(IncidentID %in% basin3.ids) %>%
+    mutate(
+      date = if_else(is.na(ResultDate), SpecReceivedDate, ResultDate)
+    )%>%
+    filter(!is.na(date))
+
+  #Assemble basins ----
+  lab2 <- bind_rows(basin1, basin2, basin3) %>%
+    mutate(
+      dateonly = as.Date(date),
+      newid = paste(IncidentID, dateonly, sep = ""),
+      DerivedCounty = trimws(DerivedCounty),
+      resultdateonly = as.Date(ResultDate)
+    ) %>%
+    filter(!is.na(resultdateonly))
+
+lab2 %>%
+    count(newid, result) %>%
+    pivot_wider(id_cols = "newid",
+                names_from = "result",
+                values_from = "n",
+                values_fill = 0) %>%
+    mutate(
+      notpositive = Inconclusive + Indeterminate + Negative,
+      result2 = case_when(
+        notpositive >= 1 & Positive == 0 ~ "NotPositive",
+        notpositive == 0 & Positive >= 1 ~ "Positive",
+        notpositive >= 1 & Positive >= 1 ~ "Positive",
+        TRUE ~ "other"
+      )
+    ) %>%
+    full_join(lab2, by = "newid") %>%
+    mutate(
+      DerivedCounty = if_else(trimws(DerivedCounty)== "Fond Du Lac",
+                              "Fond du Lac", trimws(DerivedCounty))
+    ) %>%
+    filter(!is.na(result2),
+           !is.na(DerivedCounty),
+           (!DerivedCounty %in% c("Non-Wisconsin", "Unknown"))) %>%
+    select(newid, resultdateonly, result2, DerivedCounty) %>%
+    distinct() %>%
+    group_by(DerivedCounty, resultdateonly) %>%
+    count(result2) %>%
+    pivot_wider(id_cols = c("DerivedCounty", "resultdateonly"),
+                names_from = "result2",
+                values_from = "n",
+                values_fill = 0) %>%
+    rename(Area = DerivedCounty)
+}
+
+#' Shape Testing summary data for metric calculations
+#'
+#' @param testing_df data.frame output by \code{\link{pull_testing}}
+#'
+#' @return a list of data.frames (one summary and one daily)
+#' @export
+#'
+#' @importFrom lubridate days
+#'
+#' @examples
+#' \dontrun{
+#'   #Add examples here
+#' }
+shape_testing_data <- function(testing_df) {
+  max_date <- max(testing_df$resultdateonly)
+
+  testing_daily <- dplyr::filter(testing_df, resultdateonly >= max_date - lubridate::days(13)) %>%
+    dplyr::mutate(RowType = "Daily")
+
+  testing_summary <- testing_daily %>%
+    dplyr::mutate(
+      RowType = "Summary"
+    ) %>%
+    dplyr::group_by(RowType, Region_ID, Area, Testing_Volume) %>%
+    dplyr::summarize_if(is.numeric, sum, na.rm = TRUE) %>%
+    dplyr::mutate(
+      resultdateonly = max_date
+    )
+
+  testing_daily$Testing_Volume <- NULL
+
+  out <- list(summary = testing_summary,
+              daily = testing_daily)
 }

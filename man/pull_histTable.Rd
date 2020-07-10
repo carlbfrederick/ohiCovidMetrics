@@ -19,7 +19,7 @@ HERC regions with the following columns
     \item{fips}{renamed from GEOID}
     \item{geo_type}{renamed from GEO}
     \item{geo_name}{renamed from NAME}
-    \item{post_date}{LoadDttm converted to Date format}
+    \item{post_date}{DATE converted to Date format}
     \item{case_daily}{cleaned daily new positive cases from POS_NEW except for the first day which is from POSITIVE}
     \item{test_daily}{cleaned daily new total tests from TEST_NEW except for the first day which is from POSITIve + NEGATIVE}
     \item{death_daily}{cleaned daily new deaths from DTH_NEW except for the first day which is from DEATHS}
