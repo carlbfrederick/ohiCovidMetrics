@@ -964,9 +964,13 @@ shape_testing_data <- function(testing_df) {
 #' \dontrun{
 #'   #write me an example please
 #' }
-pull_essence <- function(api_url, start_date, end_date, metric = c("cli", "ili", "total_ed")) {
+pull_essence <- function(api_url, start_date, end_date = NULL, metric = c("cli", "ili", "total_ed")) {
   start_date <- as.Date(start_date)
-  end_date <- as.Date(end_date)
+  if (is.null(end_date)) {
+    end_date <- Sys.Date()
+  } else {
+    end_date <- as.Date(end_date)
+  }
 
   chunk_dates <- dplyr::tibble(
     start = seq(start_date, end_date, by = 14)
@@ -979,9 +983,50 @@ pull_essence <- function(api_url, start_date, end_date, metric = c("cli", "ili",
   out <- purrr::map2(chunk_dates$start, chunk_dates$end, essence_query, url = api_url) %>%
     purrr::map_dfr(essence_data)
 
-  out %>%
-    switch("cli" = clean_cli,
-           "ili" = clean_ili,
-           "total_ed" = clean_total_ed)
+  switch(metric,
+         "cli" = clean_cli(out),
+         "ili" = clean_ili(out),
+         "total_ed" = clean_total_ed(out))
+}
 
+#' Clean ESSENCE data for CLI metrics
+#'
+#' @param cli data.frame from \code{\link{pull_essence}}
+#'
+#' @return a cleaned data.frame
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example please
+#' }
+clean_cli <- function(cli){
+  cli
+}
+
+#' Clean ESSENCE data for ILI metrics
+#'
+#' @param ili data.frame from \code{\link{pull_essence}}
+#'
+#' @return a cleaned data.frame
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example please
+#' }
+clean_ili <- function(ili) {
+  ili
+}
+
+#' Clean ESSENCE data for Total ED metrics
+#'
+#' @param total_ed data.frame from \code{\link{pull_essence}}
+#'
+#' @return a cleaned data.frame
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example please
+#' }
+clean_total_ed <- function(total_ed) {
+  total_ed
 }
