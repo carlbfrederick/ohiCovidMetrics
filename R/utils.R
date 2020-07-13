@@ -270,3 +270,52 @@ merge_metric_files <- function(case, hosp, test, cli, ili, outfile) {
 
   return(invisible(out))
 }
+
+#' Customize ESSENCE API query
+#'
+#' @param url ESSENCE API url to pull either ILI or CLI data
+#' @param start_date start date for daily time series
+#' @param end_date end date for daily time series5
+#'
+#' @return a list of API calls with corrected dates
+#'
+#' @importFrom stringr str_replace
+#'
+#' @examples
+#' \dontrun{
+#'   #example here
+#' }
+essence_query <- function(url, start_date, end_date){
+  url %>%
+    stringr::str_replace(pattern = 'endDate=.+?&',
+                         replacement = paste('endDate=', trimws(format(end_date, "%e%b%Y")), "&", sep = "")) %>%
+    stringr::str_replace(pattern = 'startDate=.+?&',
+                         replacement = paste('startDate=', trimws(format(start_date, "%e%b%Y")), "&", sep = ""))
+}
+
+#' Call ESSENCE API and ingest response as data.frame
+#'
+#' Requires proper setup of ESSENCE credentials via the
+#' \code{\link[keyring]{keyring}} package. See internal
+#' DHS documentation about how to do that.
+#'
+#' @inheritParams essence_query
+#'
+#' @return a data.frame from ESSENCE
+#'
+#' @importFrom keyring key_list
+#' @importFrom keyring key_get
+#' @importFrom httr GET
+#' @importFrom httr authenticate
+#' @importFrom httr content
+#' @importFrom dplyr %>%
+#'
+#' @examples
+#' \dontrun{
+#'   #example here
+#' }
+essence_data <- function(url) {
+  httr::GET(url, httr::authenticate(keyring::key_list("essence")$username,
+                                    keyring::key_get("essence", key_list("essence")$username))) %>%
+    httr::content(type = "text/csv")
+}

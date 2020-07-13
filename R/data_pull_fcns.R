@@ -940,3 +940,48 @@ shape_testing_data <- function(testing_df) {
   out <- list(summary = testing_summary,
               daily = testing_daily)
 }
+
+
+#' Pulls Essence Data for 3 metrics: CLI, ILI, Total ED Visits
+#'
+#' @param api_url character string matching Essence API format
+#' @param start_date Start date of the time series that you wish to analyze.
+#'                   It should be something coercible to Date format with as.Date.
+#' @inheritParams pull_histTable
+#' @param metric one of "cli", "ili", "total_ed" depending on which metrics you
+#'               wish to calculate.
+#'
+#' @return a data.frame
+#' @export
+#'
+#' @importFrom dplyr tibble
+#' @importFrom dplyr mutate
+#' @importFrom dplyr rowwise
+#' @importFrom dplyr map2
+#' @importFrom dplyr map_dfr
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example please
+#' }
+pull_essence <- function(api_url, start_date, end_date, metric = c("cli", "ili", "total_ed")) {
+  start_date <- as.Date(start_date)
+  end_date <- as.Date(end_date)
+
+  chunk_dates <- dplyr::tibble(
+    start = seq(start_date, end_date, by = 14)
+  ) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(
+      end = min(start + 13, end_date)
+    )
+
+  out <- purrr::map2(chunk_dates$start, chunk_dates$end, essence_query, url = api_url) %>%
+    purrr::map_dfr(essence_data)
+
+  out %>%
+    switch("cli" = clean_cli,
+           "ili" = clean_ili,
+           "total_ed" = clean_total_ed)
+
+}
