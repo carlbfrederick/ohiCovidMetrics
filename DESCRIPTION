@@ -27,7 +27,9 @@ Imports:
     rlang,
     odbc,
     readr,
-    readxl
+    readxl,
+    stringr,
+    keyring
 RoxygenNote: 7.1.0
 Suggests: 
     tinytest,
