@@ -366,7 +366,8 @@ process_confirmed_cases <- function(clean_case_df) {
 
 #' Process the shaped hospital data into a Tableau ready format
 #'
-#' @param clean_hosp_df a list shaped case data produced by \code{\link{shape_hospital_data}}
+#' @param clean_hosp_df a list of shaped hospital daily and summary
+#' data produced by \code{\link{shape_hospital_data}}
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -514,7 +515,6 @@ process_hospital <- function(clean_hosp_df) {
 #' @importFrom dplyr if_else
 #' @importFrom dplyr everything
 #' @importFrom dplyr bind_rows
-#' @importFrom rlang .data
 #'
 #' @examples
 #' \dontrun{
@@ -583,4 +583,88 @@ process_testing <- function(clean_testing_df) {
   dplyr::bind_rows(test_summary,
                    test_daily)
 
+}
+
+#' Process the shaped CLI data into a Tableau ready format
+#'
+#' @param clean_cli_df ### produced by \code{\link{shape_cli_data}}
+#'
+#' @return a Tableau ready data.frame with the following columns:
+#' \describe{
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#' }
+#'
+#' @export
+#'
+#' @importFrom dplyr mutate
+#' @importFrom dplyr select
+#' @importFrom dplyr rename
+#' @importFrom dplyr ungroup
+#' @importFrom dplyr if_else
+#' @importFrom dplyr everything
+#' @importFrom dplyr bind_rows
+#' @importFrom rlang .data
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+process_cli <- function(clean_cli_df){
+
+  cli_daily <- clean_cli_df$daily %>%
+    dplyr::select(Date = Visit_Date,
+                  Region_ID = fips,
+                  Region = County,
+                  RowType,
+                  CLI_Count = DailyED)
+
+  cli_summary <- dplyr::ungroup(clean_cli_df$summary) %>%
+    dplyr::mutate(
+      Count = .data$WeeklyED_1 + .data$WeeklyED_2,
+      Burden = score_burden(curr = .data$WeeklyED_1,
+                            prev = .data$WeeklyED_2,
+                            pop = .data$pop_2018),
+      Burden_Class = class_burden(.data$Burden),
+      Trajectory = score_trajectory(curr = .data$WeeklyED_1,
+                                    prev = .data$WeeklyED_2),
+      Trajectory_P = pval_trajectory(curr = .data$WeeklyED_1,
+                                     prev = .data$WeeklyED_2),
+      Trajectory_Class = class_trajectory(traj = .data$Trajectory,
+                                          pval = .data$Trajectory_P),
+      Trajectory_FDR = fdr_trajectory(pval = .data$Trajectory_P),
+      Composite_Class = confirmed_case_composite(traj_class = .data$Trajectory_Class,
+                                                 burd_class = .data$Burden_Class)
+
+    ) %>%
+    dplyr::mutate(
+      Trajectory = signif(.data$Trajectory, 2),
+      Trajectory = dplyr::if_else(.data$Trajectory_Class == "No significant change", "N/A",
+                                  as.character(.data$Trajectory)),
+      Burden = signif(.data$Burden, 2)
+    ) %>%
+    dplyr::select(
+      Date = .data$week_end_1,
+      Region_ID = .data$fips,
+      Region = .data$County,
+      RowType = .data$RowType,
+      CLI_Count = .data$Count,
+      CLI_Burden = .data$Burden,
+      CLI_Trajectory = .data$Trajectory,
+      CLI_Burden_Class = .data$Burden_Class,
+      CLI_Trajectory_Class = .data$Trajectory_Class,
+      CLI_Composite_Class = .data$Composite_Class,
+      CLI_Trajectory_P = .data$Trajectory_P,
+      CLI_Trajectory_FDR = .data$Trajectory_FDR
+    )
+
+  dplyr::bind_rows(cli_summary, cli_daily)
 }

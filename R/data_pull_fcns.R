@@ -523,6 +523,13 @@ clean_hospital <- function(hosp, end_date) {
 #' @export
 #'
 #' @importFrom lubridate days
+#' @importFrom dplyr filter
+#' @importFrom dplyr mutate
+#' @importFrom dplyr arrange
+#' @importFrom dplyr group_by
+#' @importFrom tidyr pivot_wider
+#' @importFrom dplyr summarize
+#' @importFrom dplyr rename
 #'
 #' @examples
 #' \dontrun{
@@ -532,28 +539,28 @@ shape_hospital_data <- function(hosp_df) {
   #Find max date for weekly calculations
   max_date <- max(hosp_df$Report_Date)
 
-  hosp_daily <- filter(hosp_df,
-                       RowType == "Daily",
-                       Report_Date >= max_date - lubridate::days(13))
+  hosp_daily <- dplyr::filter(hosp_df,
+                              RowType == "Daily",
+                              Report_Date >= max_date - lubridate::days(13))
 
   hosp_summary <- hosp_df %>%
-    filter(RowType == "Summary") %>%
-    group_by(Run_Date, RowType, fips, County, pop_2018) %>%
-    arrange(Report_Date) %>%
-    mutate(
+    dplyr::filter(RowType == "Summary") %>%
+    dplyr::group_by(Run_Date, RowType, fips, County, pop_2018) %>%
+    dplyr::arrange(Report_Date) %>%
+    dplyr::mutate(
       weeknum = rolling_week(date_vector = Report_Date, end_date = max_date)
     ) %>%
-    group_by(Run_Date, RowType, fips, County, pop_2018, weeknum) %>%
-    summarize(
+    dplyr::group_by(Run_Date, RowType, fips, County, pop_2018, weeknum) %>%
+    dplyr::summarize(
       covid_reg_weekly = as.integer(sum(dailyCOVID_px)),
       covid_icu_weekly = as.integer(sum(dailyCOVID_ICUpx)),
       week_end = max(Report_Date)
     ) %>%
-    filter(weeknum <= 2) %>%
-    pivot_wider(id_cols = c("Run_Date", "RowType", "fips", "County", "pop_2018"),
-                values_from = c("covid_reg_weekly", "covid_icu_weekly", "week_end"),
-                names_from = c("weeknum")) %>%
-    rename(geo_name = "County")
+    dplyr::filter(weeknum <= 2) %>%
+    dplyr::pivot_wider(id_cols = c("Run_Date", "RowType", "fips", "County", "pop_2018"),
+                       values_from = c("covid_reg_weekly", "covid_icu_weekly", "week_end"),
+                       names_from = c("weeknum")) %>%
+    dplyr::rename(geo_name = "County")
 
   out <- list(summary = hosp_summary,
               daily = hosp_daily)
@@ -1083,7 +1090,12 @@ clean_cli <- function(cli){
 shape_cli_data <- function(cli_df) {
   max_date <- max(cli_df$Visit_Date, na.rm = TRUE)
 
-  cli_df %>%
+  cli_daily <- filter(cli_df, Visit_date >= max_date - lubridate::days(13)) %>%
+    dplyr::mutate(
+      RowType = "Daily"
+    )
+
+  cli_summary <- cli_df %>%
     dplyr::group_by(fips, County, pop_2018) %>%
     dplyr::arrange(Visit_Date) %>%
     dplyr::mutate(
@@ -1097,7 +1109,13 @@ shape_cli_data <- function(cli_df) {
     dplyr::filter(weeknum <= 2) %>%
     tidyr::pivot_wider(id_cos = c("fips", "County", "pop_2018"),
                        values_from = c("WeeklyED", "week_end"),
-                       names_from = "weeknum")
+                       names_from = "weeknum") %>%
+    dplyr::mutate(
+      RowType = "Summary"
+    )
+
+  list(daily = cli_daily,
+       summary = cli_summary)
 }
 
 #' Clean ESSENCE data for ILI metrics
