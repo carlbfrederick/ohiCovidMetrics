@@ -995,12 +995,109 @@ pull_essence <- function(api_url, start_date, end_date = NULL, metric = c("cli",
 #'
 #' @return a cleaned data.frame
 #'
+#' @importFrom dplyr %>%
+#' @importFrom dplyr filter
+#' @importFrom dplyr mutate
+#' @importFrom dplyr if_else
+#' @importFrom dplyr left_join
+#' @importFrom dplyr select
+#'
 #' @examples
 #' \dontrun{
 #'   #write me an example please
 #' }
 clean_cli <- function(cli){
-  cli
+  cli_raw <- cli %>%
+    dplyr::mutate(
+      ED_Visit = dplyr::if_else(FacilityType == "Emergency Care", 1L, 0L),
+      Non_Resident = dplyr::if_else(grepl("WI_", Region), 0L, 1L),
+      Visit_Date = as.Date(C_Visit_Date_Time),
+      Hx_County = sub("WI_", "", HospitalRegion),
+      County = sub("WI_", "", Region)
+    ) %>%
+    dplyr::filter(ED_Visit == 1L, Non_Resident == 0L)
+
+  #retangularize the dates too so all counties are represented for all days
+  cli_cty <- cli_raw %>%
+    dplyr::group_by(County, Visit_Date) %>%
+    dplyr::summarize(
+      DailyED = sum(ED_Visit),
+      .groups = "drop"
+    ) %>%
+    dplyr::left_join(dplyr::select(county_data, County = county, fips, herc_region, pop_2018),
+                     by = "County") %>%
+    fill_dates(grouping_vars = c("County", "fips", "herc_region", "pop_2018"),
+               date_var = "Visit_Date")
+
+  #Aggregate to HERC and State and Append
+  cli_herc <- cli_cty %>%
+    dplyr::group_by(herc_region, Visit_Date) %>%
+    dplyr::summarize(
+      DailyED = sum(DailyED),
+      pop_2018 = sum(pop_2018),
+      .groups = "drop"
+    ) %>%
+    dplyr::rename(fips = herc_region) %>%
+    dplyr::mutate(
+      County = fips
+    )
+
+  cli_state <- cli_cty %>%
+    dplyr::group_by(Visit_Date) %>%
+    dplyr::summarize(
+      DailyED = sum(DailyED),
+      pop_2018 = sum(pop_2018),
+      .groups = "drop"
+    ) %>%
+    dplyr::mutate(
+      County = "Wisconsin",
+      fips = "55"
+    )
+
+  dplyr::bind_rows(cli_cty, cli_herc, cli_state) %>%
+    dplyr::select(-herc_region) %>%
+    dplyr::arrange(County, Visit_Date) %>%
+    dplyr::ungroup()
+}
+
+#' Shape CLI data
+#'
+#' @param cli_df data.frame produced by \code{\link{pull_essence}} for
+#'               CLI metrics
+#'
+#' @return output
+#' @export
+#'
+#' @importFrom dplyr %>%
+#' @importFrom dplyr group_by
+#' @importFrom dplyr mutate
+#' @importFrom dplyr arrange
+#' @importFrom dplyr summarize
+#' @imoortFrom dplyr filter
+#' @importFrom tidyr pivot_wider
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+shape_cli_data <- function(cli_df) {
+  max_date <- max(cli_df$Visit_Date, na.rm = TRUE)
+
+  cli_df %>%
+    dplyr::group_by(fips, County, pop_2018) %>%
+    dplyr::arrange(Visit_Date) %>%
+    dplyr::mutate(
+      weeknum = rolling_week(date_vector = Visit_Date, end_date = max_date)
+    ) %>%
+    dplyr::group_by(fips, County, pop_2018, weeknum) %>%
+    dplyr::summarize(
+      WeeklyED = sum(DailyED),
+      week_end = max(Visit_Date)
+    ) %>%
+    dplyr::filter(weeknum <= 2) %>%
+    tidyr::pivot_wider(id_cos = c("fips", "County", "pop_2018"),
+                       values_from = c("WeeklyED", "week_end"),
+                       names_from = "weeknum")
 }
 
 #' Clean ESSENCE data for ILI metrics
