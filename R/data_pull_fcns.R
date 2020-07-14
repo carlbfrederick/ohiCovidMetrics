@@ -964,8 +964,8 @@ shape_testing_data <- function(testing_df) {
 #' @importFrom dplyr tibble
 #' @importFrom dplyr mutate
 #' @importFrom dplyr rowwise
-#' @importFrom dplyr map2
-#' @importFrom dplyr map_dfr
+#' @importFrom purrr map2
+#' @importFrom purrr map_dfr
 #'
 #' @examples
 #' \dontrun{
@@ -1080,7 +1080,7 @@ clean_cli <- function(cli){
 #' @importFrom dplyr mutate
 #' @importFrom dplyr arrange
 #' @importFrom dplyr summarize
-#' @imoortFrom dplyr filter
+#' @importFrom dplyr filter
 #' @importFrom tidyr pivot_wider
 #'
 #' @examples
@@ -1090,7 +1090,7 @@ clean_cli <- function(cli){
 shape_cli_data <- function(cli_df) {
   max_date <- max(cli_df$Visit_Date, na.rm = TRUE)
 
-  cli_daily <- filter(cli_df, Visit_date >= max_date - lubridate::days(13)) %>%
+  cli_daily <- dplyr::filter(cli_df, Visit_date >= max_date - lubridate::days(13)) %>%
     dplyr::mutate(
       RowType = "Daily"
     )
@@ -1124,12 +1124,132 @@ shape_cli_data <- function(cli_df) {
 #'
 #' @return a cleaned data.frame
 #'
+#' @importFrom dplyr %>%
+#' @importFrom dplyr mutate
+#' @importFrom dplyr if_else
+#' @importFrom dplyr filter
+#' @importFrom dplyr group_by
+#' @importFrom dplyr summarize
+#' @importFrom dplyr across
+#' @importFrom dplyr left_join
+#' @importFrom dplyr select
+#' @importFrom dplyr rename
+#' @importFrom dplyr bind_rows
+#' @importFrom dplyr arrange
+#' @importFrom dplyr ungroup
+#'
 #' @examples
 #' \dontrun{
 #'   #write me an example please
 #' }
 clean_ili <- function(ili) {
-  ili
+  ili_raw <- ili %>%
+    dplyr::mutate(
+      ED_Visit = dplyr::if_else(FacilityType == "Emergency Care", 1L, 0L),
+      Non_Resident = dplyr::if_else(grepl("WI_", Region), 0L, 1L),
+      Visit_Date = as.Date(C_Visit_Date_Time),
+      County = sub("WI_", "", Region),
+      Total_Visits = ifelse(is.na(C_BioSense_ID),0,1),
+      ILI_Visits = ifelse(grepl("ILI CCDD v1", CCDDCategory_flat),1,0),
+      ILI_dx = ifelse(grepl("CDC Influenza DD v1", CCDDCategory_flat),1,0)
+    ) %>%
+    dplyr::filter(ED_Visit == 1L, Non_Resident == 0L)
+
+  #retangularize the dates too so all counties are represented for all days
+  ili_cty <- ili_raw %>%
+    dplyr::group_by(County, Visit_Date) %>%
+    dplyr::summarize(
+      dplyr::across(c("Total_Visits", "ILI_Visits", "ILI_dx"), sum),
+      .groups = "drop"
+    )  %>%
+    dplyr::left_join(dplyr::select(county_data, County = county, fips, herc_region),
+                     by = "County") %>%
+    fill_dates(grouping_vars = c("County", "fips", "herc_region"),
+               date_var = "Visit_Date")
+
+  #Aggregate to HERC and State and Append
+  ili_herc <- ili_cty %>%
+    dplyr::group_by(herc_region, Visit_Date) %>%
+    dplyr::summarize(
+      dplyr::across(c("Total_Visits", "ILI_Visits", "ILI_dx"), sum),
+      .groups = "drop"
+    ) %>%
+    dplyr::rename(fips = herc_region) %>%
+    dplyr::mutate(
+      County = fips
+    )
+
+  ili_state <- ili_cty %>%
+    dplyr::group_by(Visit_Date) %>%
+    dplyr::summarize(
+      dplyr::across(c("Total_Visits", "ILI_Visits", "ILI_dx"), sum),
+      .groups = "drop"
+    ) %>%
+    dplyr::mutate(
+      County = "Wisconsin",
+      fips = "55"
+    )
+
+  dplyr::bind_rows(ili_cty, ili_herc, ili_state) %>%
+    dplyr::select(-herc_region) %>%
+    dplyr::arrange(County, Visit_Date) %>%
+    dplyr::ungroup()
+}
+
+
+#' Shape ILI data
+#'
+#' @param ili_df data.frame produced by \code{\link{pull_essence}} for
+#'               ILI metrics
+#'
+#' @return output
+#' @export
+#'
+#' @importFrom lubridate days
+#' @importFrom dplyr %>%
+#' @importFrom dplyr group_by
+#' @importFrom dplyr mutate
+#' @importFrom dplyr arrange
+#' @importFrom dplyr summarize
+#' @importFrom dplyr filter
+#' @importFrom dplyr case_when
+#' @importFrom dplyr select
+#' @importFrom dplyr if_else
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+shape_ili_data <- function(ili_df) {
+  max_date <- max(ili_df$Visit_Date, na.rm = TRUE)
+
+  ili_daily <- dplyr::filter(ili_df, Visit_Date >= max_date - lubridate::days(13)) %>%
+    dplyr::mutate(
+      RowType = "Daily"
+    )  %>%
+    dplyr::select(Region = County,
+                  Region_ID = fips,
+                  Date = Visit_Date,
+                  RowType,
+                  Total_Visits,
+                  ILI_Visits,
+                  ILI_perc)
+
+  ili_summary <- ili_df %>%
+    dplyr::mutate(
+      ILI_perc = if_else(Total_Visits > 0, 100 * (ILI_Visits / Total_Visits), 0),
+      RowType = "Summary"
+    ) %>%
+    dplyr::select(Region = County,
+                  Region_ID = fips,
+                  Date = Visit_Date,
+                  RowType,
+                  Total_Visits,
+                  ILI_Visits,
+                  ILI_perc)
+
+  list(daily = ili_daily,
+       summary = ili_summary)
 }
 
 #' Clean ESSENCE data for Total ED metrics

@@ -7,7 +7,7 @@
 pull_essence(
   api_url,
   start_date,
-  end_date,
+  end_date = NULL,
   metric = c("cli", "ili", "total_ed")
 )
 }

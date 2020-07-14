@@ -29,7 +29,8 @@ Imports:
     readr,
     readxl,
     stringr,
-    keyring
+    keyring,
+    zoo
 RoxygenNote: 7.1.0
 Suggests: 
     tinytest,

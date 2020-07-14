@@ -7,7 +7,8 @@
 process_hospital(clean_hosp_df)
 }
 \arguments{
-\item{clean_hosp_df}{a list shaped case data produced by \code{\link{shape_hospital_data}}}
+\item{clean_hosp_df}{a list of shaped hospital daily and summary
+data produced by \code{\link{shape_hospital_data}}}
 }
 \value{
 a Tableau ready data.frame with the following columns:

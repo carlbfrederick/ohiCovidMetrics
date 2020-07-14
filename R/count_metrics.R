@@ -668,3 +668,60 @@ process_cli <- function(clean_cli_df){
 
   dplyr::bind_rows(cli_summary, cli_daily)
 }
+
+#' Process the shaped ILI data into a Tableau ready format
+#'
+#' @param clean_ili_df ### produced by \code{\link{shape_ili_data}}
+#' @param ili_threshold_path path to .csv file containing ILI thresholds
+#'
+#' @return a Tableau ready data.frame with the following columns:
+#' \describe{
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#' }
+#'
+#' @export
+#'
+#' @importFrom dplyr mutate
+#' @importFrom dplyr if_else
+#' @importFrom dplyr bind_rows
+#' @importFrom zoo rollapply
+#' @importFrom readr read_csv
+#' @importFrom readr cols
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+process_ili <- function(clean_ili_df, ili_threshold_path) {
+  ili_daily <- clean_ili_df$daily
+
+  ili_summary <- clean_ili_df$summary %>%
+    dplyr::left_join(readr::read_csv(ili_threshold_path,
+                                     col_types = readr::cols(
+                                       Region = col_character(),
+                                       ILI_baseline = col_double(),
+                                       ILI_threshold = col_double()
+                                     )), by = "Region") %>%
+    dplyr::mutate(
+      Over_baseline = dplyr::if_else(ILI_perc >= ILI_baseline, 1L, 0L),
+      Over_threshold = dplyr::if_else(ILI_perc >= ILI_threshold, 1L, 0L),
+      moving_avg = zoo::rollapply(ILI_perc, 3, mean, fill = NA, align = "right"),
+      Status = dplyr::case_when(
+        moving_avg >= ILI_threshold ~ "Elevated Activity",
+        moving_avg >= ILI_baseline ~ "Moderate Activity",
+        moving_avg < ILI_baseline ~ "Low Activity",
+        TRUE ~ "NA"
+      )
+    )
+
+  dplyr::bind_rows(ili_summary, ili_daily)
+}
