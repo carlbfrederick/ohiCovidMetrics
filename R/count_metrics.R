@@ -506,6 +506,7 @@ shape_hospital_data <- function(hosp_df) {
 #' @importFrom dplyr everything
 #' @importFrom dplyr bind_rows
 #' @importFrom rlang .data
+#' @importFrom lubridate days
 #'
 #' @examples
 #' \dontrun{
@@ -566,7 +567,7 @@ process_hospital <- function(hosp_df) {
                                            as.character(.data$COVID_ICUpx_Trajectory))
     ) %>%
     dplyr::select(
-      Date = .data$week_end_1,
+      Date = .data$week_end_1 - lubridate::days(1),
       Region_ID = .data$fips,
       Region = .data$geo_name,
       .data$COVID_px_Trajectory,
