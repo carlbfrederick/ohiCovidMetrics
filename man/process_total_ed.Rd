@@ -4,10 +4,11 @@
 \alias{process_total_ed}
 \title{Process the shaped Total Emergency Department Visit data into a Tableau ready format}
 \usage{
-process_total_ed(clean_total_ed_df)
+process_total_ed(total_ed_df)
 }
 \arguments{
-\item{clean_total_ed_df}{### produced by \code{\link{shape_total_ed_data}}}
+\item{total_ed_df}{data.frame produced by \code{\link{pull_essence}} for
+Total ED metrics}
 }
 \value{
 a Tableau ready data.frame with the following columns:

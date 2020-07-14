@@ -131,67 +131,6 @@ pull_wedss <- function(query, conn, end_date = NULL) {
   clean_histTable(hdt, end_date)
 }
 
-#' Reshape confirmed case data for producing Tableau extracts
-#'
-#' take case data (from WEDSS or historical data table) and put it in proper
-#' shape for metric tables to feed tableau
-#'
-#' @param case_df Confirmed case data.frame (e.g. produced by \link{pull_histTable})
-#'
-#' @return a data.frame with the following with one row per county, state, and
-#' HERC regions with the following columns
-#' \describe{
-#'   \item{fips}{FIPS Code and/or region identifier}
-#'   \item{geo_name}{Name of geography}
-#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
-#'   \item{case_weekly_1}{Total cases for \strong{current} 7 day period}
-#'   \item{case_weekly_2}{Total cases for \strong{prior} 7 day period}
-#'   \item{week_end_1}{End date for \strong{current} 7 day period}
-#'   \item{week_end_2}{End date for \strong{prior} 7 day period}
-#' }
-#'
-#' @export
-#'
-#' @importFrom dplyr group_by
-#' @importFrom dplyr mutate
-#' @importFrom dplyr summarize
-#' @importFrom dplyr filter
-#' @importFrom dplyr summarize_at
-#' @importFrom dplyr select
-#' @importFrom tidyr pivot_wider
-#' @importFrom rlang .data
-#'
-#' @examples
-#' \dontrun{
-#'   hdt <- pull_histTable()
-#'   hdt_clean <- shape_case_data(hdt)
-#' }
-shape_case_data <- function(case_df) {
-   max_date <- max(case_df$post_date)
-
-   out <- case_df %>%
-     dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018) %>%
-     dplyr::mutate(
-       weeknum = rolling_week(date_vector = .data$post_date, end_date = max_date)
-     ) %>%
-     dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018, .data$weeknum) %>%
-     dplyr::summarize(
-       case_weekly = as.integer(sum(.data$case_daily)),
-       week_end = max(.data$post_date),
-       .groups = "drop_last"
-     ) %>%
-     dplyr::filter(.data$weeknum <= 2) %>%
-     tidyr::pivot_wider(id_cols = c("fips", "geo_name", "pop_2018"),
-                        values_from = c("case_weekly", "week_end"),
-                        names_from = "weeknum")
-
-
-   out$pop_2018[out$fips == "55"] <- sum(county_data$pop_2018)
-   out$pop_2018 <- as.integer(out$pop_2018)
-
-   out
- }
-
 #' INTERNAL function to clean case data for metrics
 #'
 #' @param hdt a data.frame from the historical data table
@@ -513,59 +452,6 @@ clean_hospital <- function(hosp, end_date) {
   mutate(
     fips = unique(fips[!is.na(fips)])
   )
-}
-
-#' Shape EM Resource summary data for metric calculations
-#'
-#' @param hosp_df data.frame output by \code{\link{pull_hospital}}
-#'
-#' @return a list of data.frames (one summary and one daily)
-#' @export
-#'
-#' @importFrom lubridate days
-#' @importFrom dplyr filter
-#' @importFrom dplyr mutate
-#' @importFrom dplyr arrange
-#' @importFrom dplyr group_by
-#' @importFrom tidyr pivot_wider
-#' @importFrom dplyr summarize
-#' @importFrom dplyr rename
-#'
-#' @examples
-#' \dontrun{
-#'   #Add examples here
-#' }
-shape_hospital_data <- function(hosp_df) {
-  #Find max date for weekly calculations
-  max_date <- max(hosp_df$Report_Date)
-
-  hosp_daily <- dplyr::filter(hosp_df,
-                              RowType == "Daily",
-                              Report_Date >= max_date - lubridate::days(13))
-
-  hosp_summary <- hosp_df %>%
-    dplyr::filter(RowType == "Summary") %>%
-    dplyr::group_by(Run_Date, RowType, fips, County, pop_2018) %>%
-    dplyr::arrange(Report_Date) %>%
-    dplyr::mutate(
-      weeknum = rolling_week(date_vector = Report_Date, end_date = max_date)
-    ) %>%
-    dplyr::group_by(Run_Date, RowType, fips, County, pop_2018, weeknum) %>%
-    dplyr::summarize(
-      covid_reg_weekly = as.integer(sum(dailyCOVID_px)),
-      covid_icu_weekly = as.integer(sum(dailyCOVID_ICUpx)),
-      week_end = max(Report_Date)
-    ) %>%
-    dplyr::filter(weeknum <= 2) %>%
-    tidyr::pivot_wider(id_cols = c("Run_Date", "RowType", "fips", "County", "pop_2018"),
-                       values_from = c("covid_reg_weekly", "covid_icu_weekly", "week_end"),
-                       names_from = c("weeknum")) %>%
-    dplyr::rename(geo_name = "County")
-
-  out <- list(summary = hosp_summary,
-              daily = hosp_daily)
-
-  return(out)
 }
 
 #' Pull data from WEDSS for Testing Metrics
@@ -913,42 +799,6 @@ lab2 %>%
     rename(Area = DerivedCounty)
 }
 
-#' Shape Testing summary data for metric calculations
-#'
-#' @param testing_df data.frame output by \code{\link{pull_testing}}
-#'
-#' @return a list of data.frames (one summary and one daily)
-#' @export
-#'
-#' @importFrom lubridate days
-#'
-#' @examples
-#' \dontrun{
-#'   #Add examples here
-#' }
-shape_testing_data <- function(testing_df) {
-  max_date <- max(testing_df$resultdateonly)
-
-  testing_daily <- dplyr::filter(testing_df, resultdateonly >= max_date - lubridate::days(13)) %>%
-    dplyr::mutate(RowType = "Daily")
-
-  testing_summary <- testing_daily %>%
-    dplyr::mutate(
-      RowType = "Summary"
-    ) %>%
-    dplyr::group_by(RowType, Region_ID, Area, Testing_Volume) %>%
-    dplyr::summarize_if(is.numeric, sum, na.rm = TRUE) %>%
-    dplyr::mutate(
-      resultdateonly = max_date
-    )
-
-  testing_daily$Testing_Volume <- NULL
-
-  out <- list(summary = testing_summary,
-              daily = testing_daily)
-}
-
-
 #' Pulls Essence Data for 3 metrics: CLI, ILI, Total ED Visits
 #'
 #' @param api_url character string matching Essence API format
@@ -1067,57 +917,6 @@ clean_cli <- function(cli){
     dplyr::ungroup()
 }
 
-#' Shape CLI data
-#'
-#' @param cli_df data.frame produced by \code{\link{pull_essence}} for
-#'               CLI metrics
-#'
-#' @return output
-#' @export
-#'
-#' @importFrom dplyr %>%
-#' @importFrom dplyr group_by
-#' @importFrom dplyr mutate
-#' @importFrom dplyr arrange
-#' @importFrom dplyr summarize
-#' @importFrom dplyr filter
-#' @importFrom tidyr pivot_wider
-#'
-#' @examples
-#' \dontrun{
-#'   #write me an example
-#' }
-shape_cli_data <- function(cli_df) {
-  max_date <- max(cli_df$Visit_Date, na.rm = TRUE)
-
-  cli_daily <- dplyr::filter(cli_df, Visit_date >= max_date - lubridate::days(13)) %>%
-    dplyr::mutate(
-      RowType = "Daily"
-    )
-
-  cli_summary <- cli_df %>%
-    dplyr::group_by(fips, County, pop_2018) %>%
-    dplyr::arrange(Visit_Date) %>%
-    dplyr::mutate(
-      weeknum = rolling_week(date_vector = Visit_Date, end_date = max_date)
-    ) %>%
-    dplyr::group_by(fips, County, pop_2018, weeknum) %>%
-    dplyr::summarize(
-      WeeklyED = sum(DailyED),
-      week_end = max(Visit_Date)
-    ) %>%
-    dplyr::filter(weeknum <= 2) %>%
-    tidyr::pivot_wider(id_cos = c("fips", "County", "pop_2018"),
-                       values_from = c("WeeklyED", "week_end"),
-                       names_from = "weeknum") %>%
-    dplyr::mutate(
-      RowType = "Summary"
-    )
-
-  list(daily = cli_daily,
-       summary = cli_summary)
-}
-
 #' Clean ESSENCE data for ILI metrics
 #'
 #' @param ili data.frame from \code{\link{pull_essence}}
@@ -1196,62 +995,6 @@ clean_ili <- function(ili) {
     dplyr::ungroup()
 }
 
-
-#' Shape ILI data
-#'
-#' @param ili_df data.frame produced by \code{\link{pull_essence}} for
-#'               ILI metrics
-#'
-#' @return output
-#' @export
-#'
-#' @importFrom lubridate days
-#' @importFrom dplyr %>%
-#' @importFrom dplyr group_by
-#' @importFrom dplyr mutate
-#' @importFrom dplyr arrange
-#' @importFrom dplyr summarize
-#' @importFrom dplyr filter
-#' @importFrom dplyr case_when
-#' @importFrom dplyr select
-#' @importFrom dplyr if_else
-#'
-#' @examples
-#' \dontrun{
-#'   #write me an example
-#' }
-shape_ili_data <- function(ili_df) {
-  max_date <- max(ili_df$Visit_Date, na.rm = TRUE)
-
-  ili_daily <- dplyr::filter(ili_df, Visit_Date >= max_date - lubridate::days(13)) %>%
-    dplyr::mutate(
-      RowType = "Daily"
-    )  %>%
-    dplyr::select(Region = County,
-                  Region_ID = fips,
-                  Date = Visit_Date,
-                  RowType,
-                  Total_Visits,
-                  ILI_Visits,
-                  ILI_perc)
-
-  ili_summary <- ili_df %>%
-    dplyr::mutate(
-      ILI_perc = if_else(Total_Visits > 0, 100 * (ILI_Visits / Total_Visits), 0),
-      RowType = "Summary"
-    ) %>%
-    dplyr::select(Region = County,
-                  Region_ID = fips,
-                  Date = Visit_Date,
-                  RowType,
-                  Total_Visits,
-                  ILI_Visits,
-                  ILI_perc)
-
-  list(daily = ili_daily,
-       summary = ili_summary)
-}
-
 #' Clean ESSENCE data for Total ED metrics
 #'
 #' @param total_ed data.frame from \code{\link{pull_essence}}
@@ -1309,38 +1052,4 @@ clean_total_ed <- function(total_ed) {
     dplyr::select(-herc_region) %>%
     dplyr::arrange(County, Visit_Date) %>%
     dplyr::ungroup()
-}
-
-#' Shape Total Emergency Department Visits data
-#'
-#' @param ili_df data.frame produced by \code{\link{pull_essence}} for
-#'               Total ED metrics
-#'
-#' @return output
-#' @export
-#'
-#' @importFrom lubridate days
-#' @importFrom dplyr %>%
-#' @importFrom dplyr filter
-#' @importFrom dplyr mutate
-#' @importFrom dplyr select
-#'
-#' @examples
-#' \dontrun{
-#'   #write me an example
-#' }
-shape_total_ed_data <- function(total_ed_df) {
-  max_date <- max(total_ed_df$Visit_Date, na.rm = TRUE)
-
-  total_ed_daily <- dplyr::filter(total_ed_df, Visit_Date >= max_date - lubridate::days(13)) %>%
-    dplyr::mutate(
-      RowType = "Daily"
-    )  %>%
-    dplyr::select(Region = County,
-                  Region_ID = fips,
-                  Date = Visit_Date,
-                  RowType,
-                  TotalEDs = ED_Visit)
-
-  list(daily = total_ed_daily)
 }

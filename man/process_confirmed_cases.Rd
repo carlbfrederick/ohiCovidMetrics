@@ -4,10 +4,10 @@
 \alias{process_confirmed_cases}
 \title{Process the shaped confirmed case data.frame into a Tableau ready format}
 \usage{
-process_confirmed_cases(clean_case_df)
+process_confirmed_cases(case_df)
 }
 \arguments{
-\item{clean_case_df}{shaped case data produced by \code{\link{shape_case_data}}}
+\item{case_df}{Confirmed case data.frame (e.g. produced by \link{pull_histTable})}
 }
 \value{
 a Tableau ready data.frame with the following columns:

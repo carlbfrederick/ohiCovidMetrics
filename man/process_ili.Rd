@@ -4,10 +4,11 @@
 \alias{process_ili}
 \title{Process the shaped ILI data into a Tableau ready format}
 \usage{
-process_ili(clean_ili_df, ili_threshold_path)
+process_ili(ili_df, ili_threshold_path)
 }
 \arguments{
-\item{clean_ili_df}{### produced by \code{\link{shape_ili_data}}}
+\item{ili_df}{data.frame produced by \code{\link{pull_essence}} for
+ILI metrics}
 
 \item{ili_threshold_path}{path to .csv file containing ILI thresholds}
 }

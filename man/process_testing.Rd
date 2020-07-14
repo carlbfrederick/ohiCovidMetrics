@@ -4,10 +4,10 @@
 \alias{process_testing}
 \title{Process the shaped hospital data into a Tableau ready format}
 \usage{
-process_testing(clean_testing_df)
+process_testing(testing_df)
 }
 \arguments{
-\item{clean_testing_df}{a list shaped case data produced by \code{\link{shape_testing_data}}}
+\item{testing_df}{data.frame output by \code{\link{pull_testing}}}
 }
 \value{
 a Tableau ready data.frame with the following columns:

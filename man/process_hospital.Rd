@@ -4,11 +4,10 @@
 \alias{process_hospital}
 \title{Process the shaped hospital data into a Tableau ready format}
 \usage{
-process_hospital(clean_hosp_df)
+process_hospital(hosp_df)
 }
 \arguments{
-\item{clean_hosp_df}{a list of shaped hospital daily and summary
-data produced by \code{\link{shape_hospital_data}}}
+\item{hosp_df}{data.frame output by \code{\link{pull_hospital}}}
 }
 \value{
 a Tableau ready data.frame with the following columns:

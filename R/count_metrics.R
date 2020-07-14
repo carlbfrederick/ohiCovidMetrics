@@ -290,9 +290,69 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
   out
 }
 
+#' Reshape confirmed case data for producing Tableau extracts
+#'
+#' take case data (from WEDSS or historical data table) and put it in proper
+#' shape for metric tables to feed tableau
+#'
+#' @inheritParams process_confirmed_cases
+#'
+#' @return a data.frame with the following with one row per county, state, and
+#' HERC regions with the following columns
+#' \describe{
+#'   \item{fips}{FIPS Code and/or region identifier}
+#'   \item{geo_name}{Name of geography}
+#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#'   \item{case_weekly_1}{Total cases for \strong{current} 7 day period}
+#'   \item{case_weekly_2}{Total cases for \strong{prior} 7 day period}
+#'   \item{week_end_1}{End date for \strong{current} 7 day period}
+#'   \item{week_end_2}{End date for \strong{prior} 7 day period}
+#' }
+#'
+#' @importFrom dplyr group_by
+#' @importFrom dplyr mutate
+#' @importFrom dplyr summarize
+#' @importFrom dplyr filter
+#' @importFrom dplyr summarize_at
+#' @importFrom dplyr select
+#' @importFrom tidyr pivot_wider
+#' @importFrom rlang .data
+#'
+#' @examples
+#' \dontrun{
+#'   hdt <- pull_histTable()
+#'   hdt_clean <- shape_case_data(hdt)
+#' }
+shape_case_data <- function(case_df) {
+  max_date <- max(case_df$post_date)
+
+  out <- case_df %>%
+    dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018) %>%
+    dplyr::mutate(
+      weeknum = rolling_week(date_vector = .data$post_date, end_date = max_date)
+    ) %>%
+    dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018, .data$weeknum) %>%
+    dplyr::summarize(
+      case_weekly = as.integer(sum(.data$case_daily)),
+      week_end = max(.data$post_date),
+      .groups = "drop_last"
+    ) %>%
+    dplyr::filter(.data$weeknum <= 2) %>%
+    tidyr::pivot_wider(id_cols = c("fips", "geo_name", "pop_2018"),
+                       values_from = c("case_weekly", "week_end"),
+                       names_from = "weeknum")
+
+
+  out$pop_2018[out$fips == "55"] <- sum(county_data$pop_2018)
+  out$pop_2018 <- as.integer(out$pop_2018)
+
+  out
+}
+
+
 #' Process the shaped confirmed case data.frame into a Tableau ready format
 #'
-#' @param clean_case_df shaped case data produced by \code{\link{shape_case_data}}
+#' @param case_df Confirmed case data.frame (e.g. produced by \link{pull_histTable})
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -322,7 +382,9 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #' output <- pull_histTable() %>%
 #'   shape_case_data() %>%
 #'   process_confirmed_cases()
-process_confirmed_cases <- function(clean_case_df) {
+process_confirmed_cases <- function(case_df) {
+  clean_case_df <- shape_case_data(case_df)
+
   dplyr::ungroup(clean_case_df) %>%
     dplyr::mutate(
       Count = .data$case_weekly_1 + .data$case_weekly_2,
@@ -364,10 +426,61 @@ process_confirmed_cases <- function(clean_case_df) {
     )
 }
 
+#' Shape EM Resource summary data for metric calculations
+#'
+#' @inheritParams process_hospital
+#'
+#' @return a list of data.frames (one summary and one daily)
+#'
+#' @importFrom lubridate days
+#' @importFrom dplyr filter
+#' @importFrom dplyr mutate
+#' @importFrom dplyr arrange
+#' @importFrom dplyr group_by
+#' @importFrom tidyr pivot_wider
+#' @importFrom dplyr summarize
+#' @importFrom dplyr rename
+#'
+#' @examples
+#' \dontrun{
+#'   #Add examples here
+#' }
+shape_hospital_data <- function(hosp_df) {
+  #Find max date for weekly calculations
+  max_date <- max(hosp_df$Report_Date)
+
+  hosp_daily <- dplyr::filter(hosp_df,
+                              RowType == "Daily",
+                              Report_Date >= max_date - lubridate::days(13))
+
+  hosp_summary <- hosp_df %>%
+    dplyr::filter(RowType == "Summary") %>%
+    dplyr::group_by(Run_Date, RowType, fips, County, pop_2018) %>%
+    dplyr::arrange(Report_Date) %>%
+    dplyr::mutate(
+      weeknum = rolling_week(date_vector = Report_Date, end_date = max_date)
+    ) %>%
+    dplyr::group_by(Run_Date, RowType, fips, County, pop_2018, weeknum) %>%
+    dplyr::summarize(
+      covid_reg_weekly = as.integer(sum(dailyCOVID_px)),
+      covid_icu_weekly = as.integer(sum(dailyCOVID_ICUpx)),
+      week_end = max(Report_Date)
+    ) %>%
+    dplyr::filter(weeknum <= 2) %>%
+    tidyr::pivot_wider(id_cols = c("Run_Date", "RowType", "fips", "County", "pop_2018"),
+                       values_from = c("covid_reg_weekly", "covid_icu_weekly", "week_end"),
+                       names_from = c("weeknum")) %>%
+    dplyr::rename(geo_name = "County")
+
+  out <- list(summary = hosp_summary,
+              daily = hosp_daily)
+
+  return(out)
+}
+
 #' Process the shaped hospital data into a Tableau ready format
 #'
-#' @param clean_hosp_df a list of shaped hospital daily and summary
-#' data produced by \code{\link{shape_hospital_data}}
+#' @param hosp_df data.frame output by \code{\link{pull_hospital}}
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -402,7 +515,9 @@ process_confirmed_cases <- function(clean_case_df) {
 #'   shape_hospital_data() %>%
 #'   process_hospital()
 #' }
-process_hospital <- function(clean_hosp_df) {
+process_hospital <- function(hosp_df) {
+
+  clean_hosp_df <- shape_hospital_data(hosp_df)
 
   hosp_daily <- clean_hosp_df$daily %>%
     dplyr::select(RunDate = Run_Date,
@@ -488,9 +603,43 @@ process_hospital <- function(clean_hosp_df) {
                   Hosp_COVID_ICUpx_Trajectory_Class = COVID_ICUpx_Trajectory_Class)
 }
 
+#' Shape Testing summary data for metric calculations
+#'
+#' @inheritParams process_testing
+#'
+#' @return a list of data.frames (one summary and one daily)
+#'
+#' @importFrom lubridate days
+#'
+#' @examples
+#' \dontrun{
+#'   #Add examples here
+#' }
+shape_testing_data <- function(testing_df) {
+  max_date <- max(testing_df$resultdateonly)
+
+  testing_daily <- dplyr::filter(testing_df, resultdateonly >= max_date - lubridate::days(13)) %>%
+    dplyr::mutate(RowType = "Daily")
+
+  testing_summary <- testing_daily %>%
+    dplyr::mutate(
+      RowType = "Summary"
+    ) %>%
+    dplyr::group_by(RowType, Region_ID, Area, Testing_Volume) %>%
+    dplyr::summarize_if(is.numeric, sum, na.rm = TRUE) %>%
+    dplyr::mutate(
+      resultdateonly = max_date
+    )
+
+  testing_daily$Testing_Volume <- NULL
+
+  out <- list(summary = testing_summary,
+              daily = testing_daily)
+}
+
 #' Process the shaped hospital data into a Tableau ready format
 #'
-#' @param clean_testing_df a list shaped case data produced by \code{\link{shape_testing_data}}
+#' @param testing_df data.frame output by \code{\link{pull_testing}}
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -520,7 +669,8 @@ process_hospital <- function(clean_hosp_df) {
 #' \dontrun{
 #'   #write me an example
 #' }
-process_testing <- function(clean_testing_df) {
+process_testing <- function(testing_df) {
+  clean_testing_df <- shape_testing_data(testing_df)
 
   test_daily <- clean_testing_df$daily %>%
     dplyr::mutate(
@@ -585,9 +735,59 @@ process_testing <- function(clean_testing_df) {
 
 }
 
+#' Shape CLI data
+#'
+#' @inheritParams process_cli
+#'
+#' @return output
+#'
+#' @importFrom dplyr %>%
+#' @importFrom dplyr group_by
+#' @importFrom dplyr mutate
+#' @importFrom dplyr arrange
+#' @importFrom dplyr summarize
+#' @importFrom dplyr filter
+#' @importFrom tidyr pivot_wider
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+shape_cli_data <- function(cli_df) {
+  max_date <- max(cli_df$Visit_Date, na.rm = TRUE)
+
+  cli_daily <- dplyr::filter(cli_df, Visit_date >= max_date - lubridate::days(13)) %>%
+    dplyr::mutate(
+      RowType = "Daily"
+    )
+
+  cli_summary <- cli_df %>%
+    dplyr::group_by(fips, County, pop_2018) %>%
+    dplyr::arrange(Visit_Date) %>%
+    dplyr::mutate(
+      weeknum = rolling_week(date_vector = Visit_Date, end_date = max_date)
+    ) %>%
+    dplyr::group_by(fips, County, pop_2018, weeknum) %>%
+    dplyr::summarize(
+      WeeklyED = sum(DailyED),
+      week_end = max(Visit_Date)
+    ) %>%
+    dplyr::filter(weeknum <= 2) %>%
+    tidyr::pivot_wider(id_cos = c("fips", "County", "pop_2018"),
+                       values_from = c("WeeklyED", "week_end"),
+                       names_from = "weeknum") %>%
+    dplyr::mutate(
+      RowType = "Summary"
+    )
+
+  list(daily = cli_daily,
+       summary = cli_summary)
+}
+
 #' Process the shaped CLI data into a Tableau ready format
 #'
-#' @param clean_cli_df ### produced by \code{\link{shape_cli_data}}
+#' @param cli_df data.frame produced by \code{\link{pull_essence}} for
+#'               CLI metrics
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -618,7 +818,8 @@ process_testing <- function(clean_testing_df) {
 #' \dontrun{
 #'   #write me an example
 #' }
-process_cli <- function(clean_cli_df){
+process_cli <- function(cli_df){
+  clean_cli_df <- shape_cli_data(cli_df)
 
   cli_daily <- clean_cli_df$daily %>%
     dplyr::select(Date = Visit_Date,
@@ -669,9 +870,63 @@ process_cli <- function(clean_cli_df){
   dplyr::bind_rows(cli_summary, cli_daily)
 }
 
+#' Shape ILI data
+#'
+#' @inheritParams process_ili
+#'
+#' @return output
+#'
+#' @importFrom lubridate days
+#' @importFrom dplyr %>%
+#' @importFrom dplyr group_by
+#' @importFrom dplyr mutate
+#' @importFrom dplyr arrange
+#' @importFrom dplyr summarize
+#' @importFrom dplyr filter
+#' @importFrom dplyr case_when
+#' @importFrom dplyr select
+#' @importFrom dplyr if_else
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+shape_ili_data <- function(ili_df) {
+  max_date <- max(ili_df$Visit_Date, na.rm = TRUE)
+
+  ili_daily <- dplyr::filter(ili_df, Visit_Date >= max_date - lubridate::days(13)) %>%
+    dplyr::mutate(
+      RowType = "Daily"
+    )  %>%
+    dplyr::select(Region = County,
+                  Region_ID = fips,
+                  Date = Visit_Date,
+                  RowType,
+                  Total_Visits,
+                  ILI_Visits,
+                  ILI_perc)
+
+  ili_summary <- ili_df %>%
+    dplyr::mutate(
+      ILI_perc = if_else(Total_Visits > 0, 100 * (ILI_Visits / Total_Visits), 0),
+      RowType = "Summary"
+    ) %>%
+    dplyr::select(Region = County,
+                  Region_ID = fips,
+                  Date = Visit_Date,
+                  RowType,
+                  Total_Visits,
+                  ILI_Visits,
+                  ILI_perc)
+
+  list(daily = ili_daily,
+       summary = ili_summary)
+}
+
 #' Process the shaped ILI data into a Tableau ready format
 #'
-#' @param clean_ili_df ### produced by \code{\link{shape_ili_data}}
+#' @param ili_df data.frame produced by \code{\link{pull_essence}} for
+#'               ILI metrics
 #' @param ili_threshold_path path to .csv file containing ILI thresholds
 #'
 #' @return a Tableau ready data.frame with the following columns:
@@ -701,7 +956,9 @@ process_cli <- function(clean_cli_df){
 #' \dontrun{
 #'   #write me an example
 #' }
-process_ili <- function(clean_ili_df, ili_threshold_path) {
+process_ili <- function(ili_df, ili_threshold_path) {
+  clean_ili_df <- shape_ili_data(ili_df)
+
   ili_daily <- clean_ili_df$daily
 
   ili_summary <- clean_ili_df$summary %>%
@@ -726,9 +983,43 @@ process_ili <- function(clean_ili_df, ili_threshold_path) {
   dplyr::bind_rows(ili_summary, ili_daily)
 }
 
+
+#' Shape Total Emergency Department Visits data
+#'
+#' @inheritParams process_total_ed
+#'
+#' @return output
+#'
+#' @importFrom lubridate days
+#' @importFrom dplyr %>%
+#' @importFrom dplyr filter
+#' @importFrom dplyr mutate
+#' @importFrom dplyr select
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+shape_total_ed_data <- function(total_ed_df) {
+  max_date <- max(total_ed_df$Visit_Date, na.rm = TRUE)
+
+  total_ed_daily <- dplyr::filter(total_ed_df, Visit_Date >= max_date - lubridate::days(13)) %>%
+    dplyr::mutate(
+      RowType = "Daily"
+    )  %>%
+    dplyr::select(Region = County,
+                  Region_ID = fips,
+                  Date = Visit_Date,
+                  RowType,
+                  TotalEDs = ED_Visit)
+
+  list(daily = total_ed_daily)
+}
+
 #' Process the shaped Total Emergency Department Visit data into a Tableau ready format
 #'
-#' @param clean_total_ed_df ### produced by \code{\link{shape_total_ed_data}}
+#' @param total_ed_df data.frame produced by \code{\link{pull_essence}} for
+#'               Total ED metrics
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -750,7 +1041,9 @@ process_ili <- function(clean_ili_df, ili_threshold_path) {
 #' \dontrun{
 #'   #write me an example
 #' }
-process_total_ed <- function(clean_total_ed_df) {
+process_total_ed <- function(total_ed_df) {
+  clean_total_ed_df <- shape_total_ed_data(total_ed_df)
+
   total_ed_daily <- clean_total_ed_df$daily
 
   total_ed_daily

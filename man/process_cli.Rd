@@ -4,10 +4,11 @@
 \alias{process_cli}
 \title{Process the shaped CLI data into a Tableau ready format}
 \usage{
-process_cli(clean_cli_df)
+process_cli(cli_df)
 }
 \arguments{
-\item{clean_cli_df}{### produced by \code{\link{shape_cli_data}}}
+\item{cli_df}{data.frame produced by \code{\link{pull_essence}} for
+CLI metrics}
 }
 \value{
 a Tableau ready data.frame with the following columns:
