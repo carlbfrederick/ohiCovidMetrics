@@ -317,6 +317,7 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #' @importFrom dplyr select
 #' @importFrom tidyr pivot_wider
 #' @importFrom rlang .data
+#' @importFrom lubridate days
 #'
 #' @examples
 #' \dontrun{
@@ -324,6 +325,8 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #'   hdt_clean <- shape_case_data(hdt)
 #' }
 shape_case_data <- function(case_df) {
+  case_df$post_date = case_df$post_date - lubridate::days(1)
+
   max_date <- max(case_df$post_date)
 
   out <- case_df %>%
@@ -567,7 +570,7 @@ process_hospital <- function(hosp_df) {
                                            as.character(.data$COVID_ICUpx_Trajectory))
     ) %>%
     dplyr::select(
-      Date = .data$week_end_1 - lubridate::days(1),
+      Date = .data$week_end_1,
       Region_ID = .data$fips,
       Region = .data$geo_name,
       .data$COVID_px_Trajectory,
@@ -757,7 +760,7 @@ process_testing <- function(testing_df) {
 shape_cli_data <- function(cli_df) {
   max_date <- max(cli_df$Visit_Date, na.rm = TRUE)
 
-  cli_daily <- dplyr::filter(cli_df, Visit_date >= max_date - lubridate::days(13)) %>%
+  cli_daily <- dplyr::filter(cli_df, Visit_Date >= max_date - lubridate::days(13)) %>%
     dplyr::mutate(
       RowType = "Daily"
     )
@@ -770,11 +773,11 @@ shape_cli_data <- function(cli_df) {
     ) %>%
     dplyr::group_by(fips, County, pop_2018, weeknum) %>%
     dplyr::summarize(
-      WeeklyED = sum(DailyED),
+      WeeklyED = as.integer(sum(DailyED)),
       week_end = max(Visit_Date)
     ) %>%
     dplyr::filter(weeknum <= 2) %>%
-    tidyr::pivot_wider(id_cos = c("fips", "County", "pop_2018"),
+    tidyr::pivot_wider(id_cols = c("fips", "County", "pop_2018"),
                        values_from = c("WeeklyED", "week_end"),
                        names_from = "weeknum") %>%
     dplyr::mutate(
@@ -813,6 +816,7 @@ shape_cli_data <- function(cli_df) {
 #' @importFrom dplyr if_else
 #' @importFrom dplyr everything
 #' @importFrom dplyr bind_rows
+#' @importFrom dplyr across
 #' @importFrom rlang .data
 #'
 #' @examples
@@ -830,6 +834,7 @@ process_cli <- function(cli_df){
                   CLI_Count = DailyED)
 
   cli_summary <- dplyr::ungroup(clean_cli_df$summary) %>%
+    dplyr::mutate(dplyr::across(c("WeeklyED_1", "WeeklyED_2", "pop_2018"), as.integer)) %>%
     dplyr::mutate(
       Count = .data$WeeklyED_1 + .data$WeeklyED_2,
       Burden = score_burden(curr = .data$WeeklyED_1,
@@ -904,8 +909,7 @@ shape_ili_data <- function(ili_df) {
                   Date = Visit_Date,
                   RowType,
                   Total_Visits,
-                  ILI_Visits,
-                  ILI_perc)
+                  ILI_Visits)
 
   ili_summary <- ili_df %>%
     dplyr::mutate(
@@ -960,7 +964,13 @@ shape_ili_data <- function(ili_df) {
 process_ili <- function(ili_df, ili_threshold_path) {
   clean_ili_df <- shape_ili_data(ili_df)
 
-  ili_daily <- clean_ili_df$daily
+  ili_daily <- clean_ili_df$daily %>%
+    dplyr::select(Region,
+                  Region_ID,
+                  Date,
+                  RowType,
+                  ILI_Total_Visits = Total_Visits,
+                  ILI_Visits)
 
   ili_summary <- clean_ili_df$summary %>%
     dplyr::left_join(readr::read_csv(ili_threshold_path,
@@ -979,7 +989,18 @@ process_ili <- function(ili_df, ili_threshold_path) {
         moving_avg < ILI_baseline ~ "Low Activity",
         TRUE ~ "NA"
       )
-    )
+    ) %>%
+    dplyr::select(Region,
+                  Region_ID,
+                  Date,
+                  RowType,
+                  ILI_Total_Visits = Total_Visits,
+                  ILI_Visits,
+                  ILI_Percent = ILI_perc,
+                  ILI_Baseline = ILI_baseline,
+                  ILI_Threshold = ILI_threshold,
+                  ILI_Status = Status,
+                  ILI_Moving_Avg = moving_avg)
 
   dplyr::bind_rows(ili_summary, ili_daily)
 }
@@ -1012,7 +1033,7 @@ shape_total_ed_data <- function(total_ed_df) {
                   Region_ID = fips,
                   Date = Visit_Date,
                   RowType,
-                  TotalEDs = ED_Visit)
+                  Total_ED_Visits = ED_Visit)
 
   list(daily = total_ed_daily)
 }

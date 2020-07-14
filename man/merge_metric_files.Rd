@@ -4,18 +4,20 @@
 \alias{merge_metric_files}
 \title{Combine metric data into a single output file}
 \usage{
-merge_metric_files(case, hosp, test, cli, ili, outfile)
+merge_metric_files(case, hosp, test, cli, ili, total_ed, outfile)
 }
 \arguments{
-\item{case}{data.frame produced by \code{\link{pull_histTable}} or \code{\link{pull_wedss}}}
+\item{case}{data.frame produced by \code{\link{process_confirmed_cases}}}
 
-\item{hosp}{data.frame produced by \code{\link{pull_hospital}}}
+\item{hosp}{data.frame produced by \code{\link{process_hospital}}}
 
-\item{test}{data.frame produced by}
+\item{test}{data.frame produced by \code{\link{process_testing}}}
 
-\item{cli}{data.frame produced by}
+\item{cli}{data.frame produced by \code{\link{process_cli}}}
 
-\item{ili}{data.frame produced by}
+\item{ili}{data.frame produced by \code{\link{process_ili}}}
+
+\item{total_ed}{data.frame produced by \code{\link{process_total_ed}}}
 
 \item{outfile}{file name (including path) for output data file}
 }

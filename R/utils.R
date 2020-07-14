@@ -237,31 +237,36 @@ fill_dates <- function(df, grouping_vars, date_var) {
 
 #' Combine metric data into a single output file
 #'
-#' @param case data.frame produced by \code{\link{pull_histTable}} or \code{\link{pull_wedss}}
-#' @param hosp data.frame produced by \code{\link{pull_hospital}}
-#' @param test data.frame produced by
-#' @param cli  data.frame produced by
-#' @param ili  data.frame produced by
+#' @param case     data.frame produced by \code{\link{process_confirmed_cases}}
+#' @param hosp     data.frame produced by \code{\link{process_hospital}}
+#' @param test     data.frame produced by \code{\link{process_testing}}
+#' @param cli      data.frame produced by \code{\link{process_cli}}
+#' @param ili      data.frame produced by \code{\link{process_ili}}
+#' @param total_ed data.frame produced by \code{\link{process_total_ed}}
 #' @param outfile file name (including path) for output data file
 #'
 #' @return invisibly returns the combined data
 #' @export
 #'
 #' @importFrom readr write_csv
+#' @importFrom dplyr inner_join
+#' @importFrom dplyr full_join
 #'
 #' @examples
 #' \dontrun{
 #'   #add examples to me please,
 #' }
-merge_metric_files <- function(case, hosp, test, cli, ili, outfile) {
+merge_metric_files <- function(case, hosp, test, cli, ili, total_ed, outfile) {
   #Start with Cases and Testing
-  out <- inner_join(case, test, by = c("Region" = "Area", "Date" = "date", "RowType" = "RowType"))
+  out <- dplyr::inner_join(case, test, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in Hospitalization
-  out <- full_join(out, hosp, by = c("Date", "Region_ID", "Region", "RowType"))
+  out <- dplyr::full_join(out, hosp, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in CLI
-  out <- full_join(out, cli, by = c("Date", "Region", "RowType"))
+  out <- dplyr::full_join(out, cli, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in ILI
-  out <- full_join(out, ili, by = c("Date", "Region", "RowType"))
+  out <- dplyr::full_join(out, ili, by = c("Date", "Region_ID", "Region", "RowType"))
+  #Add in Total ED Visits
+  out <- dplyr::full_join(out, total_ed, by = c("Date", "Region_ID", "Region", "RowType"))
   #Any data cleaning necessary?
 
   #Write out a .csv

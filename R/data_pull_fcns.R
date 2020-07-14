@@ -1049,7 +1049,6 @@ clean_total_ed <- function(total_ed) {
     )
 
   dplyr::bind_rows(total_ed_herc, total_ed_state) %>%
-    dplyr::select(-herc_region) %>%
     dplyr::arrange(County, Visit_Date) %>%
     dplyr::ungroup()
 }
