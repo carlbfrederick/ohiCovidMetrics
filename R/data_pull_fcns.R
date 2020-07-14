@@ -557,7 +557,7 @@ shape_hospital_data <- function(hosp_df) {
       week_end = max(Report_Date)
     ) %>%
     dplyr::filter(weeknum <= 2) %>%
-    dplyr::pivot_wider(id_cols = c("Run_Date", "RowType", "fips", "County", "pop_2018"),
+    tidyr::pivot_wider(id_cols = c("Run_Date", "RowType", "fips", "County", "pop_2018"),
                        values_from = c("covid_reg_weekly", "covid_icu_weekly", "week_end"),
                        names_from = c("weeknum")) %>%
     dplyr::rename(geo_name = "County")
@@ -1263,5 +1263,84 @@ shape_ili_data <- function(ili_df) {
 #'   #write me an example please
 #' }
 clean_total_ed <- function(total_ed) {
-  total_ed
+  total_ed_raw <- total_ed %>%
+      dplyr::mutate(
+        ED_Visit = dplyr::if_else(FacilityType == "Emergency Care", 1L, 0L),
+        Visit_Date = as.Date(C_Visit_Date_Time),
+        County = sub("WI_", "", Region)
+      ) %>%
+      dplyr::filter(ED_Visit == 1L)
+
+  #retangularize the dates too so all counties are represented for all days
+  total_ed_cty <- total_ed_raw %>%
+    dplyr::group_by(County, Visit_Date) %>%
+    dplyr::summarize(
+      dplyr::across(c("ED_Visit"), sum),
+      .groups = "drop"
+    )  %>%
+    dplyr::left_join(dplyr::select(county_data, County = county, fips, herc_region),
+                     by = "County") %>%
+    fill_dates(grouping_vars = c("County", "fips", "herc_region"),
+               date_var = "Visit_Date")
+
+  total_ed_herc <- total_ed_cty %>%
+    dplyr::group_by(herc_region, Visit_Date) %>%
+    dplyr::summarize(
+      dplyr::across(c("ED_Visit"), sum),
+      .groups = "drop"
+    ) %>%
+    dplyr::rename(fips = herc_region) %>%
+    dplyr::mutate(
+      County = fips
+    )
+
+  total_ed_state <- total_ed_cty %>%
+    dplyr::group_by(Visit_Date) %>%
+    dplyr::summarize(
+      dplyr::across(c("ED_Visit"), sum),
+      .groups = "drop"
+    ) %>%
+    dplyr::mutate(
+      County = "Wisconsin",
+      fips = "55"
+    )
+
+  dplyr::bind_rows(total_ed_herc, total_ed_state) %>%
+    dplyr::select(-herc_region) %>%
+    dplyr::arrange(County, Visit_Date) %>%
+    dplyr::ungroup()
+}
+
+#' Shape Total Emergency Department Visits data
+#'
+#' @param ili_df data.frame produced by \code{\link{pull_essence}} for
+#'               Total ED metrics
+#'
+#' @return output
+#' @export
+#'
+#' @importFrom lubridate days
+#' @importFrom dplyr %>%
+#' @importFrom dplyr filter
+#' @importFrom dplyr mutate
+#' @importFrom dplyr select
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+shape_total_ed_data <- function(total_ed_df) {
+  max_date <- max(total_ed_df$Visit_Date, na.rm = TRUE)
+
+  total_ed_daily <- dplyr::filter(total_ed_df, Visit_Date >= max_date - lubridate::days(13)) %>%
+    dplyr::mutate(
+      RowType = "Daily"
+    )  %>%
+    dplyr::select(Region = County,
+                  Region_ID = fips,
+                  Date = Visit_Date,
+                  RowType,
+                  TotalEDs = ED_Visit)
+
+  list(daily = total_ed_daily)
 }

@@ -725,3 +725,33 @@ process_ili <- function(clean_ili_df, ili_threshold_path) {
 
   dplyr::bind_rows(ili_summary, ili_daily)
 }
+
+#' Process the shaped Total Emergency Department Visit data into a Tableau ready format
+#'
+#' @param clean_total_ed_df ### produced by \code{\link{shape_total_ed_data}}
+#'
+#' @return a Tableau ready data.frame with the following columns:
+#' \describe{
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#'   \item{}{}
+#' }
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+process_total_ed <- function(clean_total_ed_df) {
+  total_ed_daily <- clean_total_ed_df$daily
+
+  total_ed_daily
+}
