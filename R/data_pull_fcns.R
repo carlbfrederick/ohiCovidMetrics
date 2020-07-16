@@ -503,6 +503,11 @@ pull_testing <- function(bcd_query, lab_query, conn, test_vol_path, end_date = N
 #' @return a data.frame
 #'
 #' @importFrom dplyr filter
+#' @importFrom dplyr full_join
+#' @importFrom dplyr arrange
+#' @importFrom dplyr mutate
+#' @importFrom dplyr across
+#' @importFrom dplyr if_else
 #' @importFrom tidyr pivot_wider
 #'
 #' @examples
@@ -519,7 +524,9 @@ clean_testing <- function(bcd, lab, test_vol, end_date) {
   message("  Final wrangling on the testing data ...")
 
   test_raw <- dplyr::full_join(total_tests, specimens, by = c("Area", "resultdateonly")) %>%
-    dplyr::arrange(Area, resultdateonly)
+    dplyr::arrange(Area, resultdateonly) %>%
+    dplyr::mutate(dplyr::across(c("Tests", "NotPositive", "Positive"),
+                                ~ dplyr::if_else(is.na(.x), 0, .x)))
 
   #filter up to end date and discard dates before Jan 01, 2020 and missing dates
   if (!is.null(end_date)) {

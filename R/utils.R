@@ -249,7 +249,6 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' @export
 #'
 #' @importFrom readr write_csv
-#' @importFrom dplyr inner_join
 #' @importFrom dplyr full_join
 #'
 #' @examples
@@ -258,7 +257,7 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' }
 merge_metric_files <- function(case, hosp, test, cli, ili, total_ed, outfile) {
   #Start with Cases and Testing
-  out <- dplyr::inner_join(case, test, by = c("Date", "Region_ID", "Region", "RowType"))
+  out <- dplyr::full_join(case, test, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in Hospitalization
   out <- dplyr::full_join(out, hosp, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in CLI
@@ -268,6 +267,11 @@ merge_metric_files <- function(case, hosp, test, cli, ili, total_ed, outfile) {
   #Add in Total ED Visits
   out <- dplyr::full_join(out, total_ed, by = c("Date", "Region_ID", "Region", "RowType"))
   #Any data cleaning necessary?
+
+  #ADD FIELD DESCRIBING TIME PERIOD OF DATA
+  out$Data_Period <- paste(format(min(out$Date), "%x"), "-", format(max(hosp$Date), "%x"))
+
+  #ADD IN SOME BASIC CHECKS/REPORTING SO PEOPLE CAN GET SUMMARY
 
   #Write out a .csv
   message("Writing file to ", outfile, na = "")
