@@ -365,5 +365,5 @@ essence_data <- function(url) {
 
   httr::GET(url, httr::authenticate(keyring::key_list("essence")$username,
                                     keyring::key_get("essence", key_list("essence")$username))) %>%
-    httr::content(type = "text/csv", cols_types = essence_cols)
+    httr::content(type = "text/csv", col_types = essence_cols)
 }
