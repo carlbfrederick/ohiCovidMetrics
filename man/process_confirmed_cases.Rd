@@ -12,16 +12,18 @@ process_confirmed_cases(case_df)
 \value{
 a Tableau ready data.frame with the following columns:
 \describe{
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
+  \item{Date}{Date cases were confirmed }
+  \item{Region_ID}{ID code for geographic unit (FIPS for county and state)}
+  \item{Region}{Name of geographic unit (county, state, HERC region)}
+  \item{RowType}{Are row values summary or daily values}
+  \item{Conf_Case_Count}{Count of confirmed cases for period}
+  \item{Conf_Case_Burden}{see \code{\link{score_burden}}}
+  \item{Conf_Case_Trajectory}{see \code{\link{score_trajectory}}}
+  \item{Conf_Case_Burden_Class}{see \code{\link{class_burden}}}
+  \item{Conf_Case_Trajectory_Class}{see \code{\link{class_trajectory}}}
+  \item{Conv_Case_Composite_Class}{see \code{\link{confirmed_case_composite}}}
+  \item{Conf_Case_Trajectory_P}{see \code{\link{pval_trajectory}}}
+  \item{Conf_Case_Trajectory_FDR}{see \code{\link{fdr_trajectory}}}
 }
 }
 \description{

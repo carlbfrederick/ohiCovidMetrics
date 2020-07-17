@@ -12,16 +12,29 @@ process_hospital(hosp_df)
 \value{
 a Tableau ready data.frame with the following columns:
 \describe{
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
-  \item{}{}
+  \item{Hosp_RunDate}{Date hospital report was run}
+  \item{Date}{Date hospital information was reported}
+  \item{Region}{Name of geographic unit (county, state, HERC region)}
+  \item{Region_ID}{ID code for geographic unit (FIPS for county and state)}
+  \item{RowType}{Are row values summary or daily values}
+  \item{Hosp_dailyCOVID_px}{Daily count of COVID patients}
+  \item{Hosp_dailyCOVID_ICUpx}{Daily count of COVID patients in the ICU}
+  \item{Hosp_totalbeds}{Total Beds (ICU, Intermediate, Med/Surg, Neg. Flow)}
+  \item{Hosp_beds_IBA}{Total Immediate Beds Available (ICU, Intermediate, Med/Surg, Neg. Flow)}
+  \item{Hosp_totalICU}{Total ICU Beds}
+  \item{Hosp_ICU_IBA}{Immediate ICU Beds Available}
+  \item{Hosp_num_px_vent}{Current Number of Ventilated Patients (Induvated and mechanically ventilated)}
+  \item{Hosp_total_vents}{Total rented/owned/demoed general use ventilators on hand}
+  \item{Hosp_intermed_beds_IBA}{Immediate Intermediate Care Beds Available}
+  \item{Hosp_negflow_beds_IBA}{Immediate Negative Airflow Isolation Beds Available}
+  \item{Hosp_medsurg_beds_IBA}{Immediate Medical/Surgical Beds Available}
+  \item{Hosp_PrctBeds_IBA}{Hosp_beds_IBA / Hosp_totalbeds}
+  \item{Hosp_PrctICU_IBA}{Hosp_ICU_IBA / Hosp_ICU_IBA}
+  \item{Hosp_PrctVent_Used}{Hosp_num_px_vent / Hosp_total_vents}
+  \item{Hosp_COVID_px_Trajectory}{Trajectory for Hospitalized COVID patient count (see \code{\link{score_trajectory}})}
+  \item{Hosp_COVID_px_Trajectory_Class}{Trajectory for Hospitalized COVID patient count (see \code{\link{class_trajectory}})}
+  \item{Hosp_COVID_ICUpx_Trajectory}{Trajectory for ICU COVID patient count (see \code{\link{score_trajectory}})}
+  \item{Hosp_COVID_ICUpx_Trajectory_Class}{Trajectory for ICU COVID patient count (see \code{\link{class_trajectory}})}
 }
 }
 \description{

@@ -373,16 +373,18 @@ shape_case_data <- function(case_df) {
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
+#'   \item{Date}{Date cases were confirmed }
+#'   \item{Region_ID}{ID code for geographic unit (FIPS for county and state)}
+#'   \item{Region}{Name of geographic unit (county, state, HERC region)}
+#'   \item{RowType}{Are row values summary or daily values}
+#'   \item{Conf_Case_Count}{Count of confirmed cases for period}
+#'   \item{Conf_Case_Burden}{see \code{\link{score_burden}}}
+#'   \item{Conf_Case_Trajectory}{see \code{\link{score_trajectory}}}
+#'   \item{Conf_Case_Burden_Class}{see \code{\link{class_burden}}}
+#'   \item{Conf_Case_Trajectory_Class}{see \code{\link{class_trajectory}}}
+#'   \item{Conv_Case_Composite_Class}{see \code{\link{confirmed_case_composite}}}
+#'   \item{Conf_Case_Trajectory_P}{see \code{\link{pval_trajectory}}}
+#'   \item{Conf_Case_Trajectory_FDR}{see \code{\link{fdr_trajectory}}}
 #' }
 #'
 #' @export
@@ -391,6 +393,7 @@ shape_case_data <- function(case_df) {
 #' @importFrom dplyr select
 #' @importFrom dplyr ungroup
 #' @importFrom dplyr if_else
+#' @importFrom dplyr bind_rows
 #' @importFrom rlang .data
 #'
 #' @examples
@@ -459,7 +462,46 @@ process_confirmed_cases <- function(case_df) {
 #'
 #' @inheritParams process_hospital
 #'
-#' @return a list of data.frames (one summary and one daily)
+#' @return a list of data.frames. The "summary" data.frame has one row per
+#' county, state, and HERC regions with the following columns
+#' \describe{
+#'   \item{Run_Date}{Date hospital report was run}
+#'   \item{RowType}{Are row values summary or daily values}
+#'   \item{fips}{FIPS Code and/or region identifier}
+#'   \item{geo_name}{Name of geography}
+#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#'   \item{covid_reg_weekly_1}{Hospitalized Covid cases for \strong{current} 7 day period}
+#'   \item{covid_reg_weekly_2}{Hospitalized Covid cases for \strong{prior} 7 day period}
+#'   \item{covid_icu_weekly_1}{ICU Covid cases for \strong{current} 7 day period}
+#'   \item{covid_icu_weekly_2}{ICU Covid cases for \strong{prior} 7 day period}
+#'   \item{week_end_1}{End date for \strong{current} 7 day period}
+#'   \item{week_end_2}{End date for \strong{prior} 7 day period}
+#' }
+#' and the "daily" data.frame has one row per state and HERC region (\emph{not county})
+#' per day for the two week period with the following columns
+#' \describe{
+#'   \item{County}{Name of geography}
+#'   \item{Report_Date}{Date hospital information was reported}
+#'   \item{dailyCOVID_px}{}
+#'   \item{dailyCOVID_ICUpx}{}
+#'   \item{geo_type}{Type of geography - all missing should be removed}
+#'   \item{fips}{FIPS Code and/or region identifier}
+#'   \item{pop_2018}{WISH 2018 population figures}
+#'   \item{RowType}{Are row values summary or daily values}
+#'   \item{totalbeds}{Total Beds (ICU, Intermediate, Med/Surg, Neg. Flow)}
+#'   \item{beds_IBA}{Total Immediate Beds Available (ICU, Intermediate, Med/Surg, Neg. Flow)}
+#'   \item{totalICU}{Total ICU Beds}
+#'   \item{ICU_IBA}{Immediate ICU Beds Available}
+#'   \item{num_px_vent}{Current Number of Ventilated Patients (Induvated and mechanically ventilated)}
+#'   \item{total_vents}{Total rented/owned/demoed general use ventilators on hand}
+#'   \item{intermed_beds_IBA}{Immediate Intermediate Care Beds Available}
+#'   \item{negflow_beds_IBA}{Immediate Negative Airflow Isolation Beds Available}
+#'   \item{medsurg_beds_IBA}{Immediate Medical/Surgical Beds Available}
+#'   \item{PrctBeds_IBA}{Hosp_beds_IBA / Hosp_totalbeds}
+#'   \item{PrctICU_IBA}{Hosp_ICU_IBA / Hosp_ICU_IBA}
+#'   \item{PrctVent_Used}{Hosp_num_px_vent / Hosp_total_vents}
+#'   \item{Run_Date}{Date hospital report was run}
+#' }
 #'
 #' @importFrom lubridate days
 #' @importFrom dplyr filter
@@ -513,16 +555,29 @@ shape_hospital_data <- function(hosp_df) {
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
-#'   \item{}{}
+#'   \item{Hosp_RunDate}{Date hospital report was run}
+#'   \item{Date}{Date hospital information was reported}
+#'   \item{Region}{Name of geographic unit (county, state, HERC region)}
+#'   \item{Region_ID}{ID code for geographic unit (FIPS for county and state)}
+#'   \item{RowType}{Are row values summary or daily values}
+#'   \item{Hosp_dailyCOVID_px}{Daily count of COVID patients}
+#'   \item{Hosp_dailyCOVID_ICUpx}{Daily count of COVID patients in the ICU}
+#'   \item{Hosp_totalbeds}{Total Beds (ICU, Intermediate, Med/Surg, Neg. Flow)}
+#'   \item{Hosp_beds_IBA}{Total Immediate Beds Available (ICU, Intermediate, Med/Surg, Neg. Flow)}
+#'   \item{Hosp_totalICU}{Total ICU Beds}
+#'   \item{Hosp_ICU_IBA}{Immediate ICU Beds Available}
+#'   \item{Hosp_num_px_vent}{Current Number of Ventilated Patients (Induvated and mechanically ventilated)}
+#'   \item{Hosp_total_vents}{Total rented/owned/demoed general use ventilators on hand}
+#'   \item{Hosp_intermed_beds_IBA}{Immediate Intermediate Care Beds Available}
+#'   \item{Hosp_negflow_beds_IBA}{Immediate Negative Airflow Isolation Beds Available}
+#'   \item{Hosp_medsurg_beds_IBA}{Immediate Medical/Surgical Beds Available}
+#'   \item{Hosp_PrctBeds_IBA}{Hosp_beds_IBA / Hosp_totalbeds}
+#'   \item{Hosp_PrctICU_IBA}{Hosp_ICU_IBA / Hosp_ICU_IBA}
+#'   \item{Hosp_PrctVent_Used}{Hosp_num_px_vent / Hosp_total_vents}
+#'   \item{Hosp_COVID_px_Trajectory}{Trajectory for Hospitalized COVID patient count (see \code{\link{score_trajectory}})}
+#'   \item{Hosp_COVID_px_Trajectory_Class}{Trajectory for Hospitalized COVID patient count (see \code{\link{class_trajectory}})}
+#'   \item{Hosp_COVID_ICUpx_Trajectory}{Trajectory for ICU COVID patient count (see \code{\link{score_trajectory}})}
+#'   \item{Hosp_COVID_ICUpx_Trajectory_Class}{Trajectory for ICU COVID patient count (see \code{\link{class_trajectory}})}
 #' }
 #'
 #' @export
