@@ -410,7 +410,7 @@ process_confirmed_cases <- function(case_df) {
            Region_ID = .data$fips,
            Region = .data$geo_name,
            RowType,
-           Count = .data$case_daily)
+           Conf_Case_Count = .data$case_daily)
 
   out_sum <- dplyr::ungroup(clean_case_df$summary) %>%
     dplyr::mutate(

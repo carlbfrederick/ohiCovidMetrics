@@ -10,8 +10,8 @@ shape_case_data(case_df)
 \item{case_df}{Confirmed case data.frame (e.g. produced by \link{pull_histTable})}
 }
 \value{
-a data.frame with the following with one row per county, state, and
-HERC regions with the following columns
+a list of data.frames. The "summary" data.frame has one row per
+county, state, and HERC regions with the following columns
 \describe{
   \item{fips}{FIPS Code and/or region identifier}
   \item{geo_name}{Name of geography}
@@ -20,6 +20,15 @@ HERC regions with the following columns
   \item{case_weekly_2}{Total cases for \strong{prior} 7 day period}
   \item{week_end_1}{End date for \strong{current} 7 day period}
   \item{week_end_2}{End date for \strong{prior} 7 day period}
+}
+and the "daily" data.frame has one row per
+county, state, and HERC region per day for the two week period with
+the following columns
+\describe{
+  \item{fips}{FIPS Code and/or region identifier}
+  \item{geo_name}{Name of geography}
+  \item{post_date}{Date cases were confirmed}
+  \item{case_daily}{Count of cases confirmed that day}
 }
 }
 \description{
