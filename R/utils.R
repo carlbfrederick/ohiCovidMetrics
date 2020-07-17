@@ -318,13 +318,52 @@ essence_query <- function(url, start_date, end_date){
 #' @importFrom httr authenticate
 #' @importFrom httr content
 #' @importFrom dplyr %>%
+#' @importFrom readr cols
+#' @importFrom readr col_character
+#' @importFrom readr col_time
+#' @importFrom readr col_datetime
+#' @importFrom readr col_double
 #'
 #' @examples
 #' \dontrun{
 #'   #example here
 #' }
 essence_data <- function(url) {
+  essence_cols <- readr::cols(
+    Time = col_time(format = ""),
+    C_Visit_Date_Time = col_datetime(format = ""),
+    Age = col_double(),
+    HospitalZip = col_double(),
+    Arrived_Date_Time = col_datetime(format = ""),
+    Initial_Pulse_Oximetry_Calc = col_double(),
+    Hospital = col_double(),
+    HalfHour = col_double(),
+    SiteID = col_double(),
+    Year = col_double(),
+    StagingRowID = col_double(),
+    Message_ID = col_double(),
+    Create_Processed_Date_Time = col_datetime(format = ""),
+    Create_Raw_Date_Time = col_datetime(format = ""),
+    Update_Processed_Date_Time = col_datetime(format = ""),
+    Create_ER_Import_Date_Time = col_datetime(format = ""),
+    Site_ID = col_double(),
+    Recorded_Date_Time = col_datetime(format = ""),
+    HasBeenE = col_double(),
+    HasBeenI = col_double(),
+    HasBeenO = col_double(),
+    DDAvailable = col_double(),
+    DDInformative = col_double(),
+    CCAvailable = col_double(),
+    CCInformative = col_double(),
+    Create_ER_Base_Date_Time = col_datetime(format = ""),
+    Create_Cache_ER_Base_Date_Time_Web = col_datetime(format = ""),
+    CCOrig_Length = col_double(),
+    CCParsed_Length = col_double(),
+    DD_Length = col_double(),
+    .default = col_character()
+  )
+
   httr::GET(url, httr::authenticate(keyring::key_list("essence")$username,
                                     keyring::key_get("essence", key_list("essence")$username))) %>%
-    httr::content(type = "text/csv", guess_max = 1e5)
+    httr::content(type = "text/csv", cols_types = essence_cols)
 }
