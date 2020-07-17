@@ -526,7 +526,7 @@ clean_testing <- function(bcd, lab, test_vol, end_date) {
   test_raw <- dplyr::full_join(total_tests, specimens, by = c("Area", "resultdateonly")) %>%
     dplyr::arrange(Area, resultdateonly) %>%
     dplyr::mutate(dplyr::across(c("Tests", "NotPositive", "Positive"),
-                                ~ dplyr::if_else(is.na(.x), 0, .x)))
+                                ~ dplyr::if_else(is.na(.x), 0L, .x)))
 
   #filter up to end date and discard dates before Jan 01, 2020 and missing dates
   if (!is.null(end_date)) {
