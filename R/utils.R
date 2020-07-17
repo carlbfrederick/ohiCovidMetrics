@@ -326,5 +326,5 @@ essence_query <- function(url, start_date, end_date){
 essence_data <- function(url) {
   httr::GET(url, httr::authenticate(keyring::key_list("essence")$username,
                                     keyring::key_get("essence", key_list("essence")$username))) %>%
-    httr::content(type = "text/csv")
+    httr::content(type = "text/csv", guess_max = 1e5)
 }
