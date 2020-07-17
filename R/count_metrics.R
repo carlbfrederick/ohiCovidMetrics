@@ -297,8 +297,8 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #'
 #' @inheritParams process_confirmed_cases
 #'
-#' @return a data.frame with the following with one row per county, state, and
-#' HERC regions with the following columns
+#' @return a list of data.frames. The "summary" data.frame has one row per
+#' county, state, and HERC regions with the following columns
 #' \describe{
 #'   \item{fips}{FIPS Code and/or region identifier}
 #'   \item{geo_name}{Name of geography}
@@ -307,6 +307,15 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #'   \item{case_weekly_2}{Total cases for \strong{prior} 7 day period}
 #'   \item{week_end_1}{End date for \strong{current} 7 day period}
 #'   \item{week_end_2}{End date for \strong{prior} 7 day period}
+#' }
+#' and the "daily" data.frame has one row per
+#' county, state, and HERC region per day for the two week period with
+#' the following columns
+#' \describe{
+#'   \item{fips}{FIPS Code and/or region identifier}
+#'   \item{geo_name}{Name of geography}
+#'   \item{post_date}{Date cases were confirmed}
+#'   \item{case_daily}{Count of cases confirmed that day}
 #' }
 #'
 #' @importFrom dplyr group_by
@@ -325,11 +334,16 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #'   hdt_clean <- shape_case_data(hdt)
 #' }
 shape_case_data <- function(case_df) {
+  #Alter date to reflect date cases were confirmed rather than posted.
   case_df$post_date = case_df$post_date - lubridate::days(1)
 
   max_date <- max(case_df$post_date)
 
-  out <- case_df %>%
+  cases_daily <- case_df %>%
+    dplyr::filter(post_date >= (max_date - lubridate::days(13))) %>%
+    dplyr::select(fips, geo_name, post_date, case_daily)
+
+  cases_summary <- case_df %>%
     dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018) %>%
     dplyr::mutate(
       weeknum = rolling_week(date_vector = .data$post_date, end_date = max_date)
@@ -345,11 +359,11 @@ shape_case_data <- function(case_df) {
                        values_from = c("case_weekly", "week_end"),
                        names_from = "weeknum")
 
+  #Re-type pop to integer
+  cases_summary$pop_2018 <- as.integer(cases_summary$pop_2018)
 
-  out$pop_2018[out$fips == "55"] <- sum(county_data$pop_2018)
-  out$pop_2018 <- as.integer(out$pop_2018)
-
-  out
+  list(summary = cases_summary,
+       daily = cases_daily)
 }
 
 
@@ -388,7 +402,17 @@ shape_case_data <- function(case_df) {
 process_confirmed_cases <- function(case_df) {
   clean_case_df <- shape_case_data(case_df)
 
-  dplyr::ungroup(clean_case_df) %>%
+  out_day <- clean_case_df$daily %>%
+    dplyr::mutate(
+      RowType = "Daily"
+    ) %>%
+    dplyr::select(Date = .data$post_date,
+           Region_ID = .data$fips,
+           Region = .data$geo_name,
+           RowType,
+           Count = .data$case_daily)
+
+  out_sum <- dplyr::ungroup(clean_case_df$summary) %>%
     dplyr::mutate(
       Count = .data$case_weekly_1 + .data$case_weekly_2,
       Burden = score_burden(curr = .data$case_weekly_1,
@@ -427,6 +451,8 @@ process_confirmed_cases <- function(case_df) {
       Conf_Case_Trajectory_P = .data$Trajectory_P,
       Conf_Case_Trajectory_FDR = .data$Trajectory_FDR
     )
+
+  dplyr::bind_rows(out_sum, out_day)
 }
 
 #' Shape EM Resource summary data for metric calculations
