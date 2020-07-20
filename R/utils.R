@@ -69,7 +69,7 @@ rolling_week <- function(date_vector, end_date = as.Date(Sys.Date())){
 
   min_date <- min(date_vector)
 
-  period_length <- as.numeric(difftime(end_date, min_date))
+  period_length <- as.numeric(difftime(end_date, min_date)) + 1
   period_weeks <- floor(period_length / 7)
 
   week_ends <-  c(end_date + lubridate::days(1), end_date - lubridate::weeks(1:period_weeks))
@@ -275,7 +275,7 @@ merge_metric_files <- function(case, hosp, test, cli, ili, total_ed, outfile) {
 
   #Write out a .csv
   message("Writing file to ", outfile, na = "")
-  write_csv(out, outfile)
+  write_csv(out, outfile, na = "")
 
   return(invisible(out))
 }
