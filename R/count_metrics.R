@@ -685,7 +685,14 @@ process_hospital <- function(hosp_df) {
                   Hosp_COVID_px_Trajectory = COVID_px_Trajectory,
                   Hosp_COVID_px_Trajectory_Class = COVID_px_Trajectory_Class,
                   Hosp_COVID_ICUpx_Trajectory = COVID_ICUpx_Trajectory,
-                  Hosp_COVID_ICUpx_Trajectory_Class = COVID_ICUpx_Trajectory_Class)
+                  Hosp_COVID_ICUpx_Trajectory_Class = COVID_ICUpx_Trajectory_Class) %>%
+    dplyr::mutate(
+      Hosp_PrctBeds_Used = 100 - Hosp_PrctBeds_IBA,
+      Hosp_PrctICU_Used = 100 - Hosp_PrctICU_IBA,
+      Hosp_Beds_moving_avg = zoo::rollapply(Hosp_PrctBeds_Used, 7, mean, fill = NA, align = "right"),
+      Hosp_ICU_moving_avg = zoo::rollapply(Hosp_PrctICU_Used, 7, mean, fill = NA, align = "right"),
+      Hosp_Vent_moving_avg = zoo::rollapply(Hosp_PrctVent_Used, 7, mean, fill = NA, align = "right")
+    )
 }
 
 #' Shape Testing summary data for metric calculations
