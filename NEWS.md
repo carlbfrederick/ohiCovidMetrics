@@ -1,3 +1,38 @@
+# ohiCovidMetrics 0.7.0
+
+This large jump represents work such that all metrics topics are functional,
+but still need to confirm that the output is identical for 1.0.0 version
+
+## Enhancements
+- added function to pull confirmed case metric directly from WEDSS
+- fixed 'tests' in the Vignette introduced by output data format changes
+- added functions to compute metrics for
+    - Hospital Capacity 
+    - CLI (Covid Like Illnesses)
+    - ILI (Influenze Like Illnesses)
+    - Testing
+    - Total Emergency Department Visits
+- Added function to merge metric output together to streamline Tableau build
+- All functions now output summary and daily metrics for Tableau dashboard
+- Updated documentation so that all output variables of the `process_*()`
+  functions are described.
+
+## Breaking Changes
+- moved the `clean_*()` functions into the `pull_*()` functions
+- moved the `shape_*_data()` functions into the `process_*()` functions
+  to simplify user API
+    - However, I have temporarily added the `OLD_process_confirmed_cases()`
+      function to the package to ease transition to exclusive use of this
+      package to produce the metrics.
+
+## Bug fixes
+
+- Fixed a bug in `rolling_weeks()` in which periods that were a multiple 
+  of 7 days the earliest week was 7 NAs instead of a count.  Now there 
+  can only be 0-6 NAs to start the week vector.
+- Fixed bug in `pull_histTable()` where some fields were incorrectly 
+  imported as character instead of integer
+
 # ohiCovidMetrics 0.1.2
 
 This patch fixes a small bug in the process_case_metrics() function that

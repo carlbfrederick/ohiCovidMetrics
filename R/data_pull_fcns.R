@@ -458,7 +458,7 @@ clean_hospital <- function(hosp, end_date) {
 #'
 #' @param bcd_query SQL query string for data from BCD table
 #' @param lab_query SQL query string for data from Lab table
-#' @param test_Vol_path .xlsx file containing testing volume target this
+#' @param test_vol_path .xlsx file containing testing volume target this
 #'                      file must have a worksheet named weekly and it
 #'                      pulls the second (Area) and third column (Current
 #'                      Month Targets).

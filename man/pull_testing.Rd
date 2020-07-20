@@ -14,15 +14,15 @@ pull_testing(bcd_query, lab_query, conn, test_vol_path, end_date = NULL)
 \item{conn}{connection to database (see \code{\link[RODBC]{odbcConnect}})
 or \code{\link[odbc]{OdbcConnection}}}
 
+\item{test_vol_path}{.xlsx file containing testing volume target this
+file must have a worksheet named weekly and it
+pulls the second (Area) and third column (Current
+Month Targets).}
+
 \item{end_date}{(default = NULL) If specified it is the end date of the
 time series that you wish to analyze. It should be something
 coercible to Date format with as.Date. If you want all data
 leave it blank.}
-
-\item{test_Vol_path}{.xlsx file containing testing volume target this
-file must have a worksheet named weekly and it
-pulls the second (Area) and third column (Current
-Month Targets).}
 }
 \value{
 a data.frame
