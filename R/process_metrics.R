@@ -852,10 +852,14 @@ process_ili <- function(ili_df, ili_threshold_path) {
     dplyr::left_join(readr::read_csv(ili_threshold_path,
                                      col_types = readr::cols(
                                        Region = col_character(),
-                                       ILI_baseline = col_double(),
-                                       ILI_threshold = col_double()
+                                       ILI_avg = col_double(),
+                                       ILI_sd = col_double(),
+                                       SD_2 = col_double(),
+                                       SD_4 = col_double()
                                      )), by = "Region") %>%
     dplyr::mutate(
+      ILI_baseline = ILI_avg + SD_2,
+      ILI_threshold = ILI_avg + SD_4,
       Over_baseline = dplyr::if_else(ILI_perc >= ILI_baseline, 1L, 0L),
       Over_threshold = dplyr::if_else(ILI_perc >= ILI_threshold, 1L, 0L),
       moving_avg = zoo::rollapply(ILI_perc, 3, mean, fill = NA, align = "right"),
