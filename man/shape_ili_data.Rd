@@ -11,18 +11,8 @@ shape_ili_data(ili_df)
 ILI metrics}
 }
 \value{
-a list of data.frames. The "summary" data.frame has one row per
+a list of data.frames. The "daily" data.frame has one row per
 county, state, and HERC region with the following columns
-\describe{
-  \item{Region}{Name of geography}
-  \item{Region_ID}{FIPS Code and/or region identifier}
-  \item{Date}{Date of emergency dept visit}
-  \item{RowType}{Are row values summary or daily values}
-  \item{Total_Visits}{Total ED visits for the day}
-  \item{ILI_Visits}{Count of ILI ED visits for the day}
-}
-and the "daily" data.frame has one row per county, state, and HERC region
-per day for the two week period with the following columns
 \describe{
   \item{Region}{Name of geography}
   \item{Region_ID}{FIPS Code and/or region identifier}

@@ -735,18 +735,8 @@ process_cli <- function(cli_df){
 #'
 #' @inheritParams process_ili
 #'
-#' @return a list of data.frames. The "summary" data.frame has one row per
+#' @return a list of data.frames. The "daily" data.frame has one row per
 #' county, state, and HERC region with the following columns
-#' \describe{
-#'   \item{Region}{Name of geography}
-#'   \item{Region_ID}{FIPS Code and/or region identifier}
-#'   \item{Date}{Date of emergency dept visit}
-#'   \item{RowType}{Are row values summary or daily values}
-#'   \item{Total_Visits}{Total ED visits for the day}
-#'   \item{ILI_Visits}{Count of ILI ED visits for the day}
-#' }
-#' and the "daily" data.frame has one row per county, state, and HERC region
-#' per day for the two week period with the following columns
 #' \describe{
 #'   \item{Region}{Name of geography}
 #'   \item{Region_ID}{FIPS Code and/or region identifier}
@@ -775,21 +765,10 @@ process_cli <- function(cli_df){
 shape_ili_data <- function(ili_df) {
   max_date <- max(ili_df$Visit_Date, na.rm = TRUE)
 
-  ili_daily <- dplyr::filter(ili_df, Visit_Date >= max_date - lubridate::days(13)) %>%
-    dplyr::mutate(
-      RowType = "Daily"
-    )  %>%
-    dplyr::select(Region = County,
-                  Region_ID = fips,
-                  Date = Visit_Date,
-                  RowType,
-                  Total_Visits,
-                  ILI_Visits)
-
-  ili_summary <- ili_df %>%
+  ili_out <- dplyr::filter(ili_df, Visit_Date >= max_date - lubridate::days(13)) %>%
     dplyr::mutate(
       ILI_perc = if_else(Total_Visits > 0, 100 * (ILI_Visits / Total_Visits), 0),
-      RowType = "Summary"
+      RowType = "Daily"
     ) %>%
     dplyr::select(Region = County,
                   Region_ID = fips,
@@ -799,8 +778,7 @@ shape_ili_data <- function(ili_df) {
                   ILI_Visits,
                   ILI_perc)
 
-  list(daily = ili_daily,
-       summary = ili_summary)
+  list(daily = ili_out)
 }
 
 #' Process the shaped ILI data into a Tableau ready format
@@ -840,15 +818,7 @@ shape_ili_data <- function(ili_df) {
 process_ili <- function(ili_df, ili_threshold_path) {
   clean_ili_df <- shape_ili_data(ili_df)
 
-  ili_daily <- clean_ili_df$daily %>%
-    dplyr::select(Region,
-                  Region_ID,
-                  Date,
-                  RowType,
-                  ILI_Total_Visits = Total_Visits,
-                  ILI_Visits)
-
-  ili_summary <- clean_ili_df$summary %>%
+  ili_daily  <- clean_ili_df$summary %>%
     dplyr::left_join(readr::read_csv(ili_threshold_path,
                                      col_types = readr::cols(
                                        Region = col_character(),
@@ -882,7 +852,7 @@ process_ili <- function(ili_df, ili_threshold_path) {
                   ILI_Status = Status,
                   ILI_Moving_Avg = moving_avg)
 
-  dplyr::bind_rows(ili_summary, ili_daily)
+  ili_daily
 }
 
 
