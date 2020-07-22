@@ -549,9 +549,10 @@ clean_testing <- function(bcd, lab, test_vol, end_date) {
       Testing_Volume = 2 * Testing_Volume
     )
 
-  test_cty <- dplyr::left_join(test_raw, test_vol, by = "Area") %>%
-    dplyr::left_join(dplyr::select(county_data, Area = county, Region_ID = fips, herc_region),
-                     by = "Area")
+  test_cty <- dplyr::left_join(test_raw,
+                               dplyr::select(county_data, Area = county,
+                                             Region_ID = fips, herc_region),
+                               by = "Area")
 
   #add on HERC rows and WI rows by date
   test_herc <- test_cty %>%
@@ -573,7 +574,9 @@ clean_testing <- function(bcd, lab, test_vol, end_date) {
   bind_rows(test_cty, test_herc, test_state) %>%
     dplyr::ungroup() %>%
     dplyr::select(-herc_region) %>%
-    arrange(Area, resultdateonly)
+    arrange(Area, resultdateonly) %>%
+    dplyr::left_join(test_vol, by = "Area")
+
 
 }
 
