@@ -64,7 +64,7 @@ check_nonneg <- function(val, arg.name, verbose = TRUE) {
 #'   )
 rolling_week <- function(date_vector, end_date = as.Date(Sys.Date())){
   #Coerce to dates
-  date_vector <- as.Date(date_vector)
+  date_vector <- as.Date(date_vector, tz = "America/Chicago")
   end_date = as.Date(end_date)
 
   min_date <- min(date_vector)
@@ -203,8 +203,8 @@ clean_reversals <- function(daily_time_series, verbose = TRUE) {
 #'         County, Date)
 #'
 fill_dates <- function(df, grouping_vars, date_var) {
-  min_date <- as.Date(min(df[[date_var]], na.rm=TRUE))
-  max_date <- as.Date(max(df[[date_var]], na.rm=TRUE))
+  min_date <- as.Date(min(df[[date_var]], na.rm=TRUE), tz = "America/Chicago")
+  max_date <- as.Date(max(df[[date_var]], na.rm=TRUE), tz = "America/Chicago")
 
   #Grab lists of variables names
   other_vars <- setdiff(names(df), c(grouping_vars, date_var))

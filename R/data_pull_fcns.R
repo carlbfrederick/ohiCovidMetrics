@@ -168,9 +168,9 @@ clean_histTable <- function(hdt, end_date) {
     dplyr::left_join(dplyr::select(county_data, .data$fips, .data$herc_region, .data$pop_2018), by = "fips")
 
   if (inherits(hdt$post_date, "POSIXt")) {
-    hdt$post_date <- as.Date(hdt$post_date)
+    hdt$post_date <- as.Date(hdt$post_date, tz = "America/Chicago")
   } else {
-    hdt$post_date <- as.Date(as.POSIXct(hdt$post_date/1000, origin = "1970-01-01 00:00.000 UTC"))
+    hdt$post_date <- as.Date(as.POSIXct(hdt$post_date/1000, origin = "1970-01-01 00:00.000 UTC"), tz = "America/Chicago")
   }
 
   if (!is.null(end_date)) {
@@ -326,7 +326,7 @@ pull_hospital <- function(file, end_date = NULL) {
 #' }
 clean_hospital <- function(hosp, end_date) {
   #Grab Run date to append when we are finished
-  run_date <- unique(as.Date(hosp$Run_Date))
+  run_date <- unique(as.Date(hosp$Run_Date, tz = "America/Chicago"))
   if (length(run_date) > 1) {
     stop("The input file has more than one Run_Date. Fix this and try again.")
   }
@@ -492,7 +492,7 @@ pull_testing <- function(bcd_query, lab_query, conn, test_vol_path, end_date = N
   test_vol <- readxl::read_excel(test_vol_path, sheet = "Weekly") %>%
     dplyr::select(2:3) %>%
     dplyr::mutate(
-      Region = if_else(Region == "Saint Croix", "St. Croix", Region)
+      Region = if_else(Region == "Saint Croix", "St. Croix", sub("HERC\\|", "", Region))
     )
 
   clean_testing(bcd, lab, test_vol, end_date)
@@ -709,7 +709,7 @@ calc_num_tests <- function(bcd, lab) {
     dplyr::mutate(
       DerivedCounty = if_else(trimws(DerivedCounty)== "Fond Du Lac",
                               "Fond du Lac", trimws(DerivedCounty)),
-      resultdateonly = as.Date(date)
+      resultdateonly = as.Date(date, tz = "America/Chicago")
     ) %>%
     dplyr::group_by(resultdateonly, DerivedCounty) %>%
     dplyr::count(name = "Tests") %>%
@@ -799,10 +799,10 @@ calc_pos_neg <- function(lab) {
   #Assemble basins ----
   lab2 <- dplyr::bind_rows(basin1, basin2, basin3) %>%
     dplyr::mutate(
-      dateonly = as.Date(date),
+      dateonly = as.Date(date, tz = "America/Chicago"),
       newid = paste(IncidentID, dateonly, sep = ""),
       DerivedCounty = trimws(DerivedCounty),
-      resultdateonly = as.Date(ResultDate)
+      resultdateonly = as.Date(ResultDate, tz = "America/Chicago")
     ) %>%
     dplyr::filter(!is.na(resultdateonly))
 
@@ -909,7 +909,7 @@ clean_cli <- function(cli){
     dplyr::mutate(
       ED_Visit = dplyr::if_else(FacilityType == "Emergency Care", 1L, 0L),
       Non_Resident = dplyr::if_else(grepl("WI_", Region), 0L, 1L),
-      Visit_Date = as.Date(C_Visit_Date_Time),
+      Visit_Date = as.Date(C_Visit_Date_Time, tz = "America/Chicago"),
       Hx_County = sub("WI_", "", HospitalRegion),
       County = sub("WI_", "", Region)
     ) %>%
@@ -987,7 +987,7 @@ clean_ili <- function(ili) {
     dplyr::mutate(
       ED_Visit = dplyr::if_else(FacilityType == "Emergency Care", 1L, 0L),
       Non_Resident = dplyr::if_else(grepl("WI_", Region), 0L, 1L),
-      Visit_Date = as.Date(C_Visit_Date_Time),
+      Visit_Date = as.Date(C_Visit_Date_Time, tz = "America/Chicago"),
       County = sub("WI_", "", Region),
       Total_Visits = ifelse(is.na(C_BioSense_ID),0,1),
       ILI_Visits = ifelse(grepl("ILI CCDD v1", CCDDCategory_flat),1,0),
@@ -1050,7 +1050,7 @@ clean_total_ed <- function(total_ed) {
   total_ed_raw <- total_ed %>%
       dplyr::mutate(
         ED_Visit = dplyr::if_else(FacilityType == "Emergency Care", 1L, 0L),
-        Visit_Date = as.Date(C_Visit_Date_Time),
+        Visit_Date = as.Date(C_Visit_Date_Time, tz = "America/Chicago"),
         County = sub("WI_", "", Region)
       ) %>%
       dplyr::filter(ED_Visit == 1L)
