@@ -471,6 +471,8 @@ clean_hospital <- function(hosp, end_date) {
 #' @importFrom odbc dbGetQuery
 #' @importFrom RODBC sqlQuery
 #' @importFrom dplyr %>%
+#' @importFrom dplyr select
+#' @importFrom dplyr mutate
 #' @importFrom readxl read_excel
 #'
 #' @examples
@@ -488,7 +490,10 @@ pull_testing <- function(bcd_query, lab_query, conn, test_vol_path, end_date = N
 
   #read in test_volume
   test_vol <- readxl::read_excel(test_vol_path, sheet = "Weekly") %>%
-    select(2:3)
+    dplyr::select(2:3) %>%
+    dplyr::mutate(
+      Region = if_else(Region == "Saint Croix", "St. Croix", Region)
+    )
 
   clean_testing(bcd, lab, test_vol, end_date)
 }
