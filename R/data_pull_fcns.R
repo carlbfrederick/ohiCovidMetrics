@@ -897,8 +897,17 @@ pull_essence <- function(api_url, start_date, end_date = NULL, metric = c("cli",
 #' @importFrom dplyr filter
 #' @importFrom dplyr mutate
 #' @importFrom dplyr if_else
-#' @importFrom dplyr left_join
+#' @importFrom dplyr full_join
 #' @importFrom dplyr select
+#' @importFrom dplyr across
+#' @importFrom dplyr group_by
+#' @importFrom dplyr first
+#' @importFrom dplyr rename
+#' @importFrom dplyr summarize
+#' @importFrom dplyr bind_rows
+#' @importFrom dplyr ungroup
+#' @importFrom dplyr arrange
+#' @importFrom tidyr complete
 #'
 #' @examples
 #' \dontrun{
@@ -922,10 +931,13 @@ clean_cli <- function(cli){
       DailyED = sum(ED_Visit),
       .groups = "drop"
     ) %>%
-    dplyr::left_join(dplyr::select(county_data, County = county, fips, herc_region, pop_2018),
+    dplyr::full_join(dplyr::select(county_data, County = county, fips, herc_region, pop_2018),
                      by = "County") %>%
-    fill_dates(grouping_vars = c("County", "fips", "herc_region", "pop_2018"),
-               date_var = "Visit_Date")
+    tidyr::complete(County, Visit_Date,
+                    fill = list("DailyED" = 0L)) %>%
+    dplyr::group_by(County) %>%
+    dplyr::mutate(dplyr::across(fips:pop_2018, ~dplyr::first(.x[!is.na(.x)]))) %>%
+    dplyr::filter(!is.na(Visit_Date))
 
   #Aggregate to HERC and State and Append
   cli_herc <- cli_cty %>%
@@ -977,6 +989,7 @@ clean_cli <- function(cli){
 #' @importFrom dplyr bind_rows
 #' @importFrom dplyr arrange
 #' @importFrom dplyr ungroup
+#' @importFrom tidyr complete
 #'
 #' @examples
 #' \dontrun{
@@ -1002,10 +1015,13 @@ clean_ili <- function(ili) {
       dplyr::across(c("Total_Visits", "ILI_Visits", "ILI_dx"), sum),
       .groups = "drop"
     )  %>%
-    dplyr::left_join(dplyr::select(county_data, County = county, fips, herc_region),
+    dplyr::full_join(dplyr::select(county_data, County = county, fips, herc_region),
                      by = "County") %>%
-    fill_dates(grouping_vars = c("County", "fips", "herc_region"),
-               date_var = "Visit_Date")
+    tidyr::complete(County, Visit_Date,
+                    fill = list("Total_Visits" = 0L, "ILI_Visits" = 0L, "ILI_dx" = 0L)) %>%
+    dplyr::group_by(County) %>%
+    dplyr::mutate(dplyr::across(fips:herc_region, ~dplyr::first(.x[!is.na(.x)]))) %>%
+    dplyr::filter(!is.na(Visit_Date))
 
   #Aggregate to HERC and State and Append
   ili_herc <- ili_cty %>%
