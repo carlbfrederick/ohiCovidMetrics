@@ -863,6 +863,10 @@ calc_pos_neg <- function(lab) {
 #'   #write me an example please
 #' }
 pull_essence <- function(api_url, start_date, end_date = NULL, metric = c("cli", "ili", "total_ed")) {
+  if (metric == "total_ed") {
+    message("The TOTAL ED Metric has been removed from the dashboard, this function has been deprecated and will be phased out soon.")
+  }
+
   start_date <- as.Date(start_date)
   if (is.null(end_date)) {
     end_date <- Sys.Date()
@@ -1052,60 +1056,3 @@ clean_ili <- function(ili) {
     dplyr::ungroup()
 }
 
-#' Clean ESSENCE data for Total ED metrics
-#'
-#' @param total_ed data.frame from \code{\link{pull_essence}}
-#'
-#' @return a cleaned data.frame
-#'
-#' @examples
-#' \dontrun{
-#'   #write me an example please
-#' }
-clean_total_ed <- function(total_ed) {
-  total_ed_raw <- total_ed %>%
-      dplyr::mutate(
-        ED_Visit = dplyr::if_else(FacilityType == "Emergency Care", 1L, 0L),
-        Visit_Date = as.Date(C_Visit_Date_Time, tz = "America/Chicago"),
-        County = sub("WI_", "", Region)
-      ) %>%
-      dplyr::filter(ED_Visit == 1L)
-
-  #retangularize the dates too so all counties are represented for all days
-  total_ed_cty <- total_ed_raw %>%
-    dplyr::group_by(County, Visit_Date) %>%
-    dplyr::summarize(
-      dplyr::across(c("ED_Visit"), sum),
-      .groups = "drop"
-    )  %>%
-    dplyr::left_join(dplyr::select(county_data, County = county, fips, herc_region),
-                     by = "County") %>%
-    fill_dates(grouping_vars = c("County", "fips", "herc_region"),
-               date_var = "Visit_Date")
-
-  total_ed_herc <- total_ed_cty %>%
-    dplyr::group_by(herc_region, Visit_Date) %>%
-    dplyr::summarize(
-      dplyr::across(c("ED_Visit"), sum),
-      .groups = "drop"
-    ) %>%
-    dplyr::rename(fips = herc_region) %>%
-    dplyr::mutate(
-      County = fips
-    )
-
-  total_ed_state <- total_ed_cty %>%
-    dplyr::group_by(Visit_Date) %>%
-    dplyr::summarize(
-      dplyr::across(c("ED_Visit"), sum),
-      .groups = "drop"
-    ) %>%
-    dplyr::mutate(
-      County = "Wisconsin",
-      fips = "55"
-    )
-
-  dplyr::bind_rows(total_ed_herc, total_ed_state) %>%
-    dplyr::arrange(County, Visit_Date) %>%
-    dplyr::ungroup()
-}
