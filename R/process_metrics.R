@@ -539,15 +539,15 @@ process_testing <- function(testing_df) {
         TRUE                                            ~ "ERROR"
       ),
       testing_composite = dplyr::case_when(
-        percent_positive_class == "< 5% positive" & percent_volume_class == ">= 100% testing goal"                   ~ "Robust",
-        percent_positive_class == "< 5% positive" & percent_volume_class ==  ">= 75% & < 100% testing goal"          ~ "Adequate",
-        percent_positive_class == "< 5% positive" & percent_volume_class ==  "< 75% testing goal"                    ~ "Inadequate",
-        percent_positive_class == ">= 5% & < 10% positive" & percent_volume_class ==  ">= 100% testing goal"         ~ "Adequate",
-        percent_positive_class == ">= 5% & < 10% positive" & percent_volume_class ==  ">= 75% & < 100% testing goal" ~ "Adequate",
-        percent_positive_class == ">= 5% & < 10% positive" & percent_volume_class ==  "< 75% testing goal"           ~ "Inadequate",
-        percent_positive_class == ">= 10% positive" & percent_volume_class ==  ">= 100% testing goal"                ~ "Inadequate",
-        percent_positive_class == ">= 10% positive" & percent_volume_class ==  ">= 75% & < 100% testing goal"        ~ "Inadequate",
-        percent_positive_class == ">= 10% positive" & percent_volume_class ==  "< 75% testing goal"                  ~ "Inadequate",
+        percent_positive_class == "< 5% positive" & percent_volume_class == ">= 100% testing goal"                   ~ "Close to",
+        percent_positive_class == "< 5% positive" & percent_volume_class ==  ">= 75% & < 100% testing goal"          ~ "Higher than",
+        percent_positive_class == "< 5% positive" & percent_volume_class ==  "< 75% testing goal"                    ~ "Substantially Higher than",
+        percent_positive_class == ">= 5% & < 10% positive" & percent_volume_class ==  ">= 100% testing goal"         ~ "Higher than",
+        percent_positive_class == ">= 5% & < 10% positive" & percent_volume_class ==  ">= 75% & < 100% testing goal" ~ "Higher than",
+        percent_positive_class == ">= 5% & < 10% positive" & percent_volume_class ==  "< 75% testing goal"           ~ "Substantially Higher than",
+        percent_positive_class == ">= 10% positive" & percent_volume_class ==  ">= 100% testing goal"                ~ "Substantially Higher than",
+        percent_positive_class == ">= 10% positive" & percent_volume_class ==  ">= 75% & < 100% testing goal"        ~ "Substantially Higher than",
+        percent_positive_class == ">= 10% positive" & percent_volume_class ==  "< 75% testing goal"                  ~ "Substantially Higher than",
         TRUE                                                                                                         ~ "ERROR"
       )
     ) %>%
