@@ -818,7 +818,7 @@ shape_ili_data <- function(ili_df) {
 process_ili <- function(ili_df, ili_threshold_path) {
   clean_ili_df <- shape_ili_data(ili_df)
 
-  ili_daily  <- clean_ili_df$summary %>%
+  ili_daily  <- clean_ili_df$daily %>%
     dplyr::left_join(readr::read_csv(ili_threshold_path,
                                      col_types = readr::cols(
                                        Region = col_character(),
