@@ -27,10 +27,3 @@ a Tableau ready data.frame with the following columns:
 \description{
 OBSOLETE - VERSION Process the shaped confirmed case data.frame into a Tableau ready format
 }
-\examples{
-library(dplyr)
-
-output <- pull_histTable() \%>\%
-  shape_case_data() \%>\%
-  process_confirmed_cases()
-}

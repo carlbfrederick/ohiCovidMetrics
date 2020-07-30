@@ -29,7 +29,7 @@ expect_error(ohiCovidMetrics:::check_nonneg(curr_neg, arg.name = "curr"), patter
 suppressPackageStartupMessages(library(dplyr))
 
 date_vector1 <- seq.Date(from = as.Date("2020-01-01"), to = as.Date("2020-06-09"), by = 1)
-date_vector2 <- sample(date_vector1, 78, replace = FALSE)
+date_vector2 <- unique(as.Date("2020-01-01"), sample(date_vector1, 78, replace = FALSE))
 
 vec_consec <- dplyr::tibble(my_date = date_vector1) %>%
   dplyr::mutate(

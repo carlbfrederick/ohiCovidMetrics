@@ -108,7 +108,6 @@ shape_case_data <- function(case_df) {
 #' library(dplyr)
 #'
 #' output <- pull_histTable() %>%
-#'   shape_case_data() %>%
 #'   process_confirmed_cases()
 process_confirmed_cases <- function(case_df) {
   clean_case_df <- shape_case_data(case_df)

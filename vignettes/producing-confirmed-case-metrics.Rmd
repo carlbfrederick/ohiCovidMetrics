@@ -40,7 +40,7 @@ I stopped the time series at 17 June 2020 to be able to comparet the results to 
 official file prepared by Jeff Bond for the dashboard.
 
 ```{r pull-hist-table}
-hdt_raw <- pull_histTable(end_date = "2020-06-17") 
+hdt_clean <- pull_histTable(end_date = "2020-06-17") 
 ```
 
 This function does six things: 
@@ -52,7 +52,7 @@ This function does six things:
 3. Recursively corrects any reversals in the confirmed cases time series using 
    the `clean_reversals()` function. Note: this is done at the county level and 
    then aggregated up to the State level.
-4. Aggregates county data up to the HERC region and State levelsd
+4. Aggregates county data up to the HERC region and state levels
 5. Appends population data
 6. Finally, it produces a cumulative case time-series based on the cleaned version. 
 
@@ -60,7 +60,7 @@ This function does six things:
 
 The result is a data.frame where there is one row per county/HERC region/state per day.
 
-## Preparing the data to calculate metrics
+### Preparing the data to calculate metrics
 
 The confirmed case metrics are all based on 7 day bins looking back from the 
 current date, e.g., For data ending on 10 June 2020, the 7 day bins are:
@@ -70,12 +70,8 @@ current date, e.g., For data ending on 10 June 2020, the 7 day bins are:
 - 21 May 2020 through 27 May 2020,
 
 and so on. To make things easier, we need to aggregate the daily counts 
-within geographies, or regions, and 7 day bins. This can be done with 
-the `shape_case_data()` function: 
-
-```{r shape_case_data}
-hdt_clean <- shape_case_data(hdt_raw)
-```
+within geographies, or regions, and 7 day bins. This is done with 
+the internal `shape_case_data()` function that is called by `pull_histTable()`. 
 
 This function:
 
@@ -191,7 +187,7 @@ columns because the Tableau team just removes them.*
 
 ***Note: I have updated the output file to meet the Tableau Team's Specifications***
 
-```{r import-jeff}
+```{r import-jeff, eval = FALSE}
 metrics_jeff <- read_xlsx("../inst/file_for_vignette/OHI_BBB_Surveillance_CaseMetric_20200617.xlsx") %>% 
   mutate(
     Region = ifelse(Region == "Saint Croix", "St. Croix", Region),
@@ -210,7 +206,7 @@ identical(sort(unique(metrics_jeff$Region)), sort(unique(hdt_out$Region)))
 
 #Burden
 inner_join(select(metrics_jeff, Region_ID, Region, Jeff_Burden = Burden),
-           select(hdt_out, Region_ID, Region, My_Burden = Burden),
+           select(hdt_out, Region_ID, Region, My_Burden = Case_Burden),
            by = c("Region_ID", "Region")) %>% 
   mutate(diff = Jeff_Burden - My_Burden) %>% 
   filter(diff != 0) 
@@ -277,10 +273,10 @@ cases use case data from more than the past two weeks, we need to start
 with the raw data and re-aggregate it into weekly counts within regions.
 
 ```{r agg-raw-to-weekly, message = FALSE}
-last_date <- max(hdt_raw$post_date)
+last_date <- max(hdt_clean$post_date)
 
 #Prep Data for CUSUM functions
-hdt_cusum <- hdt_raw %>% 
+hdt_cusum <- hdt_clean %>% 
   group_by(fips, geo_name) %>% 
   mutate(
     week_num = rolling_week(date_vector = post_date,

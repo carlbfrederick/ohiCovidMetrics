@@ -33,6 +33,5 @@ Process the shaped confirmed case data.frame into a Tableau ready format
 library(dplyr)
 
 output <- pull_histTable() \%>\%
-  shape_case_data() \%>\%
   process_confirmed_cases()
 }

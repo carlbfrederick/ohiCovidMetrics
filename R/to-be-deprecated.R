@@ -23,13 +23,6 @@
 #' @importFrom dplyr ungroup
 #' @importFrom dplyr if_else
 #' @importFrom rlang .data
-#'
-#' @examples
-#' library(dplyr)
-#'
-#' output <- pull_histTable() %>%
-#'   shape_case_data() %>%
-#'   process_confirmed_cases()
 OLD_process_confirmed_cases <- function(clean_case_df) {
   dplyr::ungroup(clean_case_df) %>%
     dplyr::mutate(

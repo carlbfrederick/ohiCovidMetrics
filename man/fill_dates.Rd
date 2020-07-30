@@ -14,7 +14,7 @@ fill_dates(df, grouping_vars, date_var)
 names that define the grouping structure that will
 uniquely identify the relavant units of observation}
 
-\item{date_var}{}
+\item{date_var}{name of the date variable to be filled in}
 }
 \value{
 the same data.frame with any required dates filled in for each
@@ -25,11 +25,16 @@ Ensure that all units of observation have all dates within the max and min
 of the date variable.
 }
 \examples{
+library(dplyr)
+
 set.seed(123)
 tmp <- tibble(County = sample(LETTERS[1:3], 15, replace = TRUE),
               Date = sample(seq(as.Date("2020-07-01"), as.Date("2020-07-07"), by = 1),
                             15, replace = TRUE)) \%>\%
   distinct(.) \%>\%
+  mutate(
+    outcome_var = sample(2:10, size = nrow(.), replace = TRUE)
+  ) \%>\%
   arrange(County, Date)
 
 #Compare
