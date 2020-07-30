@@ -4,12 +4,17 @@
 \alias{calc_num_tests}
 \title{INTERNAL function to calculate total tests per county per day}
 \usage{
-calc_num_tests(bcd, lab)
+calc_num_tests(bcd, lab, end_date)
 }
 \arguments{
 \item{bcd}{data.frame}
 
 \item{lab}{data.frame}
+
+\item{end_date}{(default = NULL) If specified it is the end date of the
+time series that you wish to analyze. It should be something
+coercible to Date format with as.Date. If you want all data
+leave it blank.}
 }
 \value{
 data.frame

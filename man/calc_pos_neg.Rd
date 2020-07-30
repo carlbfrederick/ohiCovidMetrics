@@ -4,10 +4,15 @@
 \alias{calc_pos_neg}
 \title{INTERNAL function to calculate ingredients for percent positive per county per day}
 \usage{
-calc_pos_neg(lab)
+calc_pos_neg(lab, end_date)
 }
 \arguments{
 \item{lab}{data.frame}
+
+\item{end_date}{(default = NULL) If specified it is the end date of the
+time series that you wish to analyze. It should be something
+coercible to Date format with as.Date. If you want all data
+leave it blank.}
 }
 \value{
 data.frame

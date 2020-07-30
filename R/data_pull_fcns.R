@@ -524,7 +524,7 @@ clean_testing <- function(bcd, lab, test_vol, end_date) {
   total_tests <- calc_num_tests(bcd, lab)
 
   message("  Counting the number of positive and negative specimens...")
-  specimens <- calc_pos_neg(lab)
+  specimens <- calc_pos_neg(lab, as.Date(end_date))
 
   message("  Final wrangling on the testing data ...")
 
@@ -536,10 +536,10 @@ clean_testing <- function(bcd, lab, test_vol, end_date) {
   #filter up to end date and discard dates before Jan 01, 2020 and missing dates
   if (!is.null(end_date)) {
     test_raw <- dplyr::filter(test_raw, .data$resultdateonly <= as.Date(end_date),
-                                        .data$resultdateonly >= as.Date('2020-01-01'),
+                                        .data$resultdateonly >= as.Date(end_date) - 13,
                                         !is.na(.data$resultdateonly))
   } else {
-    test_raw <- dplyr::filter(test_raw, .data$resultdateonly >= as.Date('2020-01-01'),
+    test_raw <- dplyr::filter(test_raw, .data$resultdateonly >= Sys.Date() - 13,
                                         !is.na(.data$resultdateonly))
   }
 
@@ -581,8 +581,6 @@ clean_testing <- function(bcd, lab, test_vol, end_date) {
     dplyr::select(-herc_region) %>%
     arrange(Area, resultdateonly) %>%
     dplyr::left_join(test_vol, by = "Area")
-
-
 }
 
 #' INTERNAL function to calculate total tests per county per day
@@ -607,7 +605,10 @@ clean_testing <- function(bcd, lab, test_vol, end_date) {
 #' \dontrun{
 #'   #write me an example
 #' }
-calc_num_tests <- function(bcd, lab) {
+calc_num_tests <- function(bcd, lab, end_date) {
+  max_date <- end_date
+  min_date <- end_date - 13
+
   mergedf <- dplyr::inner_join(bcd, lab, by = "IncidentID")
 
   #NOT A CASE
@@ -711,9 +712,11 @@ calc_num_tests <- function(bcd, lab) {
                               "Fond du Lac", trimws(DerivedCounty)),
       resultdateonly = as.Date(date, tz = "America/Chicago")
     ) %>%
+    dplyr::filter(!is.na(DerivedCounty),
+                  !DerivedCounty %in% c("Non-Wisconsin", "Unknown"),
+                  resultdateonly >= min_date & resultdateonly <= max_date) %>%
     dplyr::group_by(resultdateonly, DerivedCounty) %>%
     dplyr::count(name = "Tests") %>%
-    dplyr::filter(!is.na(DerivedCounty), !DerivedCounty %in% c("Non-Wisconsin", "Unknown")) %>%
     dplyr::rename(Area = DerivedCounty)
 }
 
@@ -741,7 +744,10 @@ calc_num_tests <- function(bcd, lab) {
 #' \dontrun{
 #'   #write me an example
 #' }
-calc_pos_neg <- function(lab) {
+calc_pos_neg <- function(lab, end_date) {
+  max_date <- end_date
+  min_date <- end_date - 13
+
   lab.result <- lab %>%
     dplyr::filter(!is.na(result)) %>%
     dplyr::mutate(
@@ -801,42 +807,62 @@ calc_pos_neg <- function(lab) {
     dplyr::mutate(
       dateonly = as.Date(date, tz = "America/Chicago"),
       newid = paste(IncidentID, dateonly, sep = ""),
-      DerivedCounty = trimws(DerivedCounty),
+      DerivedCounty = ifelse(trimws(DerivedCounty) == "Fond Du Lac",
+                             "Fond du Lac", trimws(DerivedCounty)),
       resultdateonly = as.Date(ResultDate, tz = "America/Chicago")
     ) %>%
     dplyr::filter(!is.na(resultdateonly))
 
+  #decided to assign first resultdateonly within the window to deduplicate rows
+  #but keep the totals consistent with the original code.
   lab2 %>%
-    dplyr::count(newid, result) %>%
-    tidyr::pivot_wider(id_cols = "newid",
-                  names_from = "result",
-                  values_from = "n",
-                  values_fill = 0) %>%
+    dplyr::filter(resultdateonly >= min_date & resultdateonly <= max_date) %>%
+    dplyr::group_by(newid) %>%
+    dplyr::arrange(result, resultdateonly) %>%
+    dplyr::mutate(
+      first_positive = dplyr::first(resultdateonly[result == "Positive"]),
+      first_negative = dplyr::first(resultdateonly[result %in% c("Inconclusive", "Indeterminate", "Negative")])
+    ) %>%
+    dplyr::count(newid, result, first_positive, first_negative) %>%
+    tidyr::pivot_wider(id_cols = c("newid", "first_positive", "first_negative"),
+                       names_from = "result",
+                       values_from = "n",
+                       values_fill = 0) %>%
     dplyr::mutate(
       notpositive = Inconclusive + Indeterminate + Negative,
+    ) %>%
+    dplyr::group_by(newid, first_positive, first_negative) %>%
+    dplyr::mutate(
+      anypos = sum(Positive),
+      anyneg = sum(notpositive),
       result2 = dplyr::case_when(
-        notpositive >= 1 & Positive == 0 ~ "NotPositive",
-        notpositive == 0 & Positive >= 1 ~ "Positive",
-        notpositive >= 1 & Positive >= 1 ~ "Positive",
+        anyneg >= 1 & anypos == 0 ~ "NotPositive",
+        anyneg == 0 & anypos >= 1 ~ "Positive",
+        anyneg >= 1 & anypos >= 1 ~ "Positive",
         TRUE ~ "other"
       )
     ) %>%
-    dplyr::full_join(lab2, by = "newid") %>%
+    dplyr::full_join(lab2_mydf, by = c("newid")) %>%
+    dplyr::filter(!is.na(result2)) %>%
     dplyr::mutate(
       DerivedCounty = if_else(trimws(DerivedCounty)== "Fond Du Lac",
                               "Fond du Lac", trimws(DerivedCounty))
     ) %>%
     dplyr::filter(!is.na(result2),
-           !is.na(DerivedCounty),
-           (!DerivedCounty %in% c("Non-Wisconsin", "Unknown"))) %>%
-    dplyr::select(newid, resultdateonly, result2, DerivedCounty) %>%
+                  !is.na(DerivedCounty),
+                  (!DerivedCounty %in% c("Non-Wisconsin", "Unknown")),
+                  (resultdateonly >= min_date & resultdateonly <= max_date)) %>%
+    dplyr::select(newid, result2, DerivedCounty, first_positive, first_negative) %>%
     dplyr::distinct() %>%
+    dplyr::mutate(
+      resultdateonly = dplyr::if_else(result2 == "NotPositive", first_negative, first_positive)
+    ) %>%
     dplyr::group_by(DerivedCounty, resultdateonly) %>%
     dplyr::count(result2) %>%
     tidyr::pivot_wider(id_cols = c("DerivedCounty", "resultdateonly"),
-                names_from = "result2",
-                values_from = "n",
-                values_fill = 0) %>%
+                       names_from = "result2",
+                       values_from = "n",
+                       values_fill = 0) %>%
     dplyr::rename(Area = DerivedCounty)
 }
 
