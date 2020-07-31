@@ -2,7 +2,7 @@
 % Please edit documentation in R/to-be-deprecated.R
 \name{OLD_process_confirmed_cases}
 \alias{OLD_process_confirmed_cases}
-\title{OBSOLETE - VERSION Process the shaped confirmed case data.frame into a Tableau ready format}
+\title{DEPRECATED - VERSION Process the shaped confirmed case data.frame into a Tableau ready format}
 \usage{
 OLD_process_confirmed_cases(clean_case_df)
 }
@@ -25,5 +25,5 @@ a Tableau ready data.frame with the following columns:
 }
 }
 \description{
-OBSOLETE - VERSION Process the shaped confirmed case data.frame into a Tableau ready format
+DEPRECATED - VERSION Process the shaped confirmed case data.frame into a Tableau ready format
 }

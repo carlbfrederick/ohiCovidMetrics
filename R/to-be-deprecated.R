@@ -1,4 +1,4 @@
-#' OBSOLETE - VERSION Process the shaped confirmed case data.frame into a Tableau ready format
+#' DEPRECATED - VERSION Process the shaped confirmed case data.frame into a Tableau ready format
 #'
 #' @param clean_case_df shaped case data produced by \code{\link{shape_case_data}}
 #'
@@ -24,6 +24,8 @@
 #' @importFrom dplyr if_else
 #' @importFrom rlang .data
 OLD_process_confirmed_cases <- function(clean_case_df) {
+  warning("THIS FUNCTION IS DEPRECATED AND WILL BE REMOVED SHORTLY")
+
   dplyr::ungroup(clean_case_df) %>%
     dplyr::mutate(
       Count = .data$case_weekly_1 + .data$case_weekly_2,
@@ -76,6 +78,8 @@ OLD_process_confirmed_cases <- function(clean_case_df) {
 #'   #write me an example please
 #' }
 clean_total_ed <- function(total_ed) {
+  warning("THIS FUNCTION IS DEPRECATED AND WILL BE REMOVED SHORTLY")
+
   total_ed_raw <- total_ed %>%
     dplyr::mutate(
       ED_Visit = dplyr::if_else(FacilityType == "Emergency Care", 1L, 0L),
@@ -123,3 +127,78 @@ clean_total_ed <- function(total_ed) {
     dplyr::ungroup()
 }
 
+#' DEPRECATED: Shape Total Emergency Department Visits data
+#'
+#' @inheritParams process_total_ed
+#'
+#' @return a list of data.frames. Currently, only the daily version since
+#' no summary metrics have been defined. The "daily" data.frame has one
+#' row per county, state, and HERC region per day for the two week period
+#' with the following columns
+#' \describe{
+#'   \item{Region}{Name of geography}
+#'   \item{Region_ID}{FIPS Code and/or region identifier}
+#'   \item{Date}{Date of emergency dept visit}
+#'   \item{RowType}{Are row values summary or daily values}
+#'   \item{Total_ED_Visits}{Total ED visits for the day}
+#' }
+#' \emph{Note}: The difference between Total_ED_Visits and ILI_Total_Visits
+#' is that the former metrics includes all traffic into emergency departments
+#' while the latter is restricted to Wisconsin residents.
+#'
+#' @importFrom lubridate days
+#' @importFrom dplyr %>%
+#' @importFrom dplyr filter
+#' @importFrom dplyr mutate
+#' @importFrom dplyr select
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+shape_total_ed_data <- function(total_ed_df) {
+  warning("THIS FUNCTION IS DEPRECATED AND WILL BE REMOVED SHORTLY")
+
+  max_date <- max(total_ed_df$Visit_Date, na.rm = TRUE)
+
+  total_ed_daily <- dplyr::filter(total_ed_df, Visit_Date >= max_date - lubridate::days(13)) %>%
+    dplyr::mutate(
+      RowType = "Daily"
+    )  %>%
+    dplyr::select(Region = County,
+                  Region_ID = fips,
+                  Date = Visit_Date,
+                  RowType,
+                  Total_ED_Visits = ED_Visit)
+
+  list(daily = total_ed_daily)
+}
+
+#' DEPRECATED: Process the shaped Total Emergency Department Visit data into a Tableau ready format
+#'
+#' @param total_ed_df data.frame produced by \code{\link{pull_essence}} for
+#'               Total ED metrics
+#'
+#' @return a Tableau ready data.frame with the following columns:
+#' \describe{
+#'   \item{Region}{Name of geography}
+#'   \item{Region_ID}{FIPS Code and/or region identifier}
+#'   \item{Date}{Date of emergency dept visit}
+#'   \item{RowType}{Are row values summary or daily values}
+#'   \item{Total_ED_Visits}{Total ED visits for the day}
+#' }
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+process_total_ed <- function(total_ed_df) {
+  warning("THIS FUNCTION IS DEPRECATED AND WILL BE REMOVED SHORTLY")
+  clean_total_ed_df <- shape_total_ed_data(total_ed_df)
+
+  total_ed_daily <- clean_total_ed_df$daily
+
+  total_ed_daily
+}

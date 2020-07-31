@@ -247,8 +247,7 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' @param test     data.frame produced by \code{\link{process_testing}}
 #' @param cli      data.frame produced by \code{\link{process_cli}}
 #' @param ili      data.frame produced by \code{\link{process_ili}}
-#' @param total_ed data.frame produced by \code{\link{process_total_ed}}
-#' @param outfile file name (including path) for output data file
+#' @param outfile  file name (including path) for output data file
 #'
 #' @return invisibly returns the combined data
 #' @export
@@ -260,7 +259,7 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' \dontrun{
 #'   #add examples to me please,
 #' }
-merge_metric_files <- function(case, hosp, test, cli, ili, total_ed, outfile) {
+merge_metric_files <- function(case, hosp, test, cli, ili, outfile) {
   #Start with Cases and Testing
   out <- dplyr::full_join(case, test, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in Hospitalization
@@ -269,8 +268,6 @@ merge_metric_files <- function(case, hosp, test, cli, ili, total_ed, outfile) {
   out <- dplyr::full_join(out, cli, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in ILI
   out <- dplyr::full_join(out, ili, by = c("Date", "Region_ID", "Region", "RowType"))
-  #Add in Total ED Visits
-  out <- dplyr::full_join(out, total_ed, by = c("Date", "Region_ID", "Region", "RowType"))
   #Any data cleaning necessary?
 
   #ADD FIELD DESCRIBING TIME PERIOD OF DATA
