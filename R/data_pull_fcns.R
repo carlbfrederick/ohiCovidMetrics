@@ -521,7 +521,7 @@ pull_testing <- function(bcd_query, lab_query, conn, test_vol_path, end_date = N
 #' }
 clean_testing <- function(bcd, lab, test_vol, end_date) {
   message("  Counting the number of incident tests...")
-  total_tests <- calc_num_tests(bcd, lab)
+  total_tests <- calc_num_tests(bcd, lab, as.Date(end_date))
 
   message("  Counting the number of positive and negative specimens...")
   specimens <- calc_pos_neg(lab, as.Date(end_date))
