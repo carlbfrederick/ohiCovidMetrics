@@ -842,7 +842,7 @@ calc_pos_neg <- function(lab, end_date) {
         TRUE ~ "other"
       )
     ) %>%
-    dplyr::full_join(lab2_mydf, by = c("newid")) %>%
+    dplyr::full_join(lab2, by = c("newid")) %>%
     dplyr::filter(!is.na(result2)) %>%
     dplyr::mutate(
       DerivedCounty = if_else(trimws(DerivedCounty)== "Fond Du Lac",
