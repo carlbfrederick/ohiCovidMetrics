@@ -287,6 +287,13 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
   message("Writing file to ", outfile, na = "")
   write_csv(out, outfile, na = "")
 
+  if (sum(!checks_df$result) == 0) {
+    message("You are good to go, all file checks passed!")
+  } else if (sum(!checks_df$result) > 0) {
+    warning("Oh no! ", sum(!checks_df$result), " data file checks failed. See list below for conditions that failed:\n - ",
+            paste0(checks_df$info, collapse = "\n - "))
+  }
+
   return(
     invisible(
       list(merged_file = out,
