@@ -803,6 +803,9 @@ shape_ili_data <- function(ili_df) {
 #'
 #' @export
 #'
+#' @importFrom dplyr group_by
+#' @importFrom dplyr arrange
+#' @importFrom dplyr %>%
 #' @importFrom dplyr mutate
 #' @importFrom dplyr if_else
 #' @importFrom dplyr bind_rows
@@ -826,6 +829,8 @@ process_ili <- function(ili_df, ili_threshold_path) {
                                        SD_2 = col_double(),
                                        SD_4 = col_double()
                                      )), by = "Region") %>%
+    dplyr::group_by(Region) %>%
+    dplyr::arrange(Region, Date) %>%
     dplyr::mutate(
       ILI_baseline = ILI_avg + SD_2,
       ILI_threshold = ILI_avg + SD_4,
