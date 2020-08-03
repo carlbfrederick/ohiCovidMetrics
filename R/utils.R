@@ -247,6 +247,7 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' @param test     data.frame produced by \code{\link{process_testing}}
 #' @param cli      data.frame produced by \code{\link{process_cli}}
 #' @param ili      data.frame produced by \code{\link{process_ili}}
+#' @param test_targets data.frame produced by \code{\link{process_test_targets}}
 #' @param outfile  file name (including path) for output data file
 #'
 #' @return invisibly returns the combined data
@@ -254,12 +255,13 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #'
 #' @importFrom readr write_csv
 #' @importFrom dplyr full_join
+#' @importFrom tinytest run_test_file
 #'
 #' @examples
 #' \dontrun{
 #'   #add examples to me please,
 #' }
-merge_metric_files <- function(case, hosp, test, cli, ili, outfile) {
+merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile) {
   #Start with Cases and Testing
   out <- dplyr::full_join(case, test, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in Hospitalization
@@ -268,18 +270,29 @@ merge_metric_files <- function(case, hosp, test, cli, ili, outfile) {
   out <- dplyr::full_join(out, cli, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in ILI
   out <- dplyr::full_join(out, ili, by = c("Date", "Region_ID", "Region", "RowType"))
+  #Add in Testing Targets
+  out <- dplyr::full_join(out, ili, by = c("Date", "Region_ID", "Region", "RowType"))
+
   #Any data cleaning necessary?
 
   #ADD FIELD DESCRIBING TIME PERIOD OF DATA
   out$Data_Period <- paste(format(min(out$Date), "%x"), "-", format(max(hosp$Date), "%x"))
 
   #ADD IN SOME BASIC CHECKS/REPORTING SO PEOPLE CAN GET SUMMARY
+  file_checks <- tinytest::run_test_file(system.file("check-combined-metric-file.R", package = "ohiCovidMetrics"))
+  checks_df <- as.data.frame(file_checks)
+  checks_df$info <- sapply(file_checks, function(x) attr(x, which = "info"))
 
   #Write out a .csv
   message("Writing file to ", outfile, na = "")
   write_csv(out, outfile, na = "")
 
-  return(invisible(out))
+  return(
+    invisible(
+      list(merged_file = out,
+           file_checks = checks_df)
+    )
+  )
 }
 
 #' Customize ESSENCE API query

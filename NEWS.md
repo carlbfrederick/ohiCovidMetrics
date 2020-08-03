@@ -6,6 +6,7 @@ for the 'Tier 2' local dashboard.
 ## Enhancements
 
 - [spot re: testing volume targets]
+- added some basic checks for merged metric file.
 
 ## Breaking Changes
 
