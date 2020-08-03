@@ -141,10 +141,10 @@ process_confirmed_cases <- function(case_df) {
 
     ) %>%
     dplyr::mutate(
-      Trajectory = signif(.data$Trajectory, 2),
+      Trajectory = round(.data$Trajectory, 1),
       Trajectory = dplyr::if_else(.data$Trajectory_Class == "No significant change", "N/A",
                                   as.character(.data$Trajectory)),
-      Burden = signif(.data$Burden, 2),
+      Burden = round(.data$Burden, 1),
       RowType = "Summary"
     ) %>%
     dplyr::select(
@@ -356,8 +356,8 @@ process_hospital <- function(hosp_df) {
                                                       pval = .data$COVID_ICUpx_Trajectory_P)
     ) %>%
     dplyr::mutate(
-      COVID_px_Trajectory = signif(.data$COVID_px_Trajectory, 2),
-      COVID_ICUpx_Trajectory = signif(.data$COVID_ICUpx_Trajectory, 2),
+      COVID_px_Trajectory = round(.data$COVID_px_Trajectory, 1),
+      COVID_ICUpx_Trajectory = round(.data$COVID_ICUpx_Trajectory, 1),
       COVID_px_Trajectory = dplyr::if_else(.data$COVID_px_Trajectory_Class == "No significant change", "N/A",
                                            as.character(.data$COVID_px_Trajectory)),
       COVID_ICUpx_Trajectory = dplyr::if_else(.data$COVID_ICUpx_Trajectory_Class == "No significant change", "N/A",
@@ -707,10 +707,10 @@ process_cli <- function(cli_df){
 
     ) %>%
     dplyr::mutate(
-      Trajectory = signif(.data$Trajectory, 2),
+      Trajectory = round(.data$Trajectory, 1),
       Trajectory = dplyr::if_else(.data$Trajectory_Class == "No significant change", "N/A",
                                   as.character(.data$Trajectory)),
-      Burden = signif(.data$Burden, 2)
+      Burden = round(.data$Burden, 1)
     ) %>%
     dplyr::select(
       Date = .data$week_end_1,
