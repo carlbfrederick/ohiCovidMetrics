@@ -809,6 +809,7 @@ shape_ili_data <- function(ili_df) {
 #' @importFrom dplyr mutate
 #' @importFrom dplyr if_else
 #' @importFrom dplyr bind_rows
+#' @importFrom dplyr case_when
 #' @importFrom zoo rollapply
 #' @importFrom readr read_csv
 #' @importFrom readr cols
@@ -829,6 +830,14 @@ process_ili <- function(ili_df, ili_threshold_path) {
                                        SD_2 = col_double(),
                                        SD_4 = col_double()
                                      )), by = "Region") %>%
+    dplyr::mutate(
+      Region = dplyr::case_when(
+        grepl("^North[ Cc]entral", Region) ~ "North Central",
+        grepl("^South[ Cc]entral", Region) ~ "South Central",
+        grepl("^Fox", Region) ~ "Fox Valley Area",
+        TRUE ~ Region
+      )
+    ) %>%
     dplyr::group_by(Region) %>%
     dplyr::arrange(Region, Date) %>%
     dplyr::mutate(
