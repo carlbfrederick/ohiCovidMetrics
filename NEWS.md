@@ -1,9 +1,31 @@
+# ohiCovidMetrics 0.7.9
+
+This version is intended to be the last clean up version before we go live 
+for the 'Tier 2' local dashboard.
+
+## Enhancements
+
+- [spot re: testing volume targets]
+
+## Breaking Changes
+
+- Have marked the Total Emergency Department visit functions as deprecated.  
+  These functions will be deleted before the 'Tier 2' local dashboard version
+  of the file.
+
+## Bug fixes
+
+- Cleaned up fix to end dates for testing sub-functions
+- Fixed a couple of bugs in the ILI functions for calculating moving averages 
+  and merge fail for some HERC regions due to name variants.
+
 # ohiCovidMetrics 0.7.0
 
 This large jump represents work such that all metrics topics are functional,
 but still need to confirm that the output is identical for 1.0.0 version
 
 ## Enhancements
+
 - added function to pull confirmed case metric directly from WEDSS
 - fixed 'tests' in the Vignette introduced by output data format changes
 - added functions to compute metrics for
@@ -18,6 +40,7 @@ but still need to confirm that the output is identical for 1.0.0 version
   functions are described.
 
 ## Breaking Changes
+
 - moved the `clean_*()` functions into the `pull_*()` functions
 - moved the `shape_*_data()` functions into the `process_*()` functions
   to simplify user API
