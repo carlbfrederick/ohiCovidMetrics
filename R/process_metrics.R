@@ -525,9 +525,9 @@ process_testing <- function(testing_df) {
       total_specimens = NotPositive + Positive,
       percent_positive = 100 * (Positive / total_specimens),
       percent_positive_class = dplyr::case_when(
-        percent_positive >= 10.0                          ~ ">= 10% positive",
-        percent_positive >= 5.0 & percent_positive < 10.0 ~ ">= 5% & < 10% positive",
-        percent_positive >= 0.0 & percent_positive < 5.0  ~ "< 5% positive",
+        percent_positive >= 10.0                          ~ "High (more than 10% positive)",
+        percent_positive >= 5.0 & percent_positive < 10.0 ~ "Moderate (5% to 10% positive)",
+        percent_positive >= 0.0 & percent_positive < 5.0  ~ "Low (less than 5% positive)",
         TRUE                                              ~ "ERROR"
       ),
       percent_volume = 100 * Tests/Testing_Volume,
@@ -561,7 +561,9 @@ process_testing <- function(testing_df) {
                   Testing_Incident_Tests = Tests,
                   Testing_Incident_Test_Target = Testing_Volume,
                   Testing_Percent_of_Target = percent_volume,
-                  Testing_Composite_Class = testing_composite)
+                  # Testing_Composite_Class = testing_composite)
+                  # Commented out above and replaced with below for now
+                  Testing_Composite_Class = percent_volume_class)
 
   dplyr::bind_rows(test_summary,
                    test_daily)
@@ -821,23 +823,25 @@ shape_ili_data <- function(ili_df) {
 process_ili <- function(ili_df, ili_threshold_path) {
   clean_ili_df <- shape_ili_data(ili_df)
 
+  ili_thresh <- readr::read_csv(ili_threshold_path,
+                                col_types = readr::cols(
+                                  Region = col_character(),
+                                  ILI_avg = col_double(),
+                                  ILI_sd = col_double(),
+                                  SD_2 = col_double(),
+                                  SD_4 = col_double()
+                                )) %>%
+  dplyr::mutate(
+    Region = dplyr::case_when(
+      grepl("North[ Cc]+entral", Region) ~ "North Central",
+      grepl("South[ Cc]+entral", Region) ~ "South Central",
+      grepl("Fox", Region) ~ "Fox Valley Area",
+      TRUE ~ Region
+    )
+  )
+
   ili_daily  <- clean_ili_df$daily %>%
-    dplyr::left_join(readr::read_csv(ili_threshold_path,
-                                     col_types = readr::cols(
-                                       Region = col_character(),
-                                       ILI_avg = col_double(),
-                                       ILI_sd = col_double(),
-                                       SD_2 = col_double(),
-                                       SD_4 = col_double()
-                                     )), by = "Region") %>%
-    dplyr::mutate(
-      Region = dplyr::case_when(
-        grepl("North[ Cc]+entral", Region) ~ "North Central",
-        grepl("South[ Cc]+entral", Region) ~ "South Central",
-        grepl("Fox", Region) ~ "Fox Valley Area",
-        TRUE ~ Region
-      )
-    ) %>%
+    dplyr::left_join(ili_thresh, by = "Region")%>%
     dplyr::group_by(Region) %>%
     dplyr::arrange(Region, Date) %>%
     dplyr::mutate(
