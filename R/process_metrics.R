@@ -832,8 +832,8 @@ process_ili <- function(ili_df, ili_threshold_path) {
                                      )), by = "Region") %>%
     dplyr::mutate(
       Region = dplyr::case_when(
-        grepl("North[ Cc]entral", Region) ~ "North Central",
-        grepl("South[ Cc]entral", Region) ~ "South Central",
+        grepl("North[ Cc]+entral", Region) ~ "North Central",
+        grepl("South[ Cc]+entral", Region) ~ "South Central",
         grepl("Fox", Region) ~ "Fox Valley Area",
         TRUE ~ Region
       )
