@@ -18,10 +18,10 @@ an ordered factor "Shrinking" < "No statistically significant change" < "Growing
 This function tests to see if the count trajectory is statistically
 distinct from zero with a Poisson test for the ratio of two counts
 using \code{\link[stats]{poisson.test}} as.calculated by \code{\link{pval_trajectory}}
-at the two-sided p < .05 level. If it is and the ratio as calculated by
-\link{score_trajectory} is less than or equal to 0.9, the trajectory is
-classified as shrinking. If it is and the ration is greather than or equal
-to 1.1, the trajectory is classified as growing. If the test fails to
+at the two-sided p < .05 level. If it is and the percent change as calculated by
+\link{score_trajectory} is less than or equal to -10, the trajectory is
+classified as shrinking. If it is and the percent change is greater than or equal
+to 10, the trajectory is classified as growing. If the test fails to
 reject the null hypothesis, the trajectory is classified as not statistically
 significant.
 }

@@ -12,10 +12,10 @@ score_trajectory(curr, prev)
 \item{prev}{vector of counts for previous period (must be non-negative integer)}
 }
 \value{
-a numeric vector
+a numeric vector of percent change
 }
 \description{
-Calculates the ratio of the most current to previous period
+Calculates the percent change of the most current to previous period
 counts. Values greater than 1 indicate growing; less than one
 indicate shrinking. \emph{NOTE: Counts must have the same period
 (e.g. both summed over 7 consecutive days.)} In order to avoid
