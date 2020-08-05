@@ -1,3 +1,23 @@
+# ohiCovidMetrics 0.7.9.9
+
+This version corrects a critical bug in the calculation of the trajectory 
+class.
+
+## Enhancements
+
+- [spot re: testing volume targets]
+
+## Breaking Changes
+
+- [none so far]
+
+## Bug fixes
+
+- Fixed bug in `class_trajectory()` that was expecting a ratio (old) instead
+  of a percent change (current).
+- Fixed issue in ILI where some regions were not merging thresholds and 
+  baselines correctly.
+
 # ohiCovidMetrics 0.7.9
 
 This version is intended to be the last clean up version before we go live 
@@ -5,8 +25,13 @@ for the 'Tier 2' local dashboard.
 
 ## Enhancements
 
-- [spot re: testing volume targets]
-- added some basic checks for merged metric file.
+- added some basic checks for merged metric file with basic reporting via
+  a warning for failed tests.
+- added function to aggregate new metrics onto source file. This function
+  also re-calculates the moving average variables so that there are not 
+  breaks at the beginning of each update period.
+- changed rounding for case trajectory/burden so that they don't look like
+  true counts
 
 ## Breaking Changes
 
