@@ -389,3 +389,83 @@ essence_data <- function(url) {
                                     keyring::key_get("essence", key_list("essence")$username))) %>%
     httr::content(type = "text/csv", col_types = essence_cols)
 }
+
+#' Append combined metric data onto the data source
+#'
+#' @param current_combo_file path to .csv file produced by \code{\link{merge_metric_files}}
+#' @param existing_combo_file path to .csv file of all passed combo files
+#'
+#' @return invisibly returns the combined data. Also it saves existing_combo_file with a datestamp
+#'         for the archives and saves the output over existing_combo_file
+#' @export
+#'
+#' @importFrom readr write_csv
+#' @importFrom readr write_csv
+#' @importFrom dplyr bind_rows
+#' @importFrom dplyr %>%
+#' @importFrom dplyr mutate
+#' @importFrom dplyr group_by
+#' @importFrom dplyr arrange
+#' @importFrom dplyr summarize
+#' @importFrom dplyr across
+#' @importFrom dplyr select
+#' @importFrom dplyr left_join
+#' @importFrom dplyr filter
+#' @importFrom dplyr intersect
+#' @importFrom dplyr setdiff
+#' @importFrom dplyr all_of
+#' @importFrom stringr str_extract
+#' @importFrom zoo rollapply
+#'
+#' @examples
+#' \dontrun{
+#'   #add examples to me please,
+#' }
+append_metric_files <- function(current_combo_file, existing_combo_file, overwrite = FALSE) {
+  #Read and combine files
+  combo <- dplyr::bind_rows(
+    readr::read_csv(current_combo_file),
+    reder::read_csv(existing_combo_file)
+  )
+
+  ma_tmp <- combo %>%
+    dplyr::filter(RowType == "Daily") %>%
+    dplyr::mutate(
+      pervar = as.Date(stringr::str_extract(Data_Period, "[0-9]+\\/[0-9]+\\/[0-9]+$"), format = "%m/%d/%Y")
+    ) %>%
+    dplyr::group_by(RowType, Region, Date) %>%
+    dplyr::arrange(RowType, Region, Date, desc(pervar)) %>%
+    dplyr::summarize(
+      across(c(Hosp_PrctBeds_Used, Hosp_PrctICU_Used, Hosp_PrctVent_Used,
+             Testing_Percent_Positive, Testing_Total_Specimens, CLI_Count, Conf_Case_Count,
+             ILI_Percent), first),
+      .groups = "drop"
+    ) %>%
+    dplyr::group_by(RowType, Region) %>%
+    dplyr::mutate(
+      dplyr::across(c(Hosp_PrctBeds_Used, Hosp_PrctICU_Used, Hosp_PrctVent_Used,
+               Testing_Percent_Positive, Testing_Total_Specimens, CLI_Count, Conf_Case_Count),
+             zoo::rollapply, width = 7, FUN = mean, fill = NA, align = "right"),
+      dplyr::across(c(ILI_Percent),
+             zoo::rollapply, width = 3, FUN = mean, fill = NA, align = "right")
+    ) %>%
+      dplyr::select(RowType, Region, Date,
+                    Hosp_Beds_moving_avg        = Hosp_PrctBeds_Used,
+                    Hosp_ICU_moving_avg         = Hosp_PrctICU_Used,
+                    Hosp_Vent_moving_avg        = Hosp_PrctVent_Used,
+                    Testing_Perc_Pos_moving_avg = Testing_Percent_Positive,
+                    Testing_Tot_Spec_moving_avg = Testing_Total_Specimens,
+                    CLI_Count_moving_avg        = CLI_Count,
+                    Conf_Case_Count_moving_avg  = Conf_Case_Count,
+                    ILI_Moving_Avg              = ILI_Percent)
+
+  cols2rm <- dplyr::setdiff(
+    dplyr::intersect(names(ma_tmp),
+                     names(combo)),
+    c("RowType", "Region", "Date"))
+
+  out <- combo %>%
+    dplyr::select(-all_of(cols2rm)) %>%
+    dplyr::left_join(ma_tmp, by = c("RowType", "Region", "Date"))
+
+}

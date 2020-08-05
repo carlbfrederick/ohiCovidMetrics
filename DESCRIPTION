@@ -1,6 +1,7 @@
 Package: ohiCovidMetrics
 Title: Used to calculate sub-state metrics relating to the COVID-19 pandemic
 Version: 0.7.9
+Date: 2020-08-05
 Authors@R: c(
     person(given = "Jeffrey",
            family = "Bond",
@@ -9,7 +10,23 @@ Authors@R: c(
     person(given = "Carl",
            family = "Frederick",
            role = c("aut", "cre"),
-           email = "carl.frederick@dpi.wi.gov")
+           email = "carl.frederick@dpi.wi.gov"),
+    person(given = "Nathan",
+           family = "Kloczko",
+           role = c("ctb"),
+           email = "nathan.kloczko@dhs.wisconsin.gov"),
+    person(given = "Kate",
+           family = "McCoy",
+           role = c("ctb"),
+           email = "Katherine.McCoy@dpi.wi.gov"),
+    person(given = "Kristine",
+           family = "Palmer",
+           role = c("ctb"),
+           email = "Kristine.Palmer@dhs.wisconsin.gov"),
+    person(given = "Diksha",
+           family = "Ramnani",
+           role = c("ctb"),
+           email = "diksha.ramnani@dhs.wisconsin.gov")
     )
 Description: This package contains functions to pull and clean the necessary
     data and functions to calculate the metrics developed by OHI to monitor 
