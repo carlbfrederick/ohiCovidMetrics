@@ -17,6 +17,7 @@ class.
   of a percent change (current).
 - Fixed issue in ILI where some regions were not merging thresholds and 
   baselines correctly.
+- Changed Testing Composite outcome labels
 
 # ohiCovidMetrics 0.7.9
 

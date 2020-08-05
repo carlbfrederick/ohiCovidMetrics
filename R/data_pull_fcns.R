@@ -447,11 +447,12 @@ clean_hospital <- function(hosp, end_date) {
     mutate(hosp_summary, RowType = "Summary"),
     mutate(hosp_daily, RowType = "Daily")
   ) %>%
-  mutate(Run_Date = run_date) %>%
-  group_by(County) %>%
-  mutate(
-    fips = unique(fips[!is.na(fips)])
-  )
+  mutate(Run_Date = run_date)
+  # %>%
+  # group_by(County) %>%
+  # mutate(
+  #   fips = unique(fips[!is.na(fips)])
+  # )
 }
 
 #' Pull data from WEDSS for Testing Metrics

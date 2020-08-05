@@ -306,7 +306,7 @@ expect_equal(sum(is.na(combo$Testing_Composite_Class[combo$RowType == "Summary"]
 expect_equal(sum(!is.na(combo$Testing_Composite_Class[combo$RowType == "Daily"])), 0,
              info = "Testing_Composite_Class column has *all* NA/missings for Daily Rows")
 expect_equal(sort(unique(combo$Testing_Composite_Class)),
-             c("Close to", "Higher than", "Substantially Higher than"),
+             c("High (more than 10% positive)", "Low (less than 5% positive)", "Moderate (5% to 10% positive)"),
              info = "Testing_Composite_Class column has only correct unique values")
 
 ##. . Hospital ----
