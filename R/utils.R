@@ -271,7 +271,7 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
   #Add in ILI
   out <- dplyr::full_join(out, ili, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in Testing Targets
-  out <- dplyr::full_join(out, ili, by = c("Date", "Region_ID", "Region", "RowType"))
+  out <- dplyr::full_join(out, test_targets, by = c("Date", "Region_ID", "Region", "RowType"))
 
   #Any data cleaning necessary?
 
@@ -424,8 +424,8 @@ essence_data <- function(url) {
 append_metric_files <- function(current_combo_file, existing_combo_file, overwrite = FALSE) {
   #Read and combine files
   combo <- dplyr::bind_rows(
-    readr::read_csv(current_combo_file),
-    reder::read_csv(existing_combo_file)
+    readr::read_csv(current_combo_file, guess_max = 1e5),
+    readr::read_csv(existing_combo_file, guess_max = 1e5)
   )
 
   ma_tmp <- combo %>%
@@ -443,21 +443,36 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     ) %>%
     dplyr::group_by(RowType, Region) %>%
     dplyr::mutate(
-      dplyr::across(c(Hosp_PrctBeds_Used, Hosp_PrctICU_Used, Hosp_PrctVent_Used,
-               Testing_Percent_Positive, Testing_Total_Specimens, CLI_Count, Conf_Case_Count),
-             zoo::rollapply, width = 7, FUN = mean, fill = NA, align = "right"),
-      dplyr::across(c(ILI_Percent),
-             zoo::rollapply, width = 3, FUN = mean, fill = NA, align = "right")
+      dplyr::across(c(Hosp_beds_IBA, Hosp_totalbeds,
+                      Hosp_ICU_IBA, Hosp_totalICU,
+                      Hosp_num_px_vent, Hosp_total_vents,
+                      Testing_Positive_Specimens,
+                      Testing_Total_Specimens,
+                      CLI_Count,
+                      Conf_Case_Count),
+             zoo::rollapply, width = 7, FUN = sum, fill = NA, align = "right"),
+      dplyr::across(c(ILI_Visits, ILI_Total_Visits),
+             zoo::rollapply, width = 3, FUN = sum, fill = NA, align = "right")
+    ) %>%
+    dplyr::mutate(
+      Hosp_Beds_moving_avg        = 100 * (1 - (Hosp_beds_IBA/Hosp_totalbeds)),
+      Hosp_ICU_moving_avg         = 100 * (1 - (Hosp_ICU_IBA/Hosp_totalICU)),
+      Hosp_Vent_moving_avg        = 100 * (Hosp_num_px_vent/Hosp_total_vents),
+      Testing_Perc_Pos_moving_avg = 100 * (Testing_Positive_Specimens/Testing_Total_Specimens),
+      Testing_Tot_Spec_moving_avg = Testing_Total_Specimens / 7,
+      CLI_Count_moving_avg        = CLI_Count / 7,
+      Conf_Case_Count_moving_avg  = Conf_Case_Count / 7,
+      ILI_Moving_Avg              = 100 * (ILI_Visits / ILI_Total_Visits)
     ) %>%
       dplyr::select(RowType, Region, Date,
-                    Hosp_Beds_moving_avg        = Hosp_PrctBeds_Used,
-                    Hosp_ICU_moving_avg         = Hosp_PrctICU_Used,
-                    Hosp_Vent_moving_avg        = Hosp_PrctVent_Used,
-                    Testing_Perc_Pos_moving_avg = Testing_Percent_Positive,
-                    Testing_Tot_Spec_moving_avg = Testing_Total_Specimens,
-                    CLI_Count_moving_avg        = CLI_Count,
-                    Conf_Case_Count_moving_avg  = Conf_Case_Count,
-                    ILI_Moving_Avg              = ILI_Percent)
+                    Hosp_Beds_moving_avg,
+                    Hosp_ICU_moving_avg,
+                    Hosp_Vent_moving_avg,
+                    Testing_Perc_Pos_moving_avg,
+                    Testing_Tot_Spec_moving_avg,
+                    CLI_Count_moving_avg,
+                    Conf_Case_Count_moving_avg,
+                    ILI_Moving_Avg)
 
   cols2rm <- dplyr::setdiff(
     dplyr::intersect(names(ma_tmp),
@@ -467,5 +482,14 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
   out <- combo %>%
     dplyr::select(-all_of(cols2rm)) %>%
     dplyr::left_join(ma_tmp, by = c("RowType", "Region", "Date"))
+
+  if (overwrite) {
+    message("  Overwriting ", existing_combo_file, "...")
+    readr::write_csv(out, existing_combo_file, na = "")
+  } else {
+    message("Not writing file because overwrite = FALSE")
+  }
+
+  return(invisible(out))
 
 }
