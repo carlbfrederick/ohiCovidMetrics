@@ -257,6 +257,9 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' @importFrom dplyr full_join
 #' @importFrom dplyr %>%
 #' @importFrom dplyr mutate_if
+#' @importFrom dplyr select
+#' @importFrom dplyr mutate
+#' @importFrom dplyr group_by
 #' @importFrom tinytest run_test_file
 #'
 #' @examples
@@ -285,28 +288,34 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
 
   ##Only keep necessary variables
   out <- out %>%
-    select(Data_Period, Date, Region_ID, Region, RowType,
-           Conf_Case_Count, Conf_Case_Count_moving_avg, Conf_Case_Burden,
-           COnf_Case_Burden_Class, Conf_Case_Burden_Critical_Flag,
+    dplyr::select(Data_Period, Date, Region_ID, Region, RowType,
+           Conf_Case_Count, Conf_Case_Burden,
+           Conf_Case_Burden_Class, Conf_Case_Burden_Critical_Flag,
            Conf_Case_Trajectory, Conf_Case_Trajectory_P, Conf_Case_Trajectory_Class,
            Conf_Case_Composite_Class,
-           Testing_Total_Specimens, Testing_Tot_Spec_moving_avg, Testing_Positive_Specimens,
-           Testing_Nonpositive_Specimens, Testing_Percent_Positive, Testing_Perc_Pos_moving_avg,
+           Testing_Total_Specimens, Testing_Positive_Specimens,
+           Testing_Nonpositive_Specimens, Testing_Percent_Positive,
            Testing_Incident_Tests, Testing_Incident_Test_Target, Testing_Percent_of_Target,
            Testing_Composite_Class,
            Testing_Case, Testing_ARI, Testing_Case_Gap,
            Testing_Target_0.2, Testing_Target_0.4, Testing_Target_0.6, Testing_Target_0.8, Testing_Target_1,
            Hosp_dailyCOVID_px, Hosp_COVID_px_Trajectory, Hosp_COVID_px_Trajectory_Class,
-           Hosp_dailyCOVID_px, Hosp_COVID_ICUpx_Trajectory, Hosp_COVID_ICUpx_Trajectory_Class,
-           Hosp_totalbeds, hosp_beds_IBA, Hosp_PrctBeds_Used, Hosp_Beds_moving_avg,
+           Hosp_dailyCOVID_ICUpx, Hosp_COVID_ICUpx_Trajectory, Hosp_COVID_ICUpx_Trajectory_Class,
+           Hosp_totalbeds, Hosp_beds_IBA, Hosp_PrctBeds_Used, Hosp_Beds_moving_avg,
            Hosp_totalICU, Hosp_ICU_IBA, Hosp_PrctICU_Used, Hosp_ICU_moving_avg,
            Hosp_total_vents, Hosp_num_px_vent, Hosp_PrctVent_Used, Hosp_Vent_moving_avg,
-           CLI_Count, CLI_Count_moving_avg, CLI_Burden, CLI_Burden_Class,
+           CLI_Count, CLI_Burden, CLI_Burden_Class,
            CLI_Trajectory, CLI_Trajectory_P, CLI_Trajectory_Class, CLI_Composite_Class,
            ILI_Total_Visits, ILI_Visits, ILI_Percent, ILI_Moving_Avg,
            ILI_Baseline, ILI_Threshold, ILI_Status,
            ED_flag, Mayo_flag)
 
+  ##make sure ED_flag and Mayo_flags are correct
+  out <- out %>%
+    dplyr::group_by(Region) %>%
+    dplyr::mutate(
+      across(c("ED_flag", "Mayo_flag"), ~ first(.x[!is.na(.x)]))
+    )
 
   #ADD IN SOME BASIC CHECKS/REPORTING SO PEOPLE CAN GET SUMMARY
   tdir <- tempdir()
@@ -472,6 +481,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
       across(c(Hosp_beds_IBA, Hosp_totalbeds,
                Hosp_ICU_IBA, Hosp_totalICU,
                Hosp_num_px_vent, Hosp_total_vents,
+               Hosp_dailyCOVID_px, Hosp_dailyCOVID_ICUpx,
                Testing_Positive_Specimens,
                Testing_Total_Specimens,
                CLI_Count,
@@ -484,6 +494,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
       dplyr::across(c(Hosp_beds_IBA, Hosp_totalbeds,
                       Hosp_ICU_IBA, Hosp_totalICU,
                       Hosp_num_px_vent, Hosp_total_vents,
+                      Hosp_dailyCOVID_px, Hosp_dailyCOVID_ICUpx,
                       Testing_Positive_Specimens,
                       Testing_Total_Specimens,
                       CLI_Count,
@@ -493,19 +504,23 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
              zoo::rollapply, width = 3, FUN = sum, fill = NA, align = "right")
     ) %>%
     dplyr::mutate(
-      Hosp_Beds_moving_avg        = 100 * (1 - (Hosp_beds_IBA/Hosp_totalbeds)),
-      Hosp_ICU_moving_avg         = 100 * (1 - (Hosp_ICU_IBA/Hosp_totalICU)),
-      Hosp_Vent_moving_avg        = 100 * (Hosp_num_px_vent/Hosp_total_vents),
-      Testing_Perc_Pos_moving_avg = 100 * (Testing_Positive_Specimens/Testing_Total_Specimens),
-      Testing_Tot_Spec_moving_avg = Testing_Total_Specimens / 7,
-      CLI_Count_moving_avg        = CLI_Count / 7,
-      Conf_Case_Count_moving_avg  = Conf_Case_Count / 7,
-      ILI_Moving_Avg              = 100 * (ILI_Visits / ILI_Total_Visits)
+      Hosp_Beds_moving_avg           = 100 * (1 - (Hosp_beds_IBA/Hosp_totalbeds)),
+      Hosp_ICU_moving_avg            = 100 * (1 - (Hosp_ICU_IBA/Hosp_totalICU)),
+      Hosp_Vent_moving_avg           = 100 * (Hosp_num_px_vent/Hosp_total_vents),
+      Hosp_DailyCOVID_PX_moving_avg  = Hosp_dailyCOVID_px / 7,
+      Hosp_DailyCOVID_ICU_moving_avg = Hosp_dailyCOVID_ICUpx / 7,
+      Testing_Perc_Pos_moving_avg    = 100 * (Testing_Positive_Specimens/Testing_Total_Specimens),
+      Testing_Tot_Spec_moving_avg    = Testing_Total_Specimens / 7,
+      CLI_Count_moving_avg           = CLI_Count / 7,
+      Conf_Case_Count_moving_avg     = Conf_Case_Count / 7,
+      ILI_Moving_Avg                 = 100 * (ILI_Visits / ILI_Total_Visits)
     ) %>%
       dplyr::select(RowType, Region, Date,
                     Hosp_Beds_moving_avg,
                     Hosp_ICU_moving_avg,
                     Hosp_Vent_moving_avg,
+                    Hosp_DailyCOVID_PX_moving_avg,
+                    Hosp_DailyCOVID_ICU_moving_avg,
                     Testing_Perc_Pos_moving_avg,
                     Testing_Tot_Spec_moving_avg,
                     CLI_Count_moving_avg,
@@ -519,7 +534,28 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
 
   out <- combo %>%
     dplyr::select(-all_of(cols2rm)) %>%
-    dplyr::left_join(ma_tmp, by = c("RowType", "Region", "Date"))
+    dplyr::left_join(ma_tmp, by = c("RowType", "Region", "Date")) %>%
+    dplyr::select(Data_Period, Date, Region_ID, Region, RowType,
+                  Conf_Case_Count, Conf_Case_Count_moving_avg, Conf_Case_Burden,
+                  Conf_Case_Burden_Class, Conf_Case_Burden_Critical_Flag,
+                  Conf_Case_Trajectory, Conf_Case_Trajectory_P, Conf_Case_Trajectory_Class,
+                  Conf_Case_Composite_Class,
+                  Testing_Total_Specimens, Testing_Tot_Spec_moving_avg, Testing_Positive_Specimens,
+                  Testing_Nonpositive_Specimens, Testing_Percent_Positive, Testing_Perc_Pos_moving_avg,
+                  Testing_Incident_Tests, Testing_Incident_Test_Target, Testing_Percent_of_Target,
+                  Testing_Composite_Class,
+                  Testing_Case, Testing_ARI, Testing_Case_Gap,
+                  Testing_Target_0.2, Testing_Target_0.4, Testing_Target_0.6, Testing_Target_0.8, Testing_Target_1,
+                  Hosp_dailyCOVID_px, Hosp_DailyCOVID_PX_moving_avg, Hosp_COVID_px_Trajectory, Hosp_COVID_px_Trajectory_Class,
+                  Hosp_dailyCOVID_ICUpx, Hosp_DailyCOVID_ICU_moving_avg, Hosp_COVID_ICUpx_Trajectory, Hosp_COVID_ICUpx_Trajectory_Class,
+                  Hosp_totalbeds, Hosp_beds_IBA, Hosp_PrctBeds_Used, Hosp_Beds_moving_avg,
+                  Hosp_totalICU, Hosp_ICU_IBA, Hosp_PrctICU_Used, Hosp_ICU_moving_avg,
+                  Hosp_total_vents, Hosp_num_px_vent, Hosp_PrctVent_Used, Hosp_Vent_moving_avg,
+                  CLI_Count, CLI_Count_moving_avg, CLI_Burden, CLI_Burden_Class,
+                  CLI_Trajectory, CLI_Trajectory_P, CLI_Trajectory_Class, CLI_Composite_Class,
+                  ILI_Total_Visits, ILI_Visits, ILI_Percent, ILI_Moving_Avg,
+                  ILI_Baseline, ILI_Threshold, ILI_Status,
+                  ED_flag, Mayo_flag)
 
   if (overwrite) {
     message("  Overwriting ", existing_combo_file, "...")

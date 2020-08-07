@@ -144,7 +144,7 @@ process_confirmed_cases <- function(case_df) {
       Trajectory = round(.data$Trajectory, 1),
       Trajectory = dplyr::if_else(.data$Trajectory_Class == "No significant change", "N/A",
                                   as.character(.data$Trajectory)),
-      Burden_Critical_Flag = if_else(Burden >= 350),
+      Burden_Critical_Flag = dplyr::if_else(Burden >= 350, 1L, 0L),
       Burden = round(.data$Burden, 1),
       RowType = "Summary"
     ) %>%
@@ -155,7 +155,7 @@ process_confirmed_cases <- function(case_df) {
       RowType = .data$RowType,
       Conf_Case_Count = .data$Count,
       Conf_Case_Burden = .data$Burden,
-      Conf_Case_Burden_Critical_Clag = .data$Burden_Critical_Flag,
+      Conf_Case_Burden_Critical_Flag = .data$Burden_Critical_Flag,
       Conf_Case_Trajectory = .data$Trajectory,
       Conf_Case_Burden_Class = .data$Burden_Class,
       Conf_Case_Trajectory_Class = .data$Trajectory_Class,

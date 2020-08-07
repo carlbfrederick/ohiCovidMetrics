@@ -41,6 +41,7 @@
 #' @importFrom dplyr mutate
 #' @importFrom dplyr arrange
 #' @importFrom dplyr %>%
+#' @importFrom dplyr distinct
 #' @importFrom dplyr if_else
 #' @importFrom dplyr left_join
 #' @importFrom dplyr filter
@@ -61,6 +62,8 @@ pull_histTable <- function(end_date = NULL) {
   api_url <- "https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,DATE,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
   message("Downloading data from DHS ...")
   hdt <- sf::st_set_geometry(sf::st_read(api_url, quiet = TRUE, stringsAsFactors = FALSE), NULL)
+
+  hdt <- dplyr::distinct(hdt)
 
   #Protect
   hdt$NEGATIVE <- as.integer(hdt$NEGATIVE)
@@ -137,6 +140,7 @@ pull_wedss <- function(query, conn, end_date = NULL) {
 #' @inheritParams pull_histTable
 #'
 #' @importFrom dplyr group_by
+#' @importFrom dplyr ungroup
 #' @importFrom dplyr transmute
 #' @importFrom dplyr mutate
 #' @importFrom dplyr arrange
@@ -165,6 +169,9 @@ clean_histTable <- function(hdt, end_date) {
       test_daily = dplyr::if_else(is.na(.data$TEST_NEW), .data$POSITIVE + dplyr::if_else(is.na(.data$NEGATIVE), 0L, as.integer(.data$NEGATIVE)), as.integer(.data$TEST_NEW)),
       death_daily = dplyr::if_else(is.na(.data$DTH_NEW), .data$DEATHS, .data$DTH_NEW)
     ) %>%
+    dplyr::ungroup(.) %>%
+    tidyr::complete(nesting(fips, geo_type, geo_name), post_date,
+                    fill = list(case_daily = 0L, test_daily = 0L, death_daily = 0L)) %>%
     dplyr::left_join(dplyr::select(county_data, .data$fips, .data$herc_region, .data$pop_2018), by = "fips")
 
   if (inherits(hdt$post_date, "POSIXt")) {
