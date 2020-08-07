@@ -334,8 +334,8 @@ process_hospital <- function(hosp_df) {
                   intermed_beds_IBA,
                   negflow_beds_IBA,
                   medsurg_beds_IBA,
-                  PrctBeds_IBA,
-                  PrctICU_IBA,
+                  PrctBeds_Used,
+                  PrctICU_Used,
                   PrctVent_Used)
 
   hosp_summary <- dplyr::ungroup(clean_hosp_df$summary) %>%
@@ -392,16 +392,14 @@ process_hospital <- function(hosp_df) {
                   Hosp_intermed_beds_IBA = intermed_beds_IBA,
                   Hosp_negflow_beds_IBA = negflow_beds_IBA,
                   Hosp_medsurg_beds_IBA = medsurg_beds_IBA,
-                  Hosp_PrctBeds_IBA = PrctBeds_IBA,
-                  Hosp_PrctICU_IBA = PrctICU_IBA,
+                  Hosp_PrctBeds_Used = PrctBeds_Used,
+                  Hosp_PrctICU_Used = PrctICU_Used,
                   Hosp_PrctVent_Used = PrctVent_Used,
                   Hosp_COVID_px_Trajectory = COVID_px_Trajectory,
                   Hosp_COVID_px_Trajectory_Class = COVID_px_Trajectory_Class,
                   Hosp_COVID_ICUpx_Trajectory = COVID_ICUpx_Trajectory,
                   Hosp_COVID_ICUpx_Trajectory_Class = COVID_ICUpx_Trajectory_Class) %>%
     dplyr::mutate(
-      Hosp_PrctBeds_Used = 100 - Hosp_PrctBeds_IBA,
-      Hosp_PrctICU_Used = 100 - Hosp_PrctICU_IBA,
       Hosp_Beds_moving_avg = zoo::rollapply(Hosp_PrctBeds_Used, 7, mean, fill = NA, align = "right"),
       Hosp_ICU_moving_avg = zoo::rollapply(Hosp_PrctICU_Used, 7, mean, fill = NA, align = "right"),
       Hosp_Vent_moving_avg = zoo::rollapply(Hosp_PrctVent_Used, 7, mean, fill = NA, align = "right")

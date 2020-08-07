@@ -384,7 +384,7 @@ clean_hospital <- function(hosp, end_date) {
       fips = "55",
     )
 
-  hosp_summary <- bind_rows(hosp_cty, hosp_herc, hosp_state) %>%
+  hosp_summary <- bind_rows(hosp_herc, hosp_state) %>%
     dplyr::ungroup() %>%
     dplyr::select(-.data$herc_region)
 
@@ -434,9 +434,9 @@ clean_hospital <- function(hosp, end_date) {
   #Calc final vars for combined daily series
   hosp_daily <- dplyr::bind_rows(state_daily, herc_daily) %>%
     dplyr::mutate(
-      PrctBeds_IBA = (beds_IBA/totalbeds)*100,
-      PrctICU_IBA = (ICU_IBA/totalICU)*100,
-      PrctVent_Used = (num_px_vent/total_vents)*100
+      PrctBeds_Used = (1 - (beds_IBA/totalbeds)) * 100,
+      PrctICU_Used  = (1 - (ICU_IBA/totalICU)) * 100,
+      PrctVent_Used = (num_px_vent/total_vents) * 100
     ) %>%
     dplyr::left_join(dplyr::select(county_data, fips, County = county), by = "County")
 
@@ -447,12 +447,11 @@ clean_hospital <- function(hosp, end_date) {
     mutate(hosp_summary, RowType = "Summary"),
     mutate(hosp_daily, RowType = "Daily")
   ) %>%
-  mutate(Run_Date = run_date)
-  # %>%
-  # group_by(County) %>%
-  # mutate(
-  #   fips = unique(fips[!is.na(fips)])
-  # )
+  mutate(Run_Date = run_date) %>%
+  group_by(County) %>%
+  mutate(
+    fips = unique(fips[!is.na(fips)])
+  )
 }
 
 #' Pull data from WEDSS for Testing Metrics
