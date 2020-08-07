@@ -255,6 +255,8 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #'
 #' @importFrom readr write_csv
 #' @importFrom dplyr full_join
+#' @importFrom dplyr %>%
+#' @importFrom dplyr mutate_if
 #' @importFrom tinytest run_test_file
 #'
 #' @examples
@@ -274,12 +276,42 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
   out <- dplyr::full_join(out, test_targets, by = c("Date", "Region_ID", "Region", "RowType"))
 
   #Any data cleaning necessary?
+  ##convert factors to character for file check
+  out <- out %>%
+    dplyr::mutate_if(is.factor, as.character)
 
-  #ADD FIELD DESCRIBING TIME PERIOD OF DATA
+  ##ADD FIELD DESCRIBING TIME PERIOD OF DATA
   out$Data_Period <- paste(format(min(out$Date), "%x"), "-", format(max(hosp$Date), "%x"))
 
+  ##Only keep necessary variables
+  out <- out %>%
+    select(Data_Period, Date, Region_ID, Region, RowType,
+           Conf_Case_Count, Conf_Case_Count_m0oving_avg, Conf_Case_Burden, COnf_Case_Burden_Class,
+           Conf_Case_Trajectory, Conf_Case_Trajectory_P, Conf_Case_Trajectory_Class,
+           Conf_Case_Composite_Class,
+           Testing_Total_Specimens, Testing_Tot_Spec_moving_avg, Testing_Positive_Specimens,
+           Testing_Nonpositive_Specimens, Testing_Percent_Positive, Testing_Perc_Pos_moving_avg,
+           Testing_Incident_Tests, Testing_Incident_Test_Target, Testing_Percent_of_Target,
+           Testing_Composite_Class,
+           Testing_Case, Testing_ARI, Testing_Case_Gap,
+           Testing_Target_0.2, Testing_Target_0.4, Testing_Target_0.6, Testing_Target_0.8, Testing_Target_1,
+           Hosp_dailyCOVID_px, Hosp_COVID_px_Trajectory, Hosp_COVID_px_Trajectory_Class,
+           Hosp_dailyCOVID_px, Hosp_COVID_ICUpx_Trajectory, Hosp_COVID_ICUpx_Trajectory_Class,
+           Hosp_totalbeds, hosp_beds_IBA, Hosp_PrctBeds_Used, Hosp_Beds_moving_avg,
+           Hosp_totalICU, Hosp_ICU_IBA, Hosp_PrctICU_Used, Hosp_ICU_moving_avg,
+           Hosp_total_vents, Hosp_num_px_vent, Hosp_PrctVent_Used, Hosp_Vent_moving_avg,
+           CLI_Count, CLI_Count_moving_avg, CLI_Burden, CLI_Burden_Class,
+           CLI_Trajectory, CLI_Trajectory_P, CLI_Trajectory_Class, CLI_Composite_Class,
+           ILI_Total_Visits, ILI_Visits, ILI_Percent, ILI_Moving_Avg,
+           ILI_Baseline, ILI_Threshold, ILI_Status,
+           ED_flag, Mayo_flag)
+
+
   #ADD IN SOME BASIC CHECKS/REPORTING SO PEOPLE CAN GET SUMMARY
-  file_checks <- tinytest::run_test_file(system.file("check-combined-metric-file.R", package = "ohiCovidMetrics"))
+  tdir <- tempdir()
+  save(out, file = file.path(tdir, "__tmp_metric_file.RData"))
+  file_checks <- tinytest::run_test_file(system.file("check-combined-metric-file.R", package = "ohiCovidMetrics"),
+                                         set_env = list("LOADCOMBOMETRICFILE" = file.path(tdir,  "__tmp_metric_file.RData")))
   checks_df <- as.data.frame(file_checks)
   checks_df$info <- sapply(file_checks, function(x) attr(x, which = "info"))
 
@@ -436,9 +468,14 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     dplyr::group_by(RowType, Region, Date) %>%
     dplyr::arrange(RowType, Region, Date, desc(pervar)) %>%
     dplyr::summarize(
-      across(c(Hosp_PrctBeds_Used, Hosp_PrctICU_Used, Hosp_PrctVent_Used,
-             Testing_Percent_Positive, Testing_Total_Specimens, CLI_Count, Conf_Case_Count,
-             ILI_Percent), first),
+      across(c(Hosp_beds_IBA, Hosp_totalbeds,
+               Hosp_ICU_IBA, Hosp_totalICU,
+               Hosp_num_px_vent, Hosp_total_vents,
+               Testing_Positive_Specimens,
+               Testing_Total_Specimens,
+               CLI_Count,
+               Conf_Case_Count,
+               ILI_Visits, ILI_Total_Visits), first),
       .groups = "drop"
     ) %>%
     dplyr::group_by(RowType, Region) %>%
