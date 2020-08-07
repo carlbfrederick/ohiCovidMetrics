@@ -286,7 +286,8 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
   ##Only keep necessary variables
   out <- out %>%
     select(Data_Period, Date, Region_ID, Region, RowType,
-           Conf_Case_Count, Conf_Case_Count_m0oving_avg, Conf_Case_Burden, COnf_Case_Burden_Class,
+           Conf_Case_Count, Conf_Case_Count_moving_avg, Conf_Case_Burden,
+           COnf_Case_Burden_Class, Conf_Case_Burden_Critical_Flag,
            Conf_Case_Trajectory, Conf_Case_Trajectory_P, Conf_Case_Trajectory_Class,
            Conf_Case_Composite_Class,
            Testing_Total_Specimens, Testing_Tot_Spec_moving_avg, Testing_Positive_Specimens,

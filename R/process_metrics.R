@@ -144,6 +144,7 @@ process_confirmed_cases <- function(case_df) {
       Trajectory = round(.data$Trajectory, 1),
       Trajectory = dplyr::if_else(.data$Trajectory_Class == "No significant change", "N/A",
                                   as.character(.data$Trajectory)),
+      Burden_Critical_Flag = if_else(Burden >= 350),
       Burden = round(.data$Burden, 1),
       RowType = "Summary"
     ) %>%
@@ -154,6 +155,7 @@ process_confirmed_cases <- function(case_df) {
       RowType = .data$RowType,
       Conf_Case_Count = .data$Count,
       Conf_Case_Burden = .data$Burden,
+      Conf_Case_Burden_Critical_Clag = .data$Burden_Critical_Flag,
       Conf_Case_Trajectory = .data$Trajectory,
       Conf_Case_Burden_Class = .data$Burden_Class,
       Conf_Case_Trajectory_Class = .data$Trajectory_Class,
@@ -850,11 +852,12 @@ process_ili <- function(ili_df, ili_threshold_path) {
       ILI_threshold = ILI_avg + SD_4,
       Over_baseline = dplyr::if_else(ILI_perc >= ILI_baseline, 1L, 0L),
       Over_threshold = dplyr::if_else(ILI_perc >= ILI_threshold, 1L, 0L),
-      moving_avg = zoo::rollapply(ILI_perc, 3, mean, fill = NA, align = "right"),
+      moving_avg = zoo::rollapply(ILI_Visits, 3, mean, fill = NA, align = "right") /
+                   zoo::rollapply(Total_Visits, 3, mean, fill = NA, align = "right"),
       Status = dplyr::case_when(
-        moving_avg >= ILI_threshold ~ "Elevated Activity",
-        moving_avg >= ILI_baseline ~ "Moderate Activity",
-        moving_avg < ILI_baseline ~ "Low Activity",
+        moving_avg >= ILI_threshold ~ "Elevated",
+        moving_avg >= ILI_baseline ~ "Moderate",
+        moving_avg < ILI_baseline ~ "Low",
         TRUE ~ "NA"
       )
     ) %>%
