@@ -564,9 +564,7 @@ process_testing <- function(testing_df) {
                   Testing_Incident_Tests = Tests,
                   Testing_Incident_Test_Target = Testing_Volume,
                   Testing_Percent_of_Target = percent_volume,
-                  # Testing_Composite_Class = testing_composite)
-                  # Commented out above and replaced with below for now
-                  Testing_Composite_Class = percent_positive_class)
+                  Testing_Composite_Class = testing_composite)
 
   dplyr::bind_rows(test_summary,
                    test_daily)

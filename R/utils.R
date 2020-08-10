@@ -567,3 +567,21 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
   return(invisible(out))
 
 }
+
+#' Utility to standardize geographic names
+#'
+#' @param reg vector of geographic names
+#'
+#' @return a vector of standardized geographic names
+std_region <- function(reg) {
+  ifelse(reg == "Saint Croix", "St. Croix", sub("HERC|", "", reg))
+}
+
+#' Utility to standardize geographic id's
+#'
+#' @param reg_id vector of geographic ids
+#'
+#' @return a vector of standardized geographic ids
+std_region_id <- function(reg_id) {
+  sub("HERC|", "", reg_id)
+}

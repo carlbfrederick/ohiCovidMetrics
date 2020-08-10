@@ -84,6 +84,7 @@ expect_true(all(out %>%
             info = "All periods have 14 unique dates.")
 
 consec <- out %>%
+  ungroup() %>%
   mutate(
     Date = as.numeric(Date)
   ) %>%
@@ -198,8 +199,8 @@ expect_equal(sum(is.na(out$Conf_Case_Burden_Class[out$RowType == "Summary"])), 0
              info = "Conf_Case_Burden_Class column has no NA/missings for Summary Rows")
 expect_equal(sum(!is.na(out$Conf_Case_Burden_Class[out$RowType == "Daily"])), 0,
              info = "Conf_Case_Burden_Class column has *all* NA/missings for Daily Rows")
-expect_equal(sort(unique(out$Conf_Case_Burden_Class)),
-             c("High", "Low", "Moderate", "Moderately High"),
+expect_true(all(unique(out$Conf_Case_Burden_Class[out$RowType == "Summary"]) %in%
+             c("High", "Low", "Moderate", "Moderately High")),
              info = "Conf_Case_Burden_Class column has only correct unique values")
 
 ###Conf_Case_Trajectory_Class
@@ -220,8 +221,8 @@ expect_equal(sum(is.na(out$Conf_Case_Composite_Class[out$RowType == "Summary"]))
              info = "Conf_Case_Composite_Class column has no NA/missings for Summary Rows")
 expect_equal(sum(!is.na(out$Conf_Case_Composite_Class[out$RowType == "Daily"])), 0,
              info = "Conf_Case_Composite_Class column has *all* NA/missings for Daily Rows")
-expect_equal(sort(unique(out$Conf_Case_Composite_Class)),
-             c("High", "Low", "Medium"),
+expect_true(all(unique(out$Conf_Case_Composite_Class[out$RowType == "Summary"]) %in%
+             c("High", "Low", "Medium")),
              info = "Conf_Case_Composite_Class column has only correct unique values")
 
 ###Conf_Case_Trajectory_P
@@ -233,16 +234,6 @@ expect_equal(sum(!is.na(out$Conf_Case_Trajectory_P[out$RowType == "Daily"])), 0,
              info = "Conf_Case_Trajectory_P column has *all* NA/missings for Daily Rows")
 expect_true(all(dplyr::between(out$Conf_Case_Trajectory_P[out$RowType == "Summary"], left = 0.0, right = 1.0)),
             info = "Conf_Case_Trajectory_P columns values are all between 0 and 1 inclusive.")
-
-###Conf_Case_Trajectory_FDR
-expect_true(inherits(out$Conf_Case_Trajectory_FDR, 'numeric'),
-            info = "Conf_Case_Trajectory_FDR column is 'numeric' class")
-expect_equal(sum(is.na(out$Conf_Case_Trajectory_FDR[out$RowType == "Summary"])), 0,
-             info = "Conf_Case_Trajectory_FDR column has no NA/missings for Summary Rows")
-expect_equal(sum(!is.na(out$Conf_Case_Trajectory_FDR[out$RowType == "Daily"])), 0,
-             info = "Conf_Case_Trajectory_FDR column has *all* NA/missings for Daily Rows")
-expect_true(all(dplyr::between(out$Conf_Case_Trajectory_FDR[out$RowType == "Summary"], left = 0.0, right = 1.0)),
-            info = "Conf_Case_Trajectory_FDR columns values are all between 0 and 1 inclusive.")
 
 ##. . Testing/Case Detection ----
 ###Testing_Positive_Specimens

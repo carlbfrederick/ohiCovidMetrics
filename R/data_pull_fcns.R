@@ -558,7 +558,9 @@ clean_testing <- function(bcd, lab, test_vol, end_date) {
 
   test_vol <- test_vol %>%
     dplyr::mutate(
-      Testing_Volume = 2 * Testing_Volume
+      Testing_Volume = 2 * Testing_Volume,
+      Region = std_region(Region),
+      Region_ID = std_region_id(Region_ID)
     )
 
   test_cty <- dplyr::left_join(test_raw,
