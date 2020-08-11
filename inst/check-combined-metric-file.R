@@ -303,22 +303,8 @@ expect_equal(sort(unique(out$Testing_Composite_Class)),
              info = "Testing_Composite_Class column has only correct unique values")
 
 ##. . Hospital ----
-miss_hosp_cty <- c("Bayfield", "Buffalo", "Florence", "Forest",
-                   "Iron", "Kewaunee", "Marquette", "Menominee",
-                   "Pierce")
 non_cty <- c("Wisconsin", "Fox Valley Area", "North Central", "Northeast",
              "Northwest", "South Central", "Southeast", "Western")
-
-###Hosp_RunDate
-expect_true(inherits(out$Hosp_RunDate, 'Date'),
-            info = "Hosp_RunDate column is 'Date' class")
-expect_equal(sum(is.na(out$Hosp_RunDate[out$RowType == "Summary" & !(out$Region %in% miss_hosp_cty)])), 0,
-             info = "Hosp_RunDate column has no NA/missings for summary rows excluding: Bayfield, Buffalo, Florence, Forest, Iron, Kewaunee, Marquette, Menominee, Pierce")
-expect_equal(sum(is.na(out$Hosp_RunDate[out$RowType == "Daily" & out$Region %in% non_cty])), 0,
-             info = "Hosp_RunDate column has no NA/missings for daily rows for state and HERC regions")
-expect_equal(sum(!is.na(out$Hosp_RunDate[out$RowType == "Summary" & out$Region %in% miss_hosp_cty])) +
-             sum(!is.na(out$Hosp_RunDate[out$RowType == "Daily" & !(out$Region %in% non_cty)])), 0,
-             info = "Hosp_RunDate column is always NA/missings when expected")
 
 ###Hosp_dailyCOVID_px
 expect_true(inherits(out$Hosp_dailyCOVID_px, 'numeric'),
@@ -400,64 +386,6 @@ expect_equal(sum(is.na(out$Hosp_total_vents[out$RowType == "Daily" & out$Region 
 expect_equal(sum(!is.na(out$Hosp_total_vents[out$RowType == "Daily" & !(out$Region %in% non_cty)])), 0,
              info = "Hosp_total_vents column is always NA/missings for county daily rows")
 
-###Hosp_intermed_beds_IBA
-expect_true(inherits(out$Hosp_intermed_beds_IBA, 'numeric'),
-            info = "Hosp_intermed_beds_IBA column is 'numeric' class")
-expect_equal(sum(!is.na(out$Hosp_intermed_beds_IBA[out$RowType == "Summary"])), 0,
-             info = "Hosp_intermed_beds_IBA column has only NA/missings for summary")
-expect_equal(sum(is.na(out$Hosp_intermed_beds_IBA[out$RowType == "Daily" & out$Region %in% non_cty])), 0,
-             info = "Hosp_intermed_beds_IBA column has no NA/missings for daily rows for state and HERC regions")
-expect_equal(sum(!is.na(out$Hosp_intermed_beds_IBA[out$RowType == "Daily" & !(out$Region %in% non_cty)])), 0,
-             info = "Hosp_intermed_beds_IBA column is always NA/missings for county daily rows")
-
-###Hosp_negflow_beds_IBA
-expect_true(inherits(out$Hosp_negflow_beds_IBA, 'numeric'),
-            info = "Hosp_negflow_beds_IBA column is 'numeric' class")
-expect_equal(sum(!is.na(out$Hosp_negflow_beds_IBA[out$RowType == "Summary"])), 0,
-             info = "Hosp_negflow_beds_IBA column has only NA/missings for summary")
-expect_equal(sum(is.na(out$Hosp_negflow_beds_IBA[out$RowType == "Daily" & out$Region %in% non_cty])), 0,
-             info = "Hosp_negflow_beds_IBA column has no NA/missings for daily rows for state and HERC regions")
-expect_equal(sum(!is.na(out$Hosp_negflow_beds_IBA[out$RowType == "Daily" & !(out$Region %in% non_cty)])), 0,
-             info = "Hosp_negflow_beds_IBA column is always NA/missings for county daily rows")
-
-###Hosp_medsurg_beds_IBA
-expect_true(inherits(out$Hosp_medsurg_beds_IBA, 'numeric'),
-            info = "Hosp_medsurg_beds_IBA column is 'numeric' class")
-expect_equal(sum(!is.na(out$Hosp_medsurg_beds_IBA[out$RowType == "Summary"])), 0,
-             info = "Hosp_medsurg_beds_IBA column has only NA/missings for summary")
-expect_equal(sum(is.na(out$Hosp_medsurg_beds_IBA[out$RowType == "Daily" & out$Region %in% non_cty])), 0,
-             info = "Hosp_medsurg_beds_IBA column has no NA/missings for daily rows for state and HERC regions")
-expect_equal(sum(!is.na(out$Hosp_medsurg_beds_IBA[out$RowType == "Daily" & !(out$Region %in% non_cty)])), 0,
-             info = "Hosp_medsurg_beds_IBA column is always NA/missings for county daily rows")
-
-###Hosp_PrctBeds_IBA
-expect_true(inherits(out$Hosp_PrctBeds_IBA, 'numeric'),
-            info = "Hosp_PrctBeds_IBA column is 'numeric' class")
-expect_equal(sum(!is.na(out$Hosp_PrctBeds_IBA[out$RowType == "Summary"])), 0,
-             info = "Hosp_PrctBeds_IBA column has only NA/missings for summary")
-expect_equal(sum(is.na(out$Hosp_PrctBeds_IBA[out$RowType == "Daily" & out$Region %in% non_cty])), 0,
-             info = "Hosp_PrctBeds_IBA column has no NA/missings for daily rows for state and HERC regions")
-expect_equal(sum(!is.na(out$Hosp_PrctBeds_IBA[out$RowType == "Daily" & !(out$Region %in% non_cty)])), 0,
-             info = "Hosp_PrctBeds_IBA column is always NA/missings for county daily rows")
-expect_true(all(dplyr::between(out$Hosp_PrctBeds_IBA[out$RowType == "Daily" & out$Region %in% non_cty], left = 0.0, right = 100.0)),
-            info = "Hosp_PrctBeds_IBA columns values are all between 0 and 100 inclusive.")
-expect_true(any(out$Hosp_PrctBeds_IBA[out$RowType == "Daily" & out$Region %in% non_cty] > 1.0),
-            info = "Hosp_PrctBeds_IBA columns values are scales between 0 and 100 (not 0 and 1).")
-
-###Hosp_PrctICU_IBA
-expect_true(inherits(out$Hosp_PrctICU_IBA, 'numeric'),
-            info = "Hosp_PrctICU_IBA column is 'numeric' class")
-expect_equal(sum(!is.na(out$Hosp_PrctICU_IBA[out$RowType == "Summary"])), 0,
-             info = "Hosp_PrctICU_IBA column has only NA/missings for summary")
-expect_equal(sum(is.na(out$Hosp_PrctICU_IBA[out$RowType == "Daily" & out$Region %in% non_cty])), 0,
-             info = "Hosp_PrctICU_IBA column has no NA/missings for daily rows for state and HERC regions")
-expect_equal(sum(!is.na(out$Hosp_PrctICU_IBA[out$RowType == "Daily" & !(out$Region %in% non_cty)])), 0,
-             info = "Hosp_PrctICU_IBA column is always NA/missings for county daily rows")
-expect_true(all(dplyr::between(out$Hosp_PrctICU_IBA[out$RowType == "Daily" & out$Region %in% non_cty], left = 0.0, right = 100.0)),
-            info = "Hosp_PrctICU_IBA columns values are all between 0 and 100 inclusive.")
-expect_true(any(out$Hosp_PrctICU_IBA[out$RowType == "Daily" & out$Region %in% non_cty] > 1.0),
-            info = "Hosp_PrctICU_IBA columns values are scales between 0 and 100 (not 0 and 1).")
-
 ###Hosp_PrctVent_Used
 expect_true(inherits(out$Hosp_PrctVent_Used, 'numeric'),
             info = "Hosp_PrctVent_Used column is 'numeric' class")
@@ -475,46 +403,46 @@ expect_true(any(out$Hosp_PrctVent_Used[out$RowType == "Daily" & out$Region %in% 
 ###Hosp_COVID_px_Trajectory
 expect_true(inherits(out$Hosp_COVID_px_Trajectory, 'character'),
             info = "Hosp_COVID_px_Trajectory column is 'character' class")
-expect_equal(sum(is.na(out$Hosp_COVID_px_Trajectory[out$RowType == "Summary" & !(out$Region %in% miss_hosp_cty)])), 0,
-             info = "Hosp_COVID_px_Trajectory column has no NA/missings for summary rows excluding: Bayfield, Buffalo, Florence, Forest, Iron, Kewaunee, Marquette, Menominee, Pierce")
+expect_equal(sum(is.na(out$Hosp_COVID_px_Trajectory[out$RowType == "Summary" & out$Region %in% non_cty])), 0,
+             info = "Hosp_COVID_px_Trajectory column has no NA/missings for summary rows for HERC and State")
 expect_equal(sum(!is.na(out$Hosp_COVID_px_Trajectory[out$RowType == "Daily"])), 0,
              info = "Hosp_COVID_px_Trajectory column has *all* NA/missings for Daily Rows")
-expect_equal(sum(!is.na(out$Hosp_COVID_px_Trajectory[out$RowType == "Summary" & out$Region %in% miss_hosp_cty])), 0,
+expect_equal(sum(!is.na(out$Hosp_COVID_px_Trajectory[out$RowType == "Summary" & !(out$Region %in% non_cty)])), 0,
              info = "Hosp_COVID_px_Trajectory column is always NA/missings when expected")
 
 ###Hosp_COVID_px_Trajectory_Class
 expect_true(inherits(out$Hosp_COVID_px_Trajectory_Class, 'character'),
             info = "Hosp_COVID_px_Trajectory_Class column is 'character' class")
-expect_equal(sum(is.na(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summary" & !(out$Region %in% miss_hosp_cty)])), 0,
-             info = "Hosp_COVID_px_Trajectory_Class column has no NA/missings for summary rows excluding: Bayfield, Buffalo, Florence, Forest, Iron, Kewaunee, Marquette, Menominee, Pierce")
+expect_equal(sum(is.na(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summary" & out$Region %in% non_cty])), 0,
+             info = "Hosp_COVID_px_Trajectory_Class column has no NA/missings for summary rows for HERC and State")
 expect_equal(sum(!is.na(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Daily"])), 0,
              info = "Hosp_COVID_px_Trajectory_Class column has *all* NA/missings for Daily Rows")
-expect_equal(sum(!is.na(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summary" & out$Region %in% miss_hosp_cty])), 0,
+expect_equal(sum(!is.na(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summary" & !(out$Region %in% non_cty)])), 0,
              info = "Hosp_COVID_px_Trajectory_Class column is always NA/missings when expected")
-expect_equal(sort(unique(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summary" & !(out$Region %in% miss_hosp_cty)])),
+expect_equal(sort(unique(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summary" & out$Region %in% non_cty])),
              c("Growing", "No significant change", "Shrinking"),
              info = "Hosp_COVID_px_Trajectory_Class column has only correct unique values")
 
 ###Hosp_COVID_ICUpx_Trajectory
 expect_true(inherits(out$Hosp_COVID_ICUpx_Trajectory, 'character'),
             info = "Hosp_COVID_ICUpx_Trajectory column is 'character' class")
-expect_equal(sum(is.na(out$Hosp_COVID_ICUpx_Trajectory[out$RowType == "Summary" & !(out$Region %in% miss_hosp_cty)])), 0,
-             info = "Hosp_COVID_ICUpx_Trajectory column has no NA/missings for summary rows excluding: Bayfield, Buffalo, Florence, Forest, Iron, Kewaunee, Marquette, Menominee, Pierce")
+expect_equal(sum(is.na(out$Hosp_COVID_ICUpx_Trajectory[out$RowType == "Summary" & out$Region %in% non_cty])), 0,
+             info = "Hosp_COVID_ICUpx_Trajectory column has no NA/missings for summary rows for HERC and State")
 expect_equal(sum(!is.na(out$Hosp_COVID_ICUpx_Trajectory[out$RowType == "Daily"])), 0,
              info = "Hosp_COVID_ICUpx_Trajectory column has *all* NA/missings for Daily Rows")
-expect_equal(sum(!is.na(out$Hosp_COVID_ICUpx_Trajectory[out$RowType == "Summary" & out$Region %in% miss_hosp_cty])), 0,
+expect_equal(sum(!is.na(out$Hosp_COVID_ICUpx_Trajectory[out$RowType == "Summary" & !(out$Region %in% non_cty)])), 0,
              info = "Hosp_COVID_ICUpx_Trajectory column is always NA/missings when expected")
 
 ###Hosp_COVID_ICUpx_Trajectory_Class
 expect_true(inherits(out$Hosp_COVID_ICUpx_Trajectory_Class, 'character'),
             info = "Hosp_COVID_ICUpx_Trajectory_Class column is 'character' class")
-expect_equal(sum(is.na(out$Hosp_COVID_ICUpx_Trajectory_Class[out$RowType == "Summary" & !(out$Region %in% miss_hosp_cty)])), 0,
-             info = "Hosp_COVID_ICUpx_Trajectory_Class column has no NA/missings for summary rows excluding: Bayfield, Buffalo, Florence, Forest, Iron, Kewaunee, Marquette, Menominee, Pierce")
+expect_equal(sum(is.na(out$Hosp_COVID_ICUpx_Trajectory_Class[out$RowType == "Summary" & out$Region %in% non_cty])), 0,
+             info = "Hosp_COVID_ICUpx_Trajectory_Class column has no NA/missings for summary rows for HERC and State")
 expect_equal(sum(!is.na(out$Hosp_COVID_ICUpx_Trajectory_Class[out$RowType == "Daily"])), 0,
              info = "Hosp_COVID_ICUpx_Trajectory_Class column has *all* NA/missings for Daily Rows")
-expect_equal(sum(!is.na(out$Hosp_COVID_ICUpx_Trajectory_Class[out$RowType == "Summary" & out$Region %in% miss_hosp_cty])), 0,
+expect_equal(sum(!is.na(out$Hosp_COVID_ICUpx_Trajectory_Class[out$RowType == "Summary" & !(out$Region %in% non_cty)])), 0,
              info = "Hosp_COVID_ICUpx_Trajectory_Class column is always NA/missings when expected")
-expect_equal(sort(unique(out$Hosp_COVID_ICUpx_Trajectory_Class[out$RowType == "Summary" & !(out$Region %in% miss_hosp_cty)])),
+expect_equal(sort(unique(out$Hosp_COVID_ICUpx_Trajectory_Class[out$RowType == "Summary" & out$Region %in% non_cty])),
              c("Growing", "No significant change", "Shrinking"),
              info = "Hosp_COVID_ICUpx_Trajectory_Class column has only correct unique values")
 
@@ -654,16 +582,6 @@ expect_equal(sum(!is.na(out$CLI_Trajectory_P[out$RowType == "Daily"])), 0,
              info = "CLI_Trajectory_P column has *all* NA/missings for Daily Rows")
 expect_true(all(dplyr::between(out$CLI_Trajectory_P[out$RowType == "Summary"], left = 0.0, right = 1.0)),
             info = "CLI_Trajectory_P columns values are all between 0 and 1 inclusive.")
-
-###CLI_Trajectory_FDR
-expect_true(inherits(out$CLI_Trajectory_FDR, 'numeric'),
-            info = "CLI_Trajectory_FDR column is 'numeric' class")
-expect_equal(sum(is.na(out$CLI_Trajectory_FDR[out$RowType == "Summary"])), 0,
-             info = "CLI_Trajectory_FDR column has no NA/missings for Summary Rows")
-expect_equal(sum(!is.na(out$CLI_Trajectory_FDR[out$RowType == "Daily"])), 0,
-             info = "CLI_Trajectory_FDR column has *all* NA/missings for Daily Rows")
-expect_true(all(dplyr::between(out$CLI_Trajectory_FDR[out$RowType == "Summary"], left = 0.0, right = 1.0)),
-            info = "CLI_Trajectory_FDR columns values are all between 0 and 1 inclusive.")
 
 ##. . ILI ----
 ###ILI_Total_Visits
