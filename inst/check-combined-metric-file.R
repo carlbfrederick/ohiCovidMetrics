@@ -200,7 +200,7 @@ expect_equal(sum(is.na(out$Conf_Case_Burden_Class[out$RowType == "Summary"])), 0
 expect_equal(sum(!is.na(out$Conf_Case_Burden_Class[out$RowType == "Daily"])), 0,
              info = "Conf_Case_Burden_Class column has *all* NA/missings for Daily Rows")
 expect_true(all(unique(out$Conf_Case_Burden_Class[out$RowType == "Summary"]) %in%
-             c("High", "Low", "Moderate", "Moderately High")),
+             c("Critical", "High", "Low", "Moderate", "Moderately High")),
              info = "Conf_Case_Burden_Class column has only correct unique values")
 
 ###Conf_Case_Trajectory_Class
@@ -210,7 +210,7 @@ expect_equal(sum(is.na(out$Conf_Case_Trajectory_Class[out$RowType == "Summary"])
              info = "Conf_Case_Trajectory_Class column has no NA/missings for Summary Rows")
 expect_equal(sum(!is.na(out$Conf_Case_Trajectory_Class[out$RowType == "Daily"])), 0,
              info = "Conf_Case_Trajectory_Class column has *all* NA/missings for Daily Rows")
-expect_equal(all(unique(out$Conf_Case_Trajectory_Class) %in%
+expect_true(all(unique(out$Conf_Case_Trajectory_Class[out$RowType == "Summary"]) %in%
              c("Growing", "No significant change", "Shrinking")),
              info = "Conf_Case_Trajectory_Class column has only correct unique values")
 
@@ -222,7 +222,7 @@ expect_equal(sum(is.na(out$Conf_Case_Composite_Class[out$RowType == "Summary"]))
 expect_equal(sum(!is.na(out$Conf_Case_Composite_Class[out$RowType == "Daily"])), 0,
              info = "Conf_Case_Composite_Class column has *all* NA/missings for Daily Rows")
 expect_true(all(unique(out$Conf_Case_Composite_Class[out$RowType == "Summary"]) %in%
-             c("High", "Low", "Medium")),
+             c("Critical", "High", "Low", "Medium")),
              info = "Conf_Case_Composite_Class column has only correct unique values")
 
 ###Conf_Case_Trajectory_P
@@ -266,31 +266,6 @@ expect_true(all(dplyr::between(out$Testing_Percent_Positive[out$Testing_Total_Sp
 expect_true(any(out$Testing_Percent_Positive[out$Testing_Total_Specimens > 0] > 1.0),
             info = "Testing_Percent_Positive columns values are scales between 0 and 100 (not 0 and 1).")
 
-
-###Testing_Incident_Tests
-expect_true(inherits(out$Testing_Incident_Tests, 'numeric'),
-            info = "Testing_Incident_Tests column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Incident_Tests)), 0,
-             info = "Testing_Incident_Tests column has no NA/missings")
-
-###Testing_Incident_Test_Target
-expect_true(inherits(out$Testing_Incident_Test_Target, 'numeric'),
-            info = "Testing_Incident_Test_Target column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Incident_Test_Target[out$RowType == "Summary"])), 0,
-             info = "Testing_Incident_Test_Target column has no NA/missings for Summary Rows")
-expect_equal(sum(!is.na(out$Testing_Incident_Test_Target[out$RowType == "Daily"])), 0,
-             info = "Testing_Incident_Test_Target column has *all* NA/missings for Daily Rows")
-
-###Testing_Percent_of_Target
-expect_true(inherits(out$Testing_Percent_of_Target, 'numeric'),
-            info = "Testing_Percent_of_Target column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Percent_of_Target[out$RowType == "Summary"])), 0,
-             info = "Testing_Percent_of_Target column has no NA/missings for Summary Rows")
-expect_equal(sum(!is.na(out$Testing_Percent_of_Target[out$RowType == "Daily"])), 0,
-             info = "Testing_Percent_of_Target column has *all* NA/missings for Daily Rows")
-expect_true(any(out$Testing_Percent_of_Target[out$RowType == "Summary"] > 1.0),
-            info = "Testing_Percent_of_Target columns values are scales between 0 and 100+ (not 0 and 1+).")
-
 ###Testing_Composite_Class
 expect_true(inherits(out$Testing_Composite_Class, 'character'),
             info = "Testing_Composite_Class column is 'character' class")
@@ -298,7 +273,7 @@ expect_equal(sum(is.na(out$Testing_Composite_Class[out$RowType == "Summary"])), 
              info = "Testing_Composite_Class column has no NA/missings for Summary Rows")
 expect_equal(sum(!is.na(out$Testing_Composite_Class[out$RowType == "Daily"])), 0,
              info = "Testing_Composite_Class column has *all* NA/missings for Daily Rows")
-expect_equal(all(unique(out$Testing_Composite_Class) %in% c("High", "Low", "Medium")),
+expect_true(all(unique(out$Testing_Composite_Class[out$RowType == "Summary"]) %in% c("High", "Low", "Medium")),
              info = "Testing_Composite_Class column has only correct unique values")
 
 ##. . Hospital ----
@@ -418,7 +393,7 @@ expect_equal(sum(!is.na(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Daily
              info = "Hosp_COVID_px_Trajectory_Class column has *all* NA/missings for Daily Rows")
 expect_equal(sum(!is.na(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summary" & !(out$Region %in% non_cty)])), 0,
              info = "Hosp_COVID_px_Trajectory_Class column is always NA/missings when expected")
-expect_equal(all(unique(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summary" & out$Region %in% non_cty]) %in%
+expect_true(all(unique(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summary" & out$Region %in% non_cty]) %in%
              c("Growing", "No significant change", "Shrinking")),
              info = "Hosp_COVID_px_Trajectory_Class column has only correct unique values")
 
@@ -441,7 +416,7 @@ expect_equal(sum(!is.na(out$Hosp_COVID_ICUpx_Trajectory_Class[out$RowType == "Da
              info = "Hosp_COVID_ICUpx_Trajectory_Class column has *all* NA/missings for Daily Rows")
 expect_equal(sum(!is.na(out$Hosp_COVID_ICUpx_Trajectory_Class[out$RowType == "Summary" & !(out$Region %in% non_cty)])), 0,
              info = "Hosp_COVID_ICUpx_Trajectory_Class column is always NA/missings when expected")
-expect_equal(all(unique(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summary" & out$Region %in% non_cty]) %in%
+expect_true(all(unique(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summary" & out$Region %in% non_cty]) %in%
                    c("Growing", "No significant change", "Shrinking")),
              info = "Hosp_COVID_ICUpx_Trajectory_Class column has only correct unique values")
 
@@ -546,8 +521,8 @@ expect_equal(sum(is.na(out$CLI_Burden_Class[out$RowType == "Summary"])), 0,
              info = "CLI_Burden_Class column has no NA/missings for Summary Rows")
 expect_equal(sum(!is.na(out$CLI_Burden_Class[out$RowType == "Daily"])), 0,
              info = "CLI_Burden_Class column has *all* NA/missings for Daily Rows")
-expect_equal(all(unique(out$CLI_Burden_Class) %in%
-             c("High", "Low", "Moderate", "Moderately High")),
+expect_true(all(unique(out$CLI_Burden_Class[out$RowType == "Summary"]) %in%
+             c("Critical", "High", "Low", "Moderate", "Moderately High")),
              info = "CLI_Burden_Class column has only correct unique values")
 
 ###CLI_Trajectory_Class
@@ -557,7 +532,7 @@ expect_equal(sum(is.na(out$CLI_Trajectory_Class[out$RowType == "Summary"])), 0,
              info = "CLI_Trajectory_Class column has no NA/missings for Summary Rows")
 expect_equal(sum(!is.na(out$CLI_Trajectory_Class[out$RowType == "Daily"])), 0,
              info = "CLI_Trajectory_Class column has *all* NA/missings for Daily Rows")
-expect_equal(all(unique(out$CLI_Trajectory_Class) %in%
+expect_true(all(unique(out$CLI_Trajectory_Class[out$RowType == "Summary"]) %in%
              c("Growing", "No significant change", "Shrinking")),
              info = "CLI_Trajectory_Class column has only correct unique values")
 
@@ -568,7 +543,7 @@ expect_equal(sum(is.na(out$CLI_Composite_Class[out$RowType == "Summary"])), 0,
              info = "CLI_Composite_Class column has no NA/missings for Summary Rows")
 expect_equal(sum(!is.na(out$CLI_Composite_Class[out$RowType == "Daily"])), 0,
              info = "CLI_Composite_Class column has *all* NA/missings for Daily Rows")
-expect_equal(all(unique(out$CLI_Composite_Class) %in% c("High", "Low", "Medium")),
+expect_true(all(unique(out$CLI_Composite_Class[out$RowType == "Summary"]) %in% c("Critical", "High", "Low", "Medium")),
              info = "CLI_Composite_Class column has only correct unique values")
 
 ###CLI_Trajectory_P
@@ -617,9 +592,9 @@ expect_equal(sum(is.na(out$ILI_Baseline[out$RowType == "Daily" & out$Region != "
              info = "ILI_Baseline column has no NA/missings for Daily rows outside of Florence County")
 expect_equal(sum(!is.na(out$ILI_Baseline[out$RowType == "Summary" | out$Region == "Florence"])), 0,
              info = "ILI_Baseline column has ONLY NA/missings for Summary rows and Florence County")
-expect_true(all(dplyr::between(out$ILI_Baseline[out$RowType == "Daily"], left = 0.0, right = 100.0)),
+expect_true(all(dplyr::between(out$ILI_Baseline[out$RowType == "Daily" & out$Region != "Florence"], left = 0.0, right = 100.0)),
             info = "ILI_Baseline columns values are all between 0 and 100 inclusive.")
-expect_true(any(out$ILI_Baseline[out$RowType == "Daily"] > 1.0),
+expect_true(any(out$ILI_Baseline[out$RowType == "Daily" & out$Region != "Florence"] > 1.0),
             info = "ILI_Baseline columns values are scales between 0 and 100 (not 0 and 1).")
 
 ###ILI_Threshold
@@ -629,9 +604,9 @@ expect_equal(sum(is.na(out$ILI_Threshold[out$RowType == "Daily" & out$Region != 
              info = "ILI_Threshold column has no NA/missings for Daily rows outside of Florence County")
 expect_equal(sum(!is.na(out$ILI_Threshold[out$RowType == "Summary" | out$Region == "Florence"])), 0,
              info = "ILI_Threshold column has ONLY NA/missings for Summary rows and Florence County")
-expect_true(all(dplyr::between(out$ILI_Threshold[out$RowType == "Daily"], left = 0.0, right = 100.0)),
+expect_true(all(dplyr::between(out$ILI_Threshold[out$RowType == "Daily" & out$Region != "Florence"], left = 0.0, right = 100.0)),
             info = "ILI_Threshold columns values are all between 0 and 100 inclusive.")
-expect_true(any(out$ILI_Threshold[out$RowType == "Daily"] > 1.0),
+expect_true(any(out$ILI_Threshold[out$RowType == "Daily" & out$Region != "Florence"] > 1.0),
             info = "ILI_Threshold columns values are scales between 0 and 100 (not 0 and 1).")
 
 
@@ -661,11 +636,9 @@ expect_equal(sum(is.na(ili_ma$ILI_Status[ili_ma$RowType == "Daily" & ili_ma$Regi
              info = "ILI_Status column has no NA/missings for Daily rows outside of Florence County and first 2 dates of period per geo-unit")
 expect_equal(sum(!is.na(ili_ma$ILI_Status[ili_ma$RowType == "Summary" | ili_ma$Region == "Florence" | ili_ma$burn_obs <= 2])), 0,
              info = "ILI_Status column has ONLY NA/missings for Summary rows and Florence County and first 2 dates of period per geo-unit")
-expect_true(all(dplyr::between(ili_ma$ILI_Status[ili_ma$RowType == "Daily" & ili_ma$Region != "Florence" & ili_ma$burn_obs > 2], left = 0.0, right = 100.0)),
-            info = "ILI_Status columns values are all between 0 and 100 inclusive.")
-expect_true(any(ili_ma$ILI_Status[ili_ma$RowType == "Daily" & ili_ma$Region != "Florence" & ili_ma$burn_obs > 2] > 1.0),
-            info = "ILI_Status columns values are scales between 0 and 100 (not 0 and 1).")
-
+expect_true(all(unique(ili_ma$ILI_Status[ili_ma$RowType == "Daily" & ili_ma$Region != "Florence" & ili_ma$burn_obs > 2]) %in%
+                  c("Elevated", "Low", "Moderate")),
+            info = "ILI_Status column has only correct unique values")
 
 ##. . Testing Volume Targets----
 ###Testing_Case

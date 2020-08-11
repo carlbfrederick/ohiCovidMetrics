@@ -561,9 +561,6 @@ process_testing <- function(testing_df) {
                   Testing_Nonpositive_Specimens = NotPositive,
                   Testing_Total_Specimens = total_specimens,
                   Testing_Percent_Positive = percent_positive,
-                  Testing_Incident_Tests = Tests,
-                  Testing_Incident_Test_Target = Testing_Volume,
-                  Testing_Percent_of_Target = percent_volume,
                   Testing_Composite_Class = testing_composite)
 
   dplyr::bind_rows(test_summary,

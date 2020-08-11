@@ -158,11 +158,12 @@ score_burden <- function(curr, prev, pop) {
 class_burden <- function(burden) {
   out <- ifelse(burden <= 10, 1,
          ifelse(burden <= 50, 2,
-         ifelse(burden <= 100, 3, 4)))
+         ifelse(burden <= 100, 3,
+         ifelse(burden <= 350, 4, 5))))
 
   out <- factor(out,
-                levels = 1:4,
-                labels = c("Low", "Moderate", "Moderately High", "High"),
+                levels = 1:5,
+                labels = c("Low", "Moderate", "Moderately High", "High", "Critical"),
                 ordered = TRUE)
 
   out
@@ -197,12 +198,13 @@ confirmed_case_composite <- function(traj_class, burd_class) {
     burd_class == "Moderately High" & traj_class == "Shrinking" ~ 2,
     burd_class == "Moderately High" & traj_class > "Shrinking" ~ 3,
     burd_class == "High" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 3,
+    burd_class == "Critical" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 4,
     TRUE ~ NA_real_
   )
 
   out <- factor(out,
-                levels = 1:3,
-                labels = c("Low", "Medium", "High"),
+                levels = 1:4,
+                labels = c("Low", "Medium", "High", "Critical"),
                 ordered = TRUE)
 
   out
