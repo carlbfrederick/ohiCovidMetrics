@@ -333,7 +333,7 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
     message("You are good to go, all file checks passed!")
   } else if (sum(!checks_df$result) > 0) {
     warning("Oh no! ", sum(!checks_df$result), " data file checks failed. See list below for conditions that failed:\n - ",
-            paste0(checks_df$info, collapse = "\n - "))
+            paste0(checks_df$info[!checks_df$result], collapse = "\n - "))
   }
 
   return(
