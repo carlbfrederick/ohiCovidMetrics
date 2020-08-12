@@ -247,7 +247,7 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' @param test     data.frame produced by \code{\link{process_testing}}
 #' @param cli      data.frame produced by \code{\link{process_cli}}
 #' @param ili      data.frame produced by \code{\link{process_ili}}
-#' @param test_targets data.frame produced by \code{\link{process_test_targets}}
+#' @param test_targets data.frame produced by \code{process_test_targets}
 #' @param outfile  file name (including path) for output data file
 #'
 #' @return invisibly returns the combined data
@@ -443,6 +443,7 @@ essence_data <- function(url) {
 #'
 #' @param current_combo_file path to .csv file produced by \code{\link{merge_metric_files}}
 #' @param existing_combo_file path to .csv file of all passed combo files
+#' @param overwrite logical indicating if function should overwrite existing_combo_file with new combined file
 #'
 #' @return invisibly returns the combined data. Also it saves existing_combo_file with a datestamp
 #'         for the archives and saves the output over existing_combo_file

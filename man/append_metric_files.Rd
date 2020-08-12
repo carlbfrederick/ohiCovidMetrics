@@ -10,6 +10,8 @@ append_metric_files(current_combo_file, existing_combo_file, overwrite = FALSE)
 \item{current_combo_file}{path to .csv file produced by \code{\link{merge_metric_files}}}
 
 \item{existing_combo_file}{path to .csv file of all passed combo files}
+
+\item{overwrite}{logical indicating if function should overwrite existing_combo_file with new combined file}
 }
 \value{
 invisibly returns the combined data. Also it saves existing_combo_file with a datestamp

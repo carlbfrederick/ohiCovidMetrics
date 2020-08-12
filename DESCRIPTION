@@ -36,6 +36,7 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports: 
+    tinytest,
     sf,
     dplyr (>= 1.0.0),
     lubridate,
@@ -52,7 +53,6 @@ Imports:
     httr
 RoxygenNote: 7.1.0
 Suggests: 
-    tinytest,
     knitr,
     rmarkdown,
     tidyverse

@@ -151,6 +151,8 @@ pull_wedss <- function(query, conn, end_date = NULL) {
 #' @importFrom dplyr bind_rows
 #' @importFrom rlang .data
 #' @importFrom utils data
+#' @importFrom tidyr nesting
+#' @importFrom tidyr complete
 #'
 #' @return raw historical case data ready for cleaning
 clean_histTable <- function(hdt, end_date) {
@@ -170,7 +172,7 @@ clean_histTable <- function(hdt, end_date) {
       death_daily = dplyr::if_else(is.na(.data$DTH_NEW), .data$DEATHS, .data$DTH_NEW)
     ) %>%
     dplyr::ungroup(.) %>%
-    tidyr::complete(nesting(fips, geo_type, geo_name), post_date,
+    tidyr::complete(tidyr::nesting(fips, geo_type, geo_name), post_date,
                     fill = list(case_daily = 0L, test_daily = 0L, death_daily = 0L)) %>%
     dplyr::left_join(dplyr::select(county_data, .data$fips, .data$herc_region, .data$pop_2018), by = "fips")
 

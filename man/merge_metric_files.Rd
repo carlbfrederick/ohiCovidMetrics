@@ -17,7 +17,7 @@ merge_metric_files(case, hosp, test, cli, ili, test_targets, outfile)
 
 \item{ili}{data.frame produced by \code{\link{process_ili}}}
 
-\item{test_targets}{data.frame produced by \code{\link{process_test_targets}}}
+\item{test_targets}{data.frame produced by \code{process_test_targets}}
 
 \item{outfile}{file name (including path) for output data file}
 }
