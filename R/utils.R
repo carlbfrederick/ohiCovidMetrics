@@ -580,7 +580,13 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
 #'
 #' @return a vector of standardized geographic names
 std_region <- function(reg) {
-  ifelse(reg == "Saint Croix", "St. Croix", sub("HERC\\|", "", reg))
+  out <- ifelse(reg == "Saint Croix", "St. Croix", sub("HERC\\|", "", reg))
+  out <- ifelse(out == "Fond Du Lac", "Fond du Lac", out)
+  out <- ifelse(grepl("La\\s?[Cc]rosse", out), "La Crosse", out)
+  out <- ifelse(out == "Fox valley", "Fox Valley Area", out)
+  out <- ifelse(out == "NorthCentral", "North Central", out)
+  out <- ifelse(out == "SouthCentral", "South Central", out)
+
 }
 
 #' Utility to standardize geographic id's

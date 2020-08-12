@@ -79,3 +79,36 @@ expect_error(clean_reversals(c(10, 2, 13, -4, 3, NA, 3, 18, -3, 3, 3, 3)))
 #test that a known, well-behaved vector has no negative values
 #test that a known, poorly behaved vector issues a warning
 #check that it errors if there are any missing values
+
+#std_region ----
+badvec_reg <- c("Adams", "Dane", "Milwaukee", "Fond Du Lac", "Saint Croix", "Lacrosse",
+                "HERC|Fox Valley Area", "HERC|Western",
+                "HERC|North Central", "HERC|Northeast", "HERC|Northwest", "HERC|South Central",
+                "HERC|Southeast", "Wisconsin", "NorthCentral", "SouthCentral", "Fox valley")
+goodvec_reg <- c("Adams", "Dane", "Milwaukee", "Fond du Lac", "St. Croix", "La Crosse",
+                 "Fox Valley Area", "Western", "North Central", "Northeast", "Northwest", "South Central",
+                 "Southeast", "Wisconsin", "North Central", "South Central", "Fox Valley Area")
+
+expect_identical(ohiCovidMetrics:::std_region(badvec_reg), goodvec_reg)
+
+#std_region_ID ----
+badvec_reg_id <- c("55", "55001", "55003", "55005", "55007", "55009", "55011", "55013", "55015", "55017",
+                   "55019", "55021", "55023", "55025", "55027", "55029", "55031", "55033", "55035", "55037",
+                   "55039", "55041", "55043", "55045", "55047", "55049", "55051", "55053", "55055", "55057",
+                   "55059", "55061", "55063", "55065", "55067", "55069", "55071", "55073", "55075", "55077",
+                   "55078", "55079", "55081", "55083", "55085", "55087", "55089", "55091", "55093", "55095",
+                   "55097", "55099", "55101", "55103", "55105", "55107", "55109", "55111", "55113", "55115",
+                   "55117", "55119", "55121", "55123", "55125", "55127", "55129", "55131", "55133", "55135",
+                   "55137", "55139", "55141", "HERC|Fox Valley Area", "HERC|North Central", "HERC|Northeast",
+                   "HERC|Northwest", "HERC|South Central", "HERC|Southeast", "HERC|Western")
+goodvec_reg_id <- c("55", "55001", "55003", "55005", "55007", "55009", "55011", "55013", "55015", "55017",
+                    "55019", "55021", "55023", "55025", "55027", "55029", "55031", "55033", "55035", "55037",
+                    "55039", "55041", "55043", "55045", "55047", "55049", "55051", "55053", "55055", "55057",
+                    "55059", "55061", "55063", "55065", "55067", "55069", "55071", "55073", "55075", "55077",
+                    "55078", "55079", "55081", "55083", "55085", "55087", "55089", "55091", "55093", "55095",
+                    "55097", "55099", "55101", "55103", "55105", "55107", "55109", "55111", "55113", "55115",
+                    "55117", "55119", "55121", "55123", "55125", "55127", "55129", "55131", "55133", "55135",
+                    "55137", "55139", "55141", "Fox Valley Area", "North Central", "Northeast", "Northwest",
+                    "South Central", "Southeast", "Western")
+
+expect_identical(ohiCovidMetrics:::std_region(badvec_reg_id), goodvec_reg_id)
