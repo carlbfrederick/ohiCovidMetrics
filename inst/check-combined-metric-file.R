@@ -627,7 +627,7 @@ expect_equal(sum(!is.na(ili_ma$ILI_Moving_Avg[ili_ma$RowType == "Summary" | ili_
 expect_true(all(dplyr::between(ili_ma$ILI_Moving_Avg[ili_ma$RowType == "Daily" & ili_ma$burn_obs > 2], left = 0.0, right = 100.0)),
             info = "ILI_Moving_Avg columns values are all between 0 and 100 inclusive.")
 expect_true(any(ili_ma$ILI_Moving_Avg[ili_ma$RowType == "Daily" & ili_ma$burn_obs > 2] > 1.0),
-            info = "ILI_Moving_Avg columns values are scales between 0 and 100 (not 0 and 1).")
+            info = "ILI_Moving_Avg columns values are scaled between 0 and 100 (not 0 and 1).")
 
 ###ILI_Status
 expect_true(inherits(ili_ma$ILI_Status, 'character'),

@@ -260,6 +260,8 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' @importFrom dplyr select
 #' @importFrom dplyr mutate
 #' @importFrom dplyr group_by
+#' @importFrom dplyr between
+#' @importFrom dplyr if_else
 #' @importFrom tinytest run_test_file
 #'
 #' @examples
@@ -285,6 +287,12 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
 
   ##ADD FIELD DESCRIBING TIME PERIOD OF DATA
   out$Data_Period <- paste(format(min(out$Date), "%x"), "-", format(max(hosp$Date), "%x"))
+
+  #Force ILI_Moving_Avg to 0 instead of slightly zero
+  out <- out %>%
+    dplyr::mutate(
+      ILI_Moving_Avg = dplyr::if_else(dplyr::between(ILI_Moving_Avg, left = -1e-6, right = 1e-6), 0, ILI_Moving_Avg)
+    )
 
   ##Only keep necessary variables
   out <- out %>%
@@ -514,17 +522,17 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
       Conf_Case_Count_moving_avg     = Conf_Case_Count / 7,
       ILI_Moving_Avg                 = 100 * (ILI_Visits / ILI_Total_Visits)
     ) %>%
-      dplyr::select(RowType, Region, Date,
-                    Hosp_Beds_moving_avg,
-                    Hosp_ICU_moving_avg,
-                    Hosp_Vent_moving_avg,
-                    Hosp_DailyCOVID_PX_moving_avg,
-                    Hosp_DailyCOVID_ICU_moving_avg,
-                    Testing_Perc_Pos_moving_avg,
-                    Testing_Tot_Spec_moving_avg,
-                    CLI_Count_moving_avg,
-                    Conf_Case_Count_moving_avg,
-                    ILI_Moving_Avg)
+    dplyr::select(RowType, Region, Date,
+                  Hosp_Beds_moving_avg,
+                  Hosp_ICU_moving_avg,
+                  Hosp_Vent_moving_avg,
+                  Hosp_DailyCOVID_PX_moving_avg,
+                  Hosp_DailyCOVID_ICU_moving_avg,
+                  Testing_Perc_Pos_moving_avg,
+                  Testing_Tot_Spec_moving_avg,
+                  CLI_Count_moving_avg,
+                  Conf_Case_Count_moving_avg,
+                  ILI_Moving_Avg)
 
   cols2rm <- dplyr::setdiff(
     dplyr::intersect(names(ma_tmp),
