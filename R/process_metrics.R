@@ -851,8 +851,8 @@ process_ili <- function(ili_df, ili_threshold_path) {
                    zoo::rollapply(Total_Visits, 3, mean, fill = NA, align = "right"),
       Status = dplyr::case_when(
         moving_avg >= ILI_threshold ~ "Elevated",
-        moving_avg >= ILI_baseline ~ "Moderate",
-        moving_avg < ILI_baseline ~ "Low",
+        moving_avg >= ILI_baseline & moving_avg < ILI_threshold ~ "Moderate",
+        moving_avg <  ILI_baseline ~ "Low",
         TRUE ~ "NA"
       )
     ) %>%

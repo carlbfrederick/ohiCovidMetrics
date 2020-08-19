@@ -288,7 +288,7 @@ clean_histTable <- function(hdt, end_date) {
 #'
 #' @examples
 #' \dontrun{
-#'   pull_hospital("hospdtatafile.csv")
+#'   pull_hospital("hospdatafile.csv")
 #' }
 pull_hospital <- function(file, end_date = NULL) {
   #Enforce correct column types and names
@@ -318,6 +318,10 @@ pull_hospital <- function(file, end_date = NULL) {
   )
 
   hosp_in <- readr::read_csv(file, col_types = hosp_cols)
+
+  if (sum(is.na(hosp_in$County))) {
+    stop("There are missing values in the 'County' column. Please fix this before proceeding.")
+  }
 
   clean_hospital(hosp_in, end_date)
 }

@@ -450,7 +450,7 @@ essence_data <- function(url) {
 #' @export
 #'
 #' @importFrom readr write_csv
-#' @importFrom readr write_csv
+#' @importFrom readr read_csv
 #' @importFrom dplyr bind_rows
 #' @importFrom dplyr %>%
 #' @importFrom dplyr mutate
@@ -466,16 +466,154 @@ essence_data <- function(url) {
 #' @importFrom dplyr all_of
 #' @importFrom stringr str_extract
 #' @importFrom zoo rollapply
+#' @importFrom readr cols
+#' @importFrom readr col_character
+#' @importFrom readr col_date
+#' @importFrom readr col_double
 #'
 #' @examples
 #' \dontrun{
 #'   #add examples to me please,
 #' }
 append_metric_files <- function(current_combo_file, existing_combo_file, overwrite = FALSE) {
+
+  colspec_c <- readr::col_cols(
+    Data_Period = readr::col_character(),
+    Date = readr::col_date(format = ""),
+    Region_ID = readr::col_character(),
+    Region = readr::col_character(),
+    RowType = readr::col_character(),
+    Conf_Case_Count = readr::col_double(),
+    Conf_Case_Burden = readr::col_double(),
+    Conf_Case_Burden_Class = readr::col_character(),
+    Conf_Case_Burden_Critical_Flag = readr::col_double(),
+    Conf_Case_Trajectory = readr::col_character(),
+    Conf_Case_Trajectory_P = readr::col_double(),
+    Conf_Case_Trajectory_Class = readr::col_character(),
+    Conf_Case_Composite_Class = readr::col_character(),
+    Testing_Total_Specimens = readr::col_double(),
+    Testing_Positive_Specimens = readr::col_double(),
+    Testing_Nonpositive_Specimens = readr::col_double(),
+    Testing_Percent_Positive = readr::col_double(),
+    Testing_Composite_Class = readr::col_character(),
+    Testing_Case = readr::col_double(),
+    Testing_ARI = readr::col_double(),
+    Testing_Case_Gap = readr::col_double(),
+    Testing_Target_0.2 = readr::col_double(),
+    Testing_Target_0.4 = readr::col_double(),
+    Testing_Target_0.6 = readr::col_double(),
+    Testing_Target_0.8 = readr::col_double(),
+    Testing_Target_1 = readr::col_double(),
+    Hosp_dailyCOVID_px = readr::col_double(),
+    Hosp_COVID_px_Trajectory = readr::col_character(),
+    Hosp_COVID_px_Trajectory_Class = readr::col_character(),
+    Hosp_dailyCOVID_ICUpx = readr::col_double(),
+    Hosp_COVID_ICUpx_Trajectory = readr::col_character(),
+    Hosp_COVID_ICUpx_Trajectory_Class = readr::col_character(),
+    Hosp_totalbeds = readr::col_double(),
+    Hosp_beds_IBA = readr::col_double(),
+    Hosp_PrctBeds_Used = readr::col_double(),
+    Hosp_Beds_moving_avg = readr::col_double(),
+    Hosp_totalICU = readr::col_double(),
+    Hosp_ICU_IBA = readr::col_double(),
+    Hosp_PrctICU_Used = readr::col_double(),
+    Hosp_ICU_moving_avg = readr::col_double(),
+    Hosp_total_vents = readr::col_double(),
+    Hosp_num_px_vent = readr::col_double(),
+    Hosp_PrctVent_Used = readr::col_double(),
+    Hosp_Vent_moving_avg = readr::col_double(),
+    CLI_Count = readr::col_double(),
+    CLI_Burden = readr::col_double(),
+    CLI_Burden_Class = readr::col_character(),
+    CLI_Trajectory = readr::col_character(),
+    CLI_Trajectory_P = readr::col_double(),
+    CLI_Trajectory_Class = readr::col_character(),
+    CLI_Composite_Class = readr::col_character(),
+    ILI_Total_Visits = readr::col_double(),
+    ILI_Visits = readr::col_double(),
+    ILI_Percent = readr::col_double(),
+    ILI_Moving_Avg = readr::col_double(),
+    ILI_Baseline = readr::col_double(),
+    ILI_Threshold = readr::col_double(),
+    ILI_Status = readr::col_character(),
+    ED_flag = readr::col_double(),
+    Mayo_flag = readr::col_double()
+  )
+
+  colspec_e <- cols(
+    Data_Period = readr::col_character(),
+    Date = readr::col_date(format = ""),
+    Region_ID = readr::col_character(),
+    Region = readr::col_character(),
+    RowType = readr::col_character(),
+    Conf_Case_Count = readr::col_double(),
+    Conf_Case_Count_moving_avg = readr::col_double(),
+    Conf_Case_Burden = readr::col_double(),
+    Conf_Case_Burden_Class = readr::col_character(),
+    Conf_Case_Burden_Critical_Flag = readr::col_double(),
+    Conf_Case_Trajectory = readr::col_character(),
+    Conf_Case_Trajectory_P = readr::col_double(),
+    Conf_Case_Trajectory_Class = readr::col_character(),
+    Conf_Case_Composite_Class = readr::col_character(),
+    Testing_Total_Specimens = readr::col_double(),
+    Testing_Tot_Spec_moving_avg = readr::col_double(),
+    Testing_Positive_Specimens = readr::col_double(),
+    Testing_Nonpositive_Specimens = readr::col_double(),
+    Testing_Percent_Positive = readr::col_double(),
+    Testing_Perc_Pos_moving_avg = readr::col_double(),
+    Testing_Composite_Class = readr::col_character(),
+    Testing_Case = readr::col_double(),
+    Testing_ARI = readr::col_double(),
+    Testing_Case_Gap = readr::col_double(),
+    Testing_Target_0.2 = readr::col_double(),
+    Testing_Target_0.4 = readr::col_double(),
+    Testing_Target_0.6 = readr::col_double(),
+    Testing_Target_0.8 = readr::col_double(),
+    Testing_Target_1 = readr::col_double(),
+    Hosp_dailyCOVID_px = readr::col_double(),
+    Hosp_DailyCOVID_PX_moving_avg = readr::col_double(),
+    Hosp_COVID_px_Trajectory = readr::col_character(),
+    Hosp_COVID_px_Trajectory_Class = readr::col_character(),
+    Hosp_dailyCOVID_ICUpx = readr::col_double(),
+    Hosp_DailyCOVID_ICU_moving_avg = readr::col_double(),
+    Hosp_COVID_ICUpx_Trajectory = readr::col_character(),
+    Hosp_COVID_ICUpx_Trajectory_Class = readr::col_character(),
+    Hosp_totalbeds = readr::col_double(),
+    Hosp_beds_IBA = readr::col_double(),
+    Hosp_PrctBeds_Used = readr::col_double(),
+    Hosp_Beds_moving_avg = readr::col_double(),
+    Hosp_totalICU = readr::col_double(),
+    Hosp_ICU_IBA = readr::col_double(),
+    Hosp_PrctICU_Used = readr::col_double(),
+    Hosp_ICU_moving_avg = readr::col_double(),
+    Hosp_total_vents = readr::col_double(),
+    Hosp_num_px_vent = readr::col_double(),
+    Hosp_PrctVent_Used = readr::col_double(),
+    Hosp_Vent_moving_avg = readr::col_double(),
+    CLI_Count = readr::col_double(),
+    CLI_Count_moving_avg = readr::col_double(),
+    CLI_Burden = readr::col_double(),
+    CLI_Burden_Class = readr::col_character(),
+    CLI_Trajectory = readr::col_character(),
+    CLI_Trajectory_P = readr::col_double(),
+    CLI_Trajectory_Class = readr::col_character(),
+    CLI_Composite_Class = readr::col_character(),
+    ILI_Total_Visits = readr::col_double(),
+    ILI_Visits = readr::col_double(),
+    ILI_Percent = readr::col_double(),
+    ILI_Moving_Avg = readr::col_double(),
+    ILI_Baseline = readr::col_double(),
+    ILI_Threshold = readr::col_double(),
+    ILI_Status = readr::col_character(),
+    ED_flag = readr::col_double(),
+    Mayo_flag = readr::col_double()
+  )
+
   #Read and combine files
+  message("  Reading files and calculating moving averages ...")
   combo <- dplyr::bind_rows(
-    readr::read_csv(current_combo_file, guess_max = 1e5),
-    readr::read_csv(existing_combo_file, guess_max = 1e5)
+    readr::read_csv(current_combo_file, col_types = colspec_c),
+    readr::read_csv(existing_combo_file, col_type = colspec_e)
   )
 
   ma_tmp <- combo %>%
@@ -543,6 +681,15 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
   out <- combo %>%
     dplyr::select(-all_of(cols2rm)) %>%
     dplyr::left_join(ma_tmp, by = c("RowType", "Region", "Date")) %>%
+    dplyr::mutate(
+      ILI_Status = dplyr::case_when(
+        ILI_Moving_Avg >= ILI_Threshold ~ "Elevated",
+        ILI_Moving_Avg >= ILI_Baseline & ILI_Moving_Avg < ILI_Threshold ~ "Moderate",
+        ILI_Moving_Avg <  ILI_Baseline ~ "Low",
+        TRUE ~ "NA"
+      )
+
+    ) %>%
     dplyr::select(Data_Period, Date, Region_ID, Region, RowType,
                   Conf_Case_Count, Conf_Case_Count_moving_avg, Conf_Case_Burden,
                   Conf_Case_Burden_Class, Conf_Case_Burden_Critical_Flag,
@@ -564,6 +711,20 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                   ILI_Baseline, ILI_Threshold, ILI_Status,
                   ED_flag, Mayo_flag)
 
+  tdir <- tempdir()
+  save(out, file = file.path(tdir, "__tmp_append_file.RData"))
+  file_checks <- tinytest::run_test_file(system.file("check-appended-file.R", package = "ohiCovidMetrics"),
+                                         set_env = list("LOADAPPENDEDFILE" = file.path(tdir,  "__tmp_append_file.RData")))
+  checks_df <- as.data.frame(file_checks)
+  checks_df$info <- sapply(file_checks, function(x) attr(x, which = "info"))
+
+  if (sum(!checks_df$result) == 0) {
+    message("You are good to go, all file checks passed!")
+  } else if (sum(!checks_df$result) > 0) {
+    warning("Oh no! ", sum(!checks_df$result), " data file checks failed. See list below for conditions that failed:\n - ",
+            paste0(checks_df$info[!checks_df$result], collapse = "\n - "))
+  }
+
   if (overwrite) {
     message("  Overwriting ", existing_combo_file, "...")
     readr::write_csv(out, existing_combo_file, na = "")
@@ -571,7 +732,12 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     message("Not writing file because overwrite = FALSE")
   }
 
-  return(invisible(out))
+  return(
+    invisible(
+      list(merged_file = out,
+           file_checks = checks_df)
+    )
+  )
 
 }
 

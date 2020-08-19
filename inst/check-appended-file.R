@@ -1,6 +1,6 @@
-#check-combined-metric-file.R
+#check-appended-file.R
 #
-#Check Combined Metric Files For Errors
+#Check Appended Files For Errors
 #
 #Things to confirm with the group
 # - Testing_Percent_Positive is NA when denominator (Testing_Total_Specimens) is zero
@@ -22,7 +22,7 @@ library(tidyverse)
 library(ohiCovidMetrics)
 library(tinytest)
 
-load(Sys.getenv("LOADCOMBOMETRICFILE"))
+load(Sys.getenv("LOADAPPENDEDFILE"))
 
 #Global Checks ----
 
@@ -413,7 +413,7 @@ expect_true(any(out$Hosp_PrctICU_Used[out$RowType == "Daily" & out$Region %in% n
 
 ###Hosp_Beds_moving_avg
 hosp_ma <- out %>%
-  group_by(Data_Period, Region) %>%
+  group_by(Region) %>%
   mutate(
     burn_obs = row_number(Date),
     ma_present = if_else(RowType == "Daily" & Region %in% non_cty & burn_obs > 6, TRUE, FALSE)
@@ -575,7 +575,7 @@ expect_true(any(out$ILI_Threshold[out$RowType == "Daily" & out$Region != "Floren
 
 ###ILI_Moving_Avg
 ili_ma <- out %>%
-  group_by(Data_Period, Region) %>%
+  group_by(Region) %>%
   mutate(
     burn_obs = row_number(Date),
     ma_present = if_else(RowType == "Daily" & burn_obs > 2, TRUE, FALSE)
@@ -667,3 +667,64 @@ expect_equal(sum(is.na(out$Testing_Target_1[out$RowType == "Summary"])), 0,
              info = "Testing_Target_1 column has no NA/missings for Summary rows")
 expect_equal(sum(!is.na(out$Testing_Target_1[out$RowType == "Daily"])), 0,
              info = "Testing_Target_1 column has ONLY NA/missings for Daily rows")
+
+##. . COLUMNS ADDED BY append_metric_files()----
+macheck <- out %>%
+  group_by(Region) %>%
+  mutate(
+    burn_obs = row_number(Date),
+    ma_present = if_else(RowType == "Daily" & burn_obs > 6, TRUE, FALSE)
+  )
+
+###Hosp_DailyCOVID_PX_moving_avg
+expect_true(inherits(macheck$Hosp_DailyCOVID_PX_moving_avg, 'numeric'),
+            info = "Hosp_DailyCOVID_PX_moving_avg column is 'numeric' class")
+expect_equal(sum(is.na(macheck$Hosp_DailyCOVID_PX_moving_avg[macheck$ma_present & out$Region %in% non_cty])), 0,
+             info = "Hosp_DailyCOVID_PX_moving_avg column has all expected nonmissing values")
+expect_equal(sum(!is.na(macheck$Hosp_DailyCOVID_PX_moving_avg[!macheck$ma_present & !(out$Region %in% non_cty)])), 0,
+             info = "Hosp_DailyCOVID_PX_moving_avg column is always NA/missing when expected")
+
+###Hosp_DailyCOVID_ICU_moving_avg
+expect_true(inherits(macheck$Hosp_DailyCOVID_ICU_moving_avg, 'numeric'),
+            info = "Hosp_DailyCOVID_ICU_moving_avg column is 'numeric' class")
+expect_equal(sum(is.na(macheck$Hosp_DailyCOVID_ICU_moving_avg[macheck$ma_present & out$Region %in% non_cty])), 0,
+             info = "Hosp_DailyCOVID_ICU_moving_avg column has all expected nonmissing values")
+expect_equal(sum(!is.na(macheck$Hosp_DailyCOVID_ICU_moving_avg[!macheck$ma_present & !(out$Region %in% non_cty)])), 0,
+             info = "Hosp_DailyCOVID_ICU_moving_avg column is always NA/missing when expected")
+
+###Testing_Perc_Pos_moving_avg
+expect_true(inherits(macheck$Testing_Perc_Pos_moving_avg, 'numeric'),
+            info = "Testing_Perc_Pos_moving_avg column is 'numeric' class")
+expect_equal(sum(is.na(macheck$Testing_Perc_Pos_moving_avg[macheck$ma_present])), 0,
+             info = "Testing_Perc_Pos_moving_avg column has all expected nonmissing values")
+expect_equal(sum(!is.na(macheck$Testing_Perc_Pos_moving_avg[!macheck$ma_present])), 0,
+             info = "Testing_Perc_Pos_moving_avg column is always NA/missing when expected")
+expect_true(all(dplyr::between(macheck$Testing_Perc_Pos_moving_avg[macheck$ma_present], left = 0.0, right = 100.0)),
+            info = "Testing_Perc_Pos_moving_avg columns values are all between 0 and 100 inclusive.")
+expect_true(any(macheck$Testing_Perc_Pos_moving_avg[macheck$ma_present] > 1.0),
+            info = "Testing_Perc_Pos_moving_avg columns values are scaled between 0 and 100 (not 0 and 1).")
+
+###Testing_Tot_Spec_moving_avg
+expect_true(inherits(macheck$Testing_Tot_Spec_moving_avg, 'numeric'),
+            info = "Testing_Tot_Spec_moving_avg column is 'numeric' class")
+expect_equal(sum(is.na(macheck$Testing_Tot_Spec_moving_avg[macheck$ma_present])), 0,
+             info = "Testing_Tot_Spec_moving_avg column has all expected nonmissing values")
+expect_equal(sum(!is.na(macheck$Testing_Tot_Spec_moving_avg[!macheck$ma_present])), 0,
+             info = "Testing_Tot_Spec_moving_avg column is always NA/missing when expected")
+
+###CLI_Count_moving_avg
+expect_true(inherits(macheck$CLI_Count_moving_avg, 'numeric'),
+            info = "CLI_Count_moving_avg column is 'numeric' class")
+expect_equal(sum(is.na(macheck$CLI_Count_moving_avg[macheck$ma_present])), 0,
+             info = "CLI_Count_moving_avg column has all expected nonmissing values")
+expect_equal(sum(!is.na(macheck$CLI_Count_moving_avg[!macheck$ma_present])), 0,
+             info = "CLI_Count_moving_avg column is always NA/missing when expected")
+
+###Conf_Case_Count_moving_avg
+expect_true(inherits(macheck$Conf_Case_Count_moving_avg, 'numeric'),
+            info = "Conf_Case_Count_moving_avg column is 'numeric' class")
+expect_equal(sum(is.na(macheck$Conf_Case_Count_moving_avg[macheck$ma_present])), 0,
+             info = "Conf_Case_Count_moving_avg column has all expected nonmissing values")
+expect_equal(sum(!is.na(macheck$Conf_Case_Count_moving_avg[!macheck$ma_present])), 0,
+             info = "Conf_Case_Count_moving_avg column is always NA/missing when expected")
+
