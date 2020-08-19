@@ -202,3 +202,85 @@ process_total_ed <- function(total_ed_df) {
 
   total_ed_daily
 }
+
+#' DEPRECATED: Calculates upper control limits for the reverse cusum control chart based on a
+#' 3\eqn{\sigma} significance level.
+#'
+#' @inheritParams score_trajectory
+#' @param delta_t number of time periods back in time.
+#'
+#' @return the smallest count greater than curr that would produce a statistically
+#'         significant \code{\link[stats]{poisson.test}}
+#' @export
+#'
+#' @importFrom stats poisson.test
+#' @importFrom stats pnorm
+#'
+#' @examples
+#' #For 3 weeks into the past using 7-day binned counts
+#' rev_cusum_ucl(curr = 100L, delta_t = 3L)
+rev_cusum_ucl <- function(curr, delta_t) {
+  # requires: non-negative integer count, curr,  and positive integer weight, delta_t
+  curr <- check_nonneg(curr, "curr")
+  delta_t <- check_nonneg(delta_t, "delta_t")
+
+  if (delta_t == 0L) {
+    return(NA_real_)
+  }
+
+  # effects: returns the smallest count greater than curr that would provide significance at 3-sigma probability
+  cum_lim <- delta_t * curr + 1
+  p <- stats::poisson.test( c( curr , cum_lim ) , T = c( 1 , delta_t ) )$p.value
+  while( p > stats::pnorm(-3) ) {
+    cum_lim <- cum_lim + 1
+    p <- stats::poisson.test( c( curr , cum_lim ) , T = c( 1 , delta_t ) )$p.value
+  }
+
+  out <- cum_lim/delta_t - curr
+
+  out
+}
+
+#' DEPRECATED: Calculates lower control limits for the reverse cusum control chart based on a
+#' 3\eqn{\sigma} significance level.
+#'
+#' @inheritParams rev_cusum_ucl
+#'
+#' @return the greatest count smaller than curr that would produce a statistically
+#'         significant \code{\link[stats]{poisson.test}}
+#' @export
+#'
+#' @importFrom stats poisson.test
+#' @importFrom stats pnorm
+#'
+#' @examples
+#' #For 3 weeks into the past using 7-day binned counts
+#' rev_cusum_lcl(curr = 100L, delta_t = 3L)
+rev_cusum_lcl <- function( curr , delta_t = 1 ) {
+  # requires: non-negative integer count, curr,  and positive integer weight, delta_t
+  curr <- check_nonneg(curr, "curr")
+  delta_t <- check_nonneg(delta_t, "delta_t")
+
+  if (delta_t == 0L) {
+    return(NA_real_)
+  }
+
+  # effects: returns the largest count less than curr that would provide significance at 3-sigma probability
+  cum_lim <- NA
+
+
+  if (curr == 0) {
+    cum_lim <- 0
+  } else {
+    cum_lim <- delta_t * curr - 1L
+    p <- stats::poisson.test( c( curr , cum_lim ) , T = c( 1 , delta_t ) ) $p.value
+    while( p > stats::pnorm(-3) & cum_lim > 0) {
+      cum_lim <- cum_lim - 1
+      p <- stats::poisson.test( c( curr , cum_lim ) , T = c( 1 , delta_t ) )$p.value
+    }
+  }
+
+  out <- cum_lim/delta_t - curr
+
+  out
+}

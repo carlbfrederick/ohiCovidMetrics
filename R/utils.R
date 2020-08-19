@@ -477,7 +477,7 @@ essence_data <- function(url) {
 #' }
 append_metric_files <- function(current_combo_file, existing_combo_file, overwrite = FALSE) {
 
-  colspec_c <- readr::col_cols(
+  colspec_c <- readr::cols(
     Data_Period = readr::col_character(),
     Date = readr::col_date(format = ""),
     Region_ID = readr::col_character(),
@@ -540,7 +540,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     Mayo_flag = readr::col_double()
   )
 
-  colspec_e <- cols(
+  colspec_e <- readr::cols(
     Data_Period = readr::col_character(),
     Date = readr::col_date(format = ""),
     Region_ID = readr::col_character(),
