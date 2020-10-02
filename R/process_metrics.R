@@ -43,7 +43,7 @@
 #' }
 shape_case_data <- function(case_df) {
   #Alter date to reflect date cases were confirmed rather than posted.
-  case_df$post_date = case_df$post_date - lubridate::days(1)
+  case_df$post_date = case_df$post_date
 
   max_date <- max(case_df$post_date)
 

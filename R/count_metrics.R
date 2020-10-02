@@ -163,7 +163,7 @@ class_burden <- function(burden) {
 
   out <- factor(out,
                 levels = 1:5,
-                labels = c("Low", "Moderate", "Moderately High", "High", "Critical"),
+                labels = c("Low", "Moderate", "Moderately High", "High", "Very High"),
                 ordered = TRUE)
 
   out
@@ -198,13 +198,13 @@ confirmed_case_composite <- function(traj_class, burd_class) {
     burd_class == "Moderately High" & traj_class == "Shrinking" ~ 2,
     burd_class == "Moderately High" & traj_class > "Shrinking" ~ 3,
     burd_class == "High" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 3,
-    burd_class == "Critical" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 4,
+    burd_class == "Very High" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 4,
     TRUE ~ NA_real_
   )
 
   out <- factor(out,
                 levels = 1:4,
-                labels = c("Low", "Medium", "High", "Critical"),
+                labels = c("Low", "Medium", "High", "Very High"),
                 ordered = TRUE)
 
   out

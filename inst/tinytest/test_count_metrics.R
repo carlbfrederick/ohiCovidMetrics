@@ -46,15 +46,15 @@ expect_equal(score_burden(curr_int, gprev_int, pop), 1e5 * (curr_int + gprev_int
 
 #class_burden ----
 expect_identical(class_burden(score_burden(curr_int, gprev_int, pop_l)),
-                 ordered(1, levels = 1:5, labels = c("Low", "Moderate", "Moderately High", "High", "Critical")))
+                 ordered(1, levels = 1:5, labels = c("Low", "Moderate", "Moderately High", "High", "Very High")))
 expect_identical(class_burden(score_burden(curr_int, gprev_int, pop_m)),
-                 ordered(2, levels = 1:5, labels = c("Low", "Moderate", "Moderately High", "High", "Critical")))
+                 ordered(2, levels = 1:5, labels = c("Low", "Moderate", "Moderately High", "High", "Very High")))
 expect_identical(class_burden(score_burden(curr_int, gprev_int, pop_mh)),
-                 ordered(3, levels = 1:5, labels = c("Low", "Moderate", "Moderately High", "High", "Critical")))
+                 ordered(3, levels = 1:5, labels = c("Low", "Moderate", "Moderately High", "High", "Very High")))
 expect_identical(class_burden(score_burden(curr_int, gprev_int, pop)),
-                 ordered(4, levels = 1:5, labels = c("Low", "Moderate", "Moderately High", "High", "Critical")))
+                 ordered(4, levels = 1:5, labels = c("Low", "Moderate", "Moderately High", "High", "Very High")))
 expect_identical(class_burden(score_burden(curr_int, gprev_int, pop_c)),
-                 ordered(5, levels = 1:5, labels = c("Low", "Moderate", "Moderately High", "High", "Critical")))
+                 ordered(5, levels = 1:5, labels = c("Low", "Moderate", "Moderately High", "High", "Very High")))
 
 #confirmed_case_composite ----
 ##. . Low ----
@@ -64,7 +64,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, sprev_int), pval_trajectory(curr_int, sprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop_l))
   ),
-  ordered(1, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(1, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ### No sig change and Low
 expect_identical(
@@ -72,7 +72,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, nprev_int), pval_trajectory(curr_int, nprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop_l))
   ),
-  ordered(1, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(1, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ##. . Medium ----
 ### Growing and Low
@@ -81,7 +81,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, gprev_int), pval_trajectory(curr_int, gprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop_l))
   ),
-  ordered(2, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(2, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ### Shrinking and Moderate
 expect_identical(
@@ -89,7 +89,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, sprev_int), pval_trajectory(curr_int, sprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop_m))
   ),
-  ordered(2, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(2, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ### Shrinking and Moderately High
 expect_identical(
@@ -97,7 +97,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, sprev_int), pval_trajectory(curr_int, sprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop_mh))
   ),
-  ordered(2, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(2, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ##. . High ----
 ### Growing and Moderate
@@ -106,7 +106,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, gprev_int), pval_trajectory(curr_int, gprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop_m))
   ),
-  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ### No sig change and Moderately High
 expect_identical(
@@ -114,7 +114,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, nprev_int), pval_trajectory(curr_int, nprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop_mh))
   ),
-  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ### Growing and Moderately High
 expect_identical(
@@ -122,7 +122,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, gprev_int), pval_trajectory(curr_int, gprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop_mh))
   ),
-  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ### Shrinking and High
 expect_identical(
@@ -130,7 +130,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, sprev_int), pval_trajectory(curr_int, sprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop))
   ),
-  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ### No sig change and High
 expect_identical(
@@ -138,7 +138,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, nprev_int), pval_trajectory(curr_int, nprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop))
   ),
-  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ### Growing and High
 expect_identical(
@@ -146,7 +146,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, gprev_int), pval_trajectory(curr_int, gprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop))
   ),
-  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ##. . Critical ----
 ### Shrinking and Critical
@@ -155,7 +155,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, sprev_int), pval_trajectory(curr_int, sprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop_c))
   ),
-  ordered(4, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(4, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ### No sig change and Critical
 expect_identical(
@@ -163,7 +163,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, nprev_int), pval_trajectory(curr_int, nprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop_c))
   ),
-  ordered(4, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(4, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 ### Growing and Critical
 expect_identical(
@@ -171,7 +171,7 @@ expect_identical(
     class_trajectory(score_trajectory(curr_int, gprev_int), pval_trajectory(curr_int, gprev_int)),
     class_burden(score_burden(curr_int, gprev_int, pop_c))
   ),
-  ordered(4, levels = 1:4, labels = c("Low", "Medium", "High", "Critical"))
+  ordered(4, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
 
 
