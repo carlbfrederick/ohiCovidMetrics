@@ -1,0 +1,296 @@
+---
+title: "Combining Metric Files Manually"
+date: "Last Updated: 26 August 2020"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Combining Metric Files Manually}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = TRUE,
+  eval = FALSE
+)
+```
+
+```{r setup}
+library(ohiCovidMetrics)
+```
+
+This file documents how I combine the files from the various OHI analysts. The 
+source can be found on my F drive in the R project called "merge-others-output".
+
+## File Structure Setup
+
+Before we get to the code, I leverage the file structure to construct the files
+and add things like the dates. The R script is in the main directory along with
+separate sub-directories names with ISO Date format: YYYY-MM-DD, e.g. 2020-08-19.
+
+Each date sub-directory gets the source files for each metric topic. Currently, 
+these include:
+
+- Confirmed Cases: created by `process_confirmed_cases()`
+- CLI: COVID-like illnesses, created by `process_cli()`
+- ILI: Influenza-lie illnesses, created by `process_ili()`
+- Hospitalization: created by `process_hospital()`
+- Testing/Case Detection: created by Analyst code to be added to the package
+- Testing/Volume Targets: created by Analyst code to be added to the package
+
+## Syntax File
+
+There are three sections in the syntax file: the setup, combining the various
+metric data.frames, and, finally, appending the current data onto the master
+file. The syntax file is set up to loop through all of the sub-directories 
+to (re-)combine the individual metric data and then build up the master file
+from scratch.
+
+### File setup
+
+```{r file-setup, eval = FALSE}
+library(tidyverse)
+library(readxl)
+library(ohiCovidMetrics)
+
+dirstub <- "path/to/manual/merge/file/directory"
+rundirs <- dir(pattern = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+
+#Temporary fix for testing data from analyst file
+#replace this with the most up-to-date file
+testing_metrics_file <- "YYYY-MM-DD/source/testing-metrics-file-name.csv"
+
+tdaily <- read_csv(testing_metrics_file) %>% 
+  filter(!is.na(Area)) %>% 
+  group_by(Area, resultdate2) %>% 
+  summarize(across(c("Positives", "NotPositives", "Total"), sum),
+            .groups = "drop") %>% 
+  mutate(
+    Date = as.Date(resultdate2, "%m/%d/%Y")
+  ) %>% 
+  select(Region = Area,
+         Date,
+         Positives, 
+         NotPositives,
+         Total)
+
+#Temporary fix for testing volume data from analyst file
+#replace the following with the most up-to-date-file
+#sometimes I have to hand change the column names so that the first 3 columns
+#are called DATE, FIPS, Region and I delete the population and HERC columns
+ttdf <- read_xlsx("YYYY-MM-DD/source/testing-volume-file-name.xlsx") %>% 
+  mutate(
+    Date = as.Date(Date) - 1,
+    RowType = "Summary"
+  ) %>% 
+  rename(Region_ID = FIPS)
+
+```
+
+In addition to loading the required libraries, the setup leverages the file
+structure to be able to loop through and re-create the merged file for each
+weekly reporting period and pre-processes the analyst created files.
+
+`dirstub` should be set to the directory in which this R project is located.
+
+### Merging various metrics
+
+This section loops over each directory in `rundirs`. First it checks for a file
+that starts with "combined_metrics" (note the underscore).  If that file exists, 
+then the directory is skipped so that we don't have to re-do all the work that 
+is already done. I have kept the loop structure because it comes in handy in
+case a change is made to the metrics that has to be propagated all the way back 
+to the beginning. In order to do this, remove the combined_metrics files from 
+each directory.
+
+Currently, we get the metrics in 6 files listed above. The ones produced by the
+`ohiCovidMetrics` package are ready to go as-is. The ones produced by Analysts
+require a bit of tweaking before they are ready to merge. This work is all 
+taken care of inside the for loop.
+
+```{r merging-for-loop, eval = FALSE}
+#START LOOP ----
+for (i in seq_along(rundirs)) {
+
+max_date <- as.Date(rundirs[i])
+min_date <- max_date - lubridate::days(13)
+mydir <- file.path(dirstub, rundirs[i])
+
+if (length(dir(mydir, pattern = "^combined_metrics")) == 0) {
+  #ILI----
+  ## Looks for a file that starts with ILI or ili (or any combination of capital and lowercase)
+  ili_file <- dir(mydir, pattern = "^[Ii][Ll][Ii]", full.names = TRUE)
+  
+  if (grepl(".csv$", ili_file)) {
+    ili <- read_csv(ili_file)
+    
+    if ("X1" %in% names(ili)) {
+      ili <- select(ili, -X1)
+    }
+  } else {
+  ili <- read_xlsx(ili_file) %>%
+    filter(Date <= max_date & Date >= min_date) %>%
+    mutate(
+      RowType = "Daily",
+      Region = case_when(
+        Region == "FoxValley" ~ "Fox Valley Area",
+        Region == "NorthCentral" ~ "North Central",
+        Region == "SouthCentral" ~ "South Central",
+        TRUE ~ Region
+      )
+    ) %>%
+    select(Date,
+           Region,
+           RowType,
+           ILI_Total_Visits = Total_visits,
+           ILI_Visits = ILI_visits,
+           ILI_Percent = ILI_perc,
+           ILI_Baseline = ILI_baseline,
+           ILI_Threshold = ILI_threshold,
+           ILI_Status = Status,
+           ILI_Moving_Avg = moving_avg)
+  }
+  
+  ili$ILI_Status <- sub(" Activity", "", ili$ILI_Status)
+  
+  #testing ----
+  tclean <- tdaily %>% 
+      filter(Date >= min_date & Date <= max_date) %>% 
+      left_join(select(county_data, Region = county, Region_ID = fips, herc_region)) %>% 
+      mutate(
+        Region_ID = case_when(
+          Region == "Wisconsin" ~ "55",
+          is.na(Region_ID) ~ Region,
+          TRUE ~ Region_ID
+        )
+      )
+      
+  testing <- bind_rows(
+    tclean %>% 
+      group_by(Region, Region_ID) %>% 
+      summarize_if(is.numeric, sum, na.rm=TRUE) %>% 
+      mutate(
+        RowType = "Summary",
+        Date = max_date
+      ) , 
+    tclean %>%
+      mutate(
+        RowType = "Daily"
+      ) %>% 
+      select(-herc_region)
+    ) %>% 
+    select(Date, Region_ID, Region, RowType,
+           Testing_Total_Encounters = Total,
+           Testing_Positive_Encounters = Positives,
+           Testing_Nonpositive_Encounters = NotPositives) %>% 
+    mutate(
+      Testing_Percent_Positive = round(100 * Testing_Positive_Encounters / Testing_Total_Encounters, 1),
+      Testing_Composite_Class = dplyr::case_when(
+        Testing_Percent_Positive >= 10.0                          ~ "Low",
+        Testing_Percent_Positive >= 5.0 & Testing_Percent_Positive < 10.0 ~ "Medium",
+        Testing_Percent_Positive >= 0.0 & Testing_Percent_Positive < 5.0  ~ "High",
+        TRUE                                              ~ "ERROR"
+        )
+      )
+      
+    testing$Testing_Composite_Class[tout$RowType == "Daily"] <- NA
+  
+  #testing targets----
+  testing_targets <- ttdf %>% 
+      filter(Date == max_date) %>% 
+      mutate(
+        Region = ohiCovidMetrics:::std_region(Region)
+      )
+  
+  #hosp----
+  hosp <- read_csv(dir(mydir, pattern = "^Hospital", full.names = TRUE)) 
+  
+  if ("X1" %in% names(hosp)) {
+    hosp <- hosp %>% 
+      select(-X1) %>% 
+      filter(Date <= max_date & Date >= min_date)
+  } else {
+    hosp <- hosp %>% 
+      filter(Date <= max_date & Date >= min_date)
+  }
+  
+  #CLI----
+  cli <- read_csv(dir(mydir, pattern = "^cli", full.names = TRUE))
+  
+  if ("X1" %in% names(cli)) {
+    cli <- cli %>% 
+      select(-X1) 
+  }
+  
+  #cases----
+  casefile <- dir(mydir, pattern = "[Cc][Aa][Ss][Ee]", full.names = TRUE)
+  
+  if (length(casefile) == 1) {
+    cases <- read_csv(casefile) %>% 
+      mutate(Date = as.Date(Date, "%m/%d/%Y"),
+             Conf_Case_Burden_Critical_Flag = if_else(Conf_Case_Burden >= 350, 1, 0))
+  } else {
+    cases <- pull_histTable(end_date = max_date + 1) %>% 
+      process_confirmed_cases()
+  }
+  
+  ili$Region_ID <- NULL
+  ili <- left_join(ili, distinct(select(cases, Region, Region_ID)), by = "Region")
+  
+  #write out to csv----
+  out <- merge_metric_files(cases, hosp, testing, cli, ili, testing_targets,
+                            outfile = file.path(mydir, paste("combined_metrics_", max_date, ".csv", sep = "")))
+  rm(cases, hosp, testing, cli, ili, testing_targets, ili_file)
+  }
+}
+```
+
+The `merge_metric_files()` function will run through some diagnostic tests of 
+the combined data.frame. You can see the file with the tests by running the 
+following command in the console:
+
+```
+file.edit(system.file("check-combined-metric-file.R", package = "ohiCovidMetrics"))
+```
+
+The results of these tests are returned by `merge_metric_files()` in the
+"file_checks" item. The combined data themselves are returned in the 
+"merged_file" item.
+
+Hopefully, the file check will report zero test failures.
+
+### Appending to master file
+
+The last step is to append the current weeks data to the master 
+"combined-metrics.csv" (note the hyphen instead of the underscore).
+Normally, you only need to append the one dataset, but if you have to re-run
+the entire period back to the beginning, take the combined_metrics*.csv file
+from the first time period and copy it to combined-metrics.csv in the main
+directory (i.e. `dirstub`).
+
+Again, this is set up as a loop, but for now it only adds the final two week
+period. By default, `append_metric_files()` does NOT overwrite the output 
+file, but you can force it to overwrite if you are 100% confident by setting
+the overwrite argument to `TRUE`. To be safe, one could archive the current
+`combined-metric.csv` to a separate subfolder for backup.
+
+```{r append-metric-files, eval = FALSE}
+for (i in length(rundirs)) {
+  final <- append_metric_files(current_combo_file = dir(paste(dirstub, "/", rundirs[i], "/", sep = ""), 
+                                                       pattern = "^combined", full.names = TRUE),
+                              existing_combo_file = file.path(dirstub, "combined-metrics.csv"),
+                              overwrite = TRUE)
+}
+```
+
+Again, this file will run through a similar set of diagnostic tests of the 
+final data.frame. These checks can be seen by running
+
+```
+file.edit(system.file("check-appended-file.R", package = "ohiCovidMetrics"))
+```
+
+Also, like above, the test results are returned in `final$file_checks` and the
+data themselves are returned in `final$merged_file`. 

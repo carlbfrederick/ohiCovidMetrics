@@ -3,7 +3,7 @@
 #Check Combined Metric Files For Errors
 #
 #Things to confirm with the group
-# - Testing_Percent_Positive is NA when denominator (Testing_Total_Specimens) is zero
+# - Testing_Percent_Positive is NA when denominator (Testing_Total_Encounters) is zero
 # - Hospital Data is always missing for:
 #   - Counties for daily rows
 #   - The following 9 counties for summary rows:
@@ -199,34 +199,34 @@ expect_true(all(dplyr::between(out$Conf_Case_Trajectory_P[out$RowType == "Summar
             info = "Conf_Case_Trajectory_P columns values are all between 0 and 1 inclusive.")
 
 ##. . Testing/Case Detection ----
-###Testing_Positive_Specimens
-expect_true(inherits(out$Testing_Positive_Specimens, 'numeric'),
-            info = "Testing_Positive_Specimens column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Positive_Specimens)), 0,
-             info = "Testing_Positive_Specimens column has no NA/missings")
+###Testing_Positive_Encounters
+expect_true(inherits(out$Testing_Positive_Encounters, 'numeric'),
+            info = "Testing_Positive_Encounters column is 'numeric' class")
+expect_equal(sum(is.na(out$Testing_Positive_Encounters)), 0,
+             info = "Testing_Positive_Encounters column has no NA/missings")
 
-###Testing_Nonpositive_Specimens
-expect_true(inherits(out$Testing_Nonpositive_Specimens, 'numeric'),
-            info = "Testing_Nonpositive_Specimens column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Positive_Specimens)), 0,
-             info = "Testing_Nonpositive_Specimens column has no NA/missings")
+###Testing_Nonpositive_Encounters
+expect_true(inherits(out$Testing_Nonpositive_Encounters, 'numeric'),
+            info = "Testing_Nonpositive_Encounters column is 'numeric' class")
+expect_equal(sum(is.na(out$v)), 0,
+             info = "Testing_Nonpositive_Encounters column has no NA/missings")
 
-###Testing_Total_Specimens
-expect_true(inherits(out$Testing_Total_Specimens, 'numeric'),
-            info = "Testing_Total_Specimens column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Total_Specimens)), 0,
-             info = "Testing_Total_Specimens column has no NA/missings")
+###Testing_Total_Encounters
+expect_true(inherits(out$Testing_Total_Encounters, 'numeric'),
+            info = "Testing_Total_Encounters column is 'numeric' class")
+expect_equal(sum(is.na(out$Testing_Total_Encounters)), 0,
+             info = "Testing_Total_Encounters column has no NA/missings")
 
 ###Testing_Percent_Positive
 expect_true(inherits(out$Testing_Percent_Positive, 'numeric'),
             info = "Testing_Percent_Positive column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Percent_Positive[out$Testing_Total_Specimens > 0])), 0,
+expect_equal(sum(is.na(out$Testing_Percent_Positive[out$Testing_Total_Encounters > 0])), 0,
              info = "Testing_Percent_Positive column has no NA/missings")
-expect_equal(sum(!is.na(out$Testing_Percent_Positive[out$Testing_Total_Specimens == 0])), 0,
+expect_equal(sum(!is.na(out$Testing_Percent_Positive[out$Testing_Total_Encounters == 0])), 0,
              info = "Testing_Percent_Positive column is always NA/missing if denominator is zero")
-expect_true(all(dplyr::between(out$Testing_Percent_Positive[out$Testing_Total_Specimens > 0], left = 0.0, right = 100.0)),
+expect_true(all(dplyr::between(out$Testing_Percent_Positive[out$Testing_Total_Encounters > 0], left = 0.0, right = 100.0)),
             info = "Testing_Percent_Positive columns values are all between 0 and 100 inclusive.")
-expect_true(any(out$Testing_Percent_Positive[out$Testing_Total_Specimens > 0] > 1.0),
+expect_true(any(out$Testing_Percent_Positive[out$Testing_Total_Encounters > 0] > 1.0),
             info = "Testing_Percent_Positive columns values are scales between 0 and 100 (not 0 and 1).")
 
 ###Testing_Composite_Class

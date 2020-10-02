@@ -469,12 +469,8 @@ clean_hospital <- function(hosp, end_date) {
 
 #' Pull data from WEDSS for Testing Metrics
 #'
-#' @param bcd_query SQL query string for data from BCD table
 #' @param lab_query SQL query string for data from Lab table
-#' @param test_vol_path .xlsx file containing testing volume target this
-#'                      file must have a worksheet named weekly and it
-#'                      pulls the second (Area) and third column (Current
-#'                      Month Targets).
+#' @param stg_query SQL query string for data from Staging table
 #'
 #' @inheritParams pull_wedss
 #'
@@ -492,30 +488,22 @@ clean_hospital <- function(hosp, end_date) {
 #' \dontrun{
 #'   #write me an example please.
 #' }
-pull_testing <- function(bcd_query, lab_query, conn, test_vol_path, end_date = NULL) {
+pull_testing <- function(lab_query, stg_query, conn, end_date = NULL) {
   if (inherits(conn, "RODBC")) {
-    bcd <- RODBC::sqlQuery(conn, bcd_query)
     lab <- RODBC::sqlQuery(conn, lab_query)
+    stg <- RODBC::sqlQuery(conn, stg_query)
   } else if (inherits(conn, "DBIConnection")) {
-    bcd <- odbc::dbGetQuery(conn, bcd_query)
     lab <- odbc::dbGetQuery(conn, lab_query)
+    stg <- odbc::dbGetQuery(conn, stg_query)
   }
 
-  #read in test_volume
-  test_vol <- readxl::read_excel(test_vol_path, sheet = "Weekly") %>%
-    dplyr::select(2:3) %>%
-    dplyr::mutate(
-      Region = if_else(Region == "Saint Croix", "St. Croix", sub("HERC\\|", "", Region))
-    )
-
-  clean_testing(bcd, lab, test_vol, end_date)
+  clean_testing(lab, stg, end_date)
 }
 
 #' Internal function to clean testing data
 #'
-#' @param bcd data.frame
-#' @param lab data.frame
-#' @param test_vol data.frame
+#' @param lab data.frame from Lab table pull
+#' @param stg data.frame from Staging table pull
 #' @inheritParams pull_testing
 #'
 #' @return a data.frame
@@ -532,9 +520,7 @@ pull_testing <- function(bcd_query, lab_query, conn, test_vol_path, end_date = N
 #' \dontrun{
 #'   #write me an example
 #' }
-clean_testing <- function(bcd, lab, test_vol, end_date) {
-  message("  Counting the number of incident tests...")
-  total_tests <- calc_num_tests(bcd, lab, as.Date(end_date))
+clean_testing <- function(lab, stg, end_date) {
 
   message("  Counting the number of positive and negative specimens...")
   specimens <- calc_pos_neg(lab, as.Date(end_date))
@@ -597,143 +583,6 @@ clean_testing <- function(bcd, lab, test_vol, end_date) {
     dplyr::left_join(test_vol, by = "Area")
 }
 
-#' INTERNAL function to calculate total tests per county per day
-#'
-#' @inheritParams clean_testing
-#'
-#' @return data.frame
-#'
-#' @importFrom dplyr inner_join
-#' @importFrom dplyr filter
-#' @importFrom dplyr group_by
-#' @importFrom dplyr count
-#' @importFrom dplyr pull
-#' @importFrom dplyr arrange
-#' @importFrom dplyr slice
-#' @importFrom dplyr rename
-#' @importFrom dplyr mutate
-#' @importFrom dplyr bind_rows
-#' @importFrom tidyr pivot_wider
-#'
-#' @examples
-#' \dontrun{
-#'   #write me an example
-#' }
-calc_num_tests <- function(bcd, lab, end_date) {
-  max_date <- end_date
-  min_date <- end_date - 13
-
-  mergedf <- dplyr::inner_join(bcd, lab, by = "IncidentID")
-
-  #NOT A CASE
-  notacase <- mergedf[which(mergedf$ResolutionStatus=="Not A Case"),]
-
-  ##Bucket 1 ----
-  ##  incident ids that don't have a positive result
-  bucket1.ids <- mergedf %>%
-    dplyr::filter(ResolutionStatus == "Not A Case") %>%
-    dplyr::group_by(IncidentID, result) %>%
-    dplyr::count() %>%
-    tidyr::pivot_wider(id_cols = c("IncidentID"),
-                       names_from = c("result"),
-                       values_from = c("n"), values_fill = 0) %>%
-    dplyr::filter(Positive == 0) %>%
-    dplyr::pull(IncidentID)
-
-  bucket1 <- notacase %>%
-    dplyr::filter(IncidentID %in% bucket1.ids) %>%
-    dplyr::group_by(IncidentID) %>%
-    dplyr::arrange(ResultDate) %>%
-    dplyr::slice(1L) %>%
-    dplyr::rename(date = ResultDate)
-
-  ##Bucket 5 ----
-  ##  incident ids that have a positive results
-  bucket5.ids <- mergedf %>%
-    dplyr::filter(ResolutionStatus == "Not A Case") %>%
-    dplyr::group_by(IncidentID, result) %>%
-    dplyr::count() %>%
-    tidyr::pivot_wider(id_cols = c("IncidentID"),
-                names_from = c("result"),
-                values_from = c("n"), values_fill = 0) %>%
-    dplyr::filter(Positive >= 1) %>%
-    dplyr::pull(IncidentID)
-
-  bucket5 <- notacase %>%
-    dplyr::filter(IncidentID %in% bucket5.ids) %>%
-    dplyr::group_by(IncidentID) %>%
-    dplyr::arrange(ResultDate) %>%
-    dplyr::slice(1L) %>%
-    dplyr::rename(date = ResultDate)
-
-  #CONFIRMED CASES
-  confirmed <- mergedf[which(mergedf$ResolutionStatus=="Confirmed"),]
-
-  ##Bucket 4 ----
-  ##  Incident ids don't have a positive result at all
-  bucket4.ids <- mergedf %>%
-    dplyr::filter(ResolutionStatus == "Confirmed") %>%
-    dplyr::group_by(IncidentID, result) %>%
-    dplyr::count() %>%
-    tidyr::pivot_wider(id_cols = c("IncidentID"),
-                names_from = c("result"),
-                values_from = c("n"), values_fill = 0) %>%
-    dplyr::filter(Positive == 0) %>%
-    dplyr::pull(IncidentID)
-
-  bucket4 <- confirmed %>%
-    dplyr::filter(IncidentID %in% bucket4.ids) %>%
-    dplyr::mutate(
-      date = DateSentCDC
-    ) %>%
-    dplyr::group_by(IncidentID) %>%
-    dplyr::arrange(date) %>%
-    dplyr::slice(1L)
-
-  ##Buckets 2 and 3
-  confirmed.positive <- confirmed %>%
-    dplyr::filter(!IncidentID %in% bucket4.ids)
-
-  confirmed.firstresult <- confirmed.positive %>%
-    dplyr::group_by(IncidentID) %>%
-    dplyr::arrange(ResultDate) %>%
-    dplyr::slice(1L)
-
-  ##Bucket 2 ----
-  ##  incident ids have positive on first result date
-  bucket2 <- confirmed.firstresult %>%
-    dplyr::filter(result == "Positive") %>%
-    dplyr::rename(date = ResultDate)
-
-  ##Bucket 3 ----
-  ##  incident ids have positive on subsequent result date
-  bucket3.ids <- confirmed.firstresult %>%
-    dplyr::filter(is.na(result) | result != "Positive") %>%
-    dplyr::pull(IncidentID)
-
-  bucket3 <- confirmed %>%
-    dplyr::filter(IncidentID %in% bucket3.ids,
-           result == "Positive") %>%
-    dplyr::group_by(IncidentID) %>%
-    dplyr::arrange(ResultDate) %>%
-    dplyr::slice(1L) %>%
-    dplyr::rename(date = ResultDate)
-
-  #Assemble buckets ----
-  dplyr::bind_rows(bucket1, bucket2, bucket3, bucket4, bucket5) %>%
-    dplyr::mutate(
-      DerivedCounty = if_else(trimws(DerivedCounty)== "Fond Du Lac",
-                              "Fond du Lac", trimws(DerivedCounty)),
-      resultdateonly = as.Date(date, tz = "America/Chicago")
-    ) %>%
-    dplyr::filter(!is.na(DerivedCounty),
-                  !DerivedCounty %in% c("Non-Wisconsin", "Unknown"),
-                  resultdateonly >= min_date & resultdateonly <= max_date) %>%
-    dplyr::group_by(resultdateonly, DerivedCounty) %>%
-    dplyr::count(name = "Tests") %>%
-    dplyr::rename(Area = DerivedCounty)
-}
-
 #' INTERNAL function to calculate ingredients for percent positive per county per day
 #'
 #' @inheritParams clean_testing
@@ -763,7 +612,6 @@ calc_pos_neg <- function(lab, end_date) {
   min_date <- end_date - 13
 
   lab.result <- lab %>%
-    dplyr::filter(!is.na(result)) %>%
     dplyr::mutate(
       scdflag = dplyr::if_else(is.na(SpecCollectedDate),
                                 "missing.scd", "present.scd")
@@ -800,7 +648,15 @@ calc_pos_neg <- function(lab, end_date) {
     dplyr::filter(IncidentID %in% basin2.ids) %>%
     dplyr::mutate(
       date = dplyr::if_else(is.na(ResultDate), SpecReceivedDate, ResultDate)
-    ) %>%
+    )
+
+  basin2.leftover <- basin2 %>%
+    dplyr::filter(is.na(date)) %>%
+    dplyr::mutate(
+      dateonly = AccessionNumber
+    )
+
+  basin2 <- basin2 %>%
     dplyr::filter(!is.na(date))
 
   ##Basin 3 ----
@@ -813,14 +669,39 @@ calc_pos_neg <- function(lab, end_date) {
     dplyr::filter(IncidentID %in% basin3.ids) %>%
     dplyr::mutate(
       date = if_else(is.na(ResultDate), SpecReceivedDate, ResultDate)
-    )%>%
+    )
+
+  basin3.leftover <- basin3 %>%
+    dplyr::filter(is.na(date)) %>%
+    dplyr::mutate(
+      dateonly <- AccessionNumber
+    )
+
+  basin3 <- basin3 %>%
     dplyr::filter(!is.na(date))
 
   #Assemble basins ----
   lab2 <- dplyr::bind_rows(basin1, basin2, basin3) %>%
     dplyr::mutate(
       dateonly = as.Date(date, tz = "America/Chicago"),
-      newid = paste(IncidentID, dateonly, sep = ""),
+      date = as.character(date)
+    ) %>%
+    dplyr::bind_rows(basin2.leftover, basin3.leftover) %>%
+    dplyr::mutate(
+      newid  = paste(IncidentID, dateonly, sep = ""),
+      newid2 = paste(IncidentID, dateonly, SpecimenSourceText, sep = ""),
+      displaydate = dplyr::case_when(
+        !is.na(ResultDate) ~ as.Date(ResultDate, tz = "America/Chicago"),
+        is.na(ResultDate) & !is.na(SpecCollectedDate) ~ as.Date(SpecCollectedDate, tz = "America/Chicago"),
+        is.na(ResultDate) & is.na(SpecCollectedDate) & !is.na(SpecReceivedDate) ~ as.Date(SpecReceivedDate, tz = "America/Chicago"),
+        TRUE ~ as.Date(NA)
+      )
+    )
+
+  lab3 <- lab2[!duplicated(lab2$newid2),]
+
+  #NEXT IS LINE 147 in Nathan_All_Specimens.R
+
       DerivedCounty = ifelse(trimws(DerivedCounty) == "Fond Du Lac",
                              "Fond du Lac", trimws(DerivedCounty)),
       resultdateonly = as.Date(ResultDate, tz = "America/Chicago")

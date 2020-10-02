@@ -468,7 +468,7 @@ shape_testing_data <- function(testing_df) {
               daily = testing_daily)
 }
 
-#' Process the shaped hospital data into a Tableau ready format
+#' Process the shaped testing data into a Tableau ready format
 #'
 #' @param testing_df data.frame output by \code{\link{pull_testing}}
 #'
@@ -514,9 +514,9 @@ process_testing <- function(testing_df) {
                   Region = Area,
                   Region_ID,
                   RowType,
-                  Testing_Positive_Specimens = Positive,
-                  Testing_Nonpositive_Specimens = NotPositive,
-                  Testing_Total_Specimens = total_specimens,
+                  Testing_Positive_Encounters = Positive,
+                  Testing_Nonpositive_Encounters = NotPositive,
+                  Testing_Total_Encounters = total_specimens,
                   Testing_Percent_Positive = percent_positive,
                   Testing_Incident_Tests = Tests)
 
@@ -557,9 +557,9 @@ process_testing <- function(testing_df) {
                   Region = Area,
                   Region_ID,
                   RowType,
-                  Testing_Positive_Specimens = Positive,
-                  Testing_Nonpositive_Specimens = NotPositive,
-                  Testing_Total_Specimens = total_specimens,
+                  Testing_Positive_Encounters = Positive,
+                  Testing_Nonpositive_Encounters = NotPositive,
+                  Testing_Total_Encounters = total_specimens,
                   Testing_Percent_Positive = percent_positive,
                   Testing_Composite_Class = testing_composite)
 

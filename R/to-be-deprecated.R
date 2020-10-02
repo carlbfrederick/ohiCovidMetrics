@@ -284,3 +284,140 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 
   out
 }
+
+#' DEPRECATED: INTERNAL function to calculate total tests per county per day
+#'
+#' @inheritParams clean_testing
+#'
+#' @return data.frame
+#'
+#' @importFrom dplyr inner_join
+#' @importFrom dplyr filter
+#' @importFrom dplyr group_by
+#' @importFrom dplyr count
+#' @importFrom dplyr pull
+#' @importFrom dplyr arrange
+#' @importFrom dplyr slice
+#' @importFrom dplyr rename
+#' @importFrom dplyr mutate
+#' @importFrom dplyr bind_rows
+#' @importFrom tidyr pivot_wider
+#'
+#' @examples
+#' \dontrun{
+#'   #write me an example
+#' }
+calc_num_tests <- function(bcd, lab, end_date) {
+  max_date <- end_date
+  min_date <- end_date - 13
+
+  mergedf <- dplyr::inner_join(bcd, lab, by = "IncidentID")
+
+  #NOT A CASE
+  notacase <- mergedf[which(mergedf$ResolutionStatus=="Not A Case"),]
+
+  ##Bucket 1 ----
+  ##  incident ids that don't have a positive result
+  bucket1.ids <- mergedf %>%
+    dplyr::filter(ResolutionStatus == "Not A Case") %>%
+    dplyr::group_by(IncidentID, result) %>%
+    dplyr::count() %>%
+    tidyr::pivot_wider(id_cols = c("IncidentID"),
+                       names_from = c("result"),
+                       values_from = c("n"), values_fill = 0) %>%
+    dplyr::filter(Positive == 0) %>%
+    dplyr::pull(IncidentID)
+
+  bucket1 <- notacase %>%
+    dplyr::filter(IncidentID %in% bucket1.ids) %>%
+    dplyr::group_by(IncidentID) %>%
+    dplyr::arrange(ResultDate) %>%
+    dplyr::slice(1L) %>%
+    dplyr::rename(date = ResultDate)
+
+  ##Bucket 5 ----
+  ##  incident ids that have a positive results
+  bucket5.ids <- mergedf %>%
+    dplyr::filter(ResolutionStatus == "Not A Case") %>%
+    dplyr::group_by(IncidentID, result) %>%
+    dplyr::count() %>%
+    tidyr::pivot_wider(id_cols = c("IncidentID"),
+                       names_from = c("result"),
+                       values_from = c("n"), values_fill = 0) %>%
+    dplyr::filter(Positive >= 1) %>%
+    dplyr::pull(IncidentID)
+
+  bucket5 <- notacase %>%
+    dplyr::filter(IncidentID %in% bucket5.ids) %>%
+    dplyr::group_by(IncidentID) %>%
+    dplyr::arrange(ResultDate) %>%
+    dplyr::slice(1L) %>%
+    dplyr::rename(date = ResultDate)
+
+  #CONFIRMED CASES
+  confirmed <- mergedf[which(mergedf$ResolutionStatus=="Confirmed"),]
+
+  ##Bucket 4 ----
+  ##  Incident ids don't have a positive result at all
+  bucket4.ids <- mergedf %>%
+    dplyr::filter(ResolutionStatus == "Confirmed") %>%
+    dplyr::group_by(IncidentID, result) %>%
+    dplyr::count() %>%
+    tidyr::pivot_wider(id_cols = c("IncidentID"),
+                       names_from = c("result"),
+                       values_from = c("n"), values_fill = 0) %>%
+    dplyr::filter(Positive == 0) %>%
+    dplyr::pull(IncidentID)
+
+  bucket4 <- confirmed %>%
+    dplyr::filter(IncidentID %in% bucket4.ids) %>%
+    dplyr::mutate(
+      date = DateSentCDC
+    ) %>%
+    dplyr::group_by(IncidentID) %>%
+    dplyr::arrange(date) %>%
+    dplyr::slice(1L)
+
+  ##Buckets 2 and 3
+  confirmed.positive <- confirmed %>%
+    dplyr::filter(!IncidentID %in% bucket4.ids)
+
+  confirmed.firstresult <- confirmed.positive %>%
+    dplyr::group_by(IncidentID) %>%
+    dplyr::arrange(ResultDate) %>%
+    dplyr::slice(1L)
+
+  ##Bucket 2 ----
+  ##  incident ids have positive on first result date
+  bucket2 <- confirmed.firstresult %>%
+    dplyr::filter(result == "Positive") %>%
+    dplyr::rename(date = ResultDate)
+
+  ##Bucket 3 ----
+  ##  incident ids have positive on subsequent result date
+  bucket3.ids <- confirmed.firstresult %>%
+    dplyr::filter(is.na(result) | result != "Positive") %>%
+    dplyr::pull(IncidentID)
+
+  bucket3 <- confirmed %>%
+    dplyr::filter(IncidentID %in% bucket3.ids,
+                  result == "Positive") %>%
+    dplyr::group_by(IncidentID) %>%
+    dplyr::arrange(ResultDate) %>%
+    dplyr::slice(1L) %>%
+    dplyr::rename(date = ResultDate)
+
+  #Assemble buckets ----
+  dplyr::bind_rows(bucket1, bucket2, bucket3, bucket4, bucket5) %>%
+    dplyr::mutate(
+      DerivedCounty = if_else(trimws(DerivedCounty)== "Fond Du Lac",
+                              "Fond du Lac", trimws(DerivedCounty)),
+      resultdateonly = as.Date(date, tz = "America/Chicago")
+    ) %>%
+    dplyr::filter(!is.na(DerivedCounty),
+                  !DerivedCounty %in% c("Non-Wisconsin", "Unknown"),
+                  resultdateonly >= min_date & resultdateonly <= max_date) %>%
+    dplyr::group_by(resultdateonly, DerivedCounty) %>%
+    dplyr::count(name = "Tests") %>%
+    dplyr::rename(Area = DerivedCounty)
+}
