@@ -4,14 +4,12 @@
 \alias{clean_testing}
 \title{Internal function to clean testing data}
 \usage{
-clean_testing(bcd, lab, test_vol, end_date)
+clean_testing(lab, stg, end_date)
 }
 \arguments{
-\item{bcd}{data.frame}
+\item{lab}{data.frame from Lab table pull}
 
-\item{lab}{data.frame}
-
-\item{test_vol}{data.frame}
+\item{stg}{data.frame from Staging table pull}
 
 \item{end_date}{(default = NULL) If specified it is the end date of the
 time series that you wish to analyze. It should be something

@@ -59,7 +59,7 @@
 pull_histTable <- function(end_date = NULL) {
   #Pull down the data
   #REsT API URL
-  api_url <- "https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,DATE,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
+  api_url <- "https://dhsgis.wi.gov/server/rest/services/DHS_COVID19/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20%27COUNTY%27&outFields=GEOID,GEO,NAME,DATE,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
   message("Downloading data from DHS ...")
   hdt <- sf::st_set_geometry(sf::st_read(api_url, quiet = TRUE, stringsAsFactors = FALSE), NULL)
 
@@ -698,15 +698,15 @@ calc_pos_neg <- function(lab, end_date) {
       )
     )
 
-  lab3 <- lab2[!duplicated(lab2$newid2),]
-
-  #NEXT IS LINE 147 in Nathan_All_Specimens.R
-
-      DerivedCounty = ifelse(trimws(DerivedCounty) == "Fond Du Lac",
-                             "Fond du Lac", trimws(DerivedCounty)),
-      resultdateonly = as.Date(ResultDate, tz = "America/Chicago")
-    ) %>%
-    dplyr::filter(!is.na(resultdateonly))
+  # lab3 <- lab2[!duplicated(lab2$newid2),]
+  #
+  # #NEXT IS LINE 147 in Nathan_All_Specimens.R
+  #
+  #     DerivedCounty = ifelse(trimws(DerivedCounty) == "Fond Du Lac",
+  #                            "Fond du Lac", trimws(DerivedCounty)),
+  #     resultdateonly = as.Date(ResultDate, tz = "America/Chicago")
+  #   ) %>%
+  #   dplyr::filter(!is.na(resultdateonly))
 
   #decided to assign first resultdateonly within the window to deduplicate rows
   #but keep the totals consistent with the original code.

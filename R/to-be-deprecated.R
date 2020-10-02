@@ -288,6 +288,7 @@ rev_cusum_lcl <- function( curr , delta_t = 1 ) {
 #' DEPRECATED: INTERNAL function to calculate total tests per county per day
 #'
 #' @inheritParams clean_testing
+#' @param bcd old file for testing calculations
 #'
 #' @return data.frame
 #'

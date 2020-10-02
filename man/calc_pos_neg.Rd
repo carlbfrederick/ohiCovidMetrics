@@ -7,7 +7,7 @@
 calc_pos_neg(lab, end_date)
 }
 \arguments{
-\item{lab}{data.frame}
+\item{lab}{data.frame from Lab table pull}
 
 \item{end_date}{(default = NULL) If specified it is the end date of the
 time series that you wish to analyze. It should be something
