@@ -148,8 +148,8 @@ expect_identical(
   ),
   ordered(3, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
-##. . Critical ----
-### Shrinking and Critical
+##. . Very high ----
+### Shrinking and Very high
 expect_identical(
   confirmed_case_composite(
     class_trajectory(score_trajectory(curr_int, sprev_int), pval_trajectory(curr_int, sprev_int)),
@@ -157,7 +157,7 @@ expect_identical(
   ),
   ordered(4, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
-### No sig change and Critical
+### No sig change and Very high
 expect_identical(
   confirmed_case_composite(
     class_trajectory(score_trajectory(curr_int, nprev_int), pval_trajectory(curr_int, nprev_int)),
@@ -165,7 +165,7 @@ expect_identical(
   ),
   ordered(4, levels = 1:4, labels = c("Low", "Medium", "High", "Very High"))
 )
-### Growing and Critical
+### Growing and Very high
 expect_identical(
   confirmed_case_composite(
     class_trajectory(score_trajectory(curr_int, gprev_int), pval_trajectory(curr_int, gprev_int)),

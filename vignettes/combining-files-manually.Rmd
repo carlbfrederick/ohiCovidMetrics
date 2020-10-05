@@ -230,7 +230,7 @@ if (length(dir(mydir, pattern = "^combined_metrics")) == 0) {
   if (length(casefile) == 1) {
     cases <- read_csv(casefile) %>% 
       mutate(Date = as.Date(Date, "%m/%d/%Y"),
-             Conf_Case_Burden_Critical_Flag = if_else(Conf_Case_Burden >= 350, 1, 0))
+             Conf_Case_Burden_Very_high_Flag = if_else(Conf_Case_Burden >= 350, 1, 0))
   } else {
     cases <- pull_histTable(end_date = max_date + 1) %>% 
       process_confirmed_cases()
