@@ -286,7 +286,7 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
     dplyr::mutate_if(is.factor, as.character)
 
   ##ADD FIELD DESCRIBING TIME PERIOD OF DATA
-  out$Data_Period <- paste(format(min(out$Date), "%x"), "-", format(max(hosp$Date), "%x"))
+  out$Data_Period <- format(max(out$Date), "%x")
 
   #Force ILI_Moving_Avg to 0 instead of slightly zero
   out <- out %>%

@@ -27,24 +27,24 @@ load(Sys.getenv("LOADCOMBOMETRICFILE"))
 #Global Checks ----
 
 ###all periods have 1200 observation
-expect_true(all(table(out$Data_Period) == 1200),
+expect_true(all(table(out$Data_Period) == 1280),
             info = "All Periods have 1200 Obs.")
 
 ###all periods have 80 summary rows and 1120 daily rows
 expect_true(all(table(out$Data_Period[out$RowType == "Summary"]) == 80),
             info = "All periods have 80 summary rows.")
-expect_true(all(table(out$Data_Period[out$RowType == "Daily"]) == 1120),
+expect_true(all(table(out$Data_Period[out$RowType == "Daily"]) == 1200),
             info = "All periods have 1120 daily rows.")
 
-###all periods have 14 consecutive days
+###all periods have 15 consecutive days
 expect_true(all(out %>%
                   group_by(Data_Period) %>%
                   summarize(
                     ndates = n_distinct(Date),
                     .groups = "drop"
                   ) %>%
-                  pull(ndates) == 14),
-            info = "All periods have 14 unique dates.")
+                  pull(ndates) == 15),
+            info = "All periods have 15 unique dates.")
 
 consec <- out %>%
   ungroup() %>%

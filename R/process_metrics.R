@@ -710,10 +710,11 @@ process_cli <- function(cli_df){
       Trajectory = round(.data$Trajectory, 1),
       Trajectory = dplyr::if_else(.data$Trajectory_Class == "No significant change", "N/A",
                                   as.character(.data$Trajectory)),
-      Burden = round(.data$Burden, 1)
+      Burden = round(.data$Burden, 1),
+      Date = .data$week_end_1 + lubridate::days(1)
     ) %>%
     dplyr::select(
-      Date = .data$week_end_1,
+      Date,
       Region_ID = .data$fips,
       Region = .data$County,
       RowType = .data$RowType,
