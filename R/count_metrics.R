@@ -143,8 +143,9 @@ score_burden <- function(curr, prev, pop) {
 #' \itemize{
 #'   \item "Low" is a burden less than or equal to 10 per 100,000
 #'   \item "Moderate" is a burden greater than 10 and less than or equal to 50 per 100,000
-#'   \item "Moderately High" is a burden greater than 50 and less than or equal to 100 per 100,000
-#'   \item "High" is a burden greater than 100
+#'   \item "Moderately high" is a burden greater than 50 and less than or equal to 100 per 100,000
+#'   \item "High" is a burden greater than 100 and less than or equal to 350 per 100,000
+#'   \item "Very high" is a burden greater than 350 per 100,000
 #' }
 #'
 #' @param burden numeric vector as calculated by \code{\link{score_burden}}
@@ -163,7 +164,7 @@ class_burden <- function(burden) {
 
   out <- factor(out,
                 levels = 1:5,
-                labels = c("Low", "Moderate", "Moderately High", "High", "Very High"),
+                labels = c("Low", "Moderate", "Moderately high", "High", "Very high"),
                 ordered = TRUE)
 
   out
@@ -195,16 +196,16 @@ confirmed_case_composite <- function(traj_class, burd_class) {
     burd_class == "Low" & traj_class == "Growing" ~ 2,
     burd_class == "Moderate" & traj_class < "Growing" ~ 2,
     burd_class == "Moderate" & traj_class == "Growing" ~ 3,
-    burd_class == "Moderately High" & traj_class == "Shrinking" ~ 2,
-    burd_class == "Moderately High" & traj_class > "Shrinking" ~ 3,
+    burd_class == "Moderately high" & traj_class == "Shrinking" ~ 2,
+    burd_class == "Moderately high" & traj_class > "Shrinking" ~ 3,
     burd_class == "High" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 3,
-    burd_class == "Very High" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 4,
+    burd_class == "Very high" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 4,
     TRUE ~ NA_real_
   )
 
   out <- factor(out,
                 levels = 1:4,
-                labels = c("Low", "Medium", "High", "Very High"),
+                labels = c("Low", "Medium", "High", "Very high"),
                 ordered = TRUE)
 
   out

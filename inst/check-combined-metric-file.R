@@ -163,7 +163,7 @@ expect_equal(sum(is.na(out$Conf_Case_Burden_Class[out$RowType == "Summary"])), 0
 expect_equal(sum(!is.na(out$Conf_Case_Burden_Class[out$RowType == "Daily"])), 0,
              info = "Conf_Case_Burden_Class column has *all* NA/missings for Daily Rows")
 expect_true(all(unique(out$Conf_Case_Burden_Class[out$RowType == "Summary"]) %in%
-             c("High", "Low", "Moderate", "Moderately High", "Very High")),
+             c("High", "Low", "Moderate", "Moderately high", "Very high")),
              info = "Conf_Case_Burden_Class column has only correct unique values")
 
 ###Conf_Case_Trajectory_Class
@@ -185,7 +185,7 @@ expect_equal(sum(is.na(out$Conf_Case_Composite_Class[out$RowType == "Summary"]))
 expect_equal(sum(!is.na(out$Conf_Case_Composite_Class[out$RowType == "Daily"])), 0,
              info = "Conf_Case_Composite_Class column has *all* NA/missings for Daily Rows")
 expect_true(all(unique(out$Conf_Case_Composite_Class[out$RowType == "Summary"]) %in%
-             c("High", "Low", "Medium", "Very High")),
+             c("High", "Low", "Medium", "Very high")),
              info = "Conf_Case_Composite_Class column has only correct unique values")
 
 ###Conf_Case_Trajectory_P
@@ -485,7 +485,7 @@ expect_equal(sum(is.na(out$CLI_Burden_Class[out$RowType == "Summary"])), 0,
 expect_equal(sum(!is.na(out$CLI_Burden_Class[out$RowType == "Daily"])), 0,
              info = "CLI_Burden_Class column has *all* NA/missings for Daily Rows")
 expect_true(all(unique(out$CLI_Burden_Class[out$RowType == "Summary"]) %in%
-             c("High", "Low", "Moderate", "Moderately High", "Very High")),
+             c("High", "Low", "Moderate", "Moderately high", "Very high")),
              info = "CLI_Burden_Class column has only correct unique values")
 
 ###CLI_Trajectory_Class
@@ -506,7 +506,7 @@ expect_equal(sum(is.na(out$CLI_Composite_Class[out$RowType == "Summary"])), 0,
              info = "CLI_Composite_Class column has no NA/missings for Summary Rows")
 expect_equal(sum(!is.na(out$CLI_Composite_Class[out$RowType == "Daily"])), 0,
              info = "CLI_Composite_Class column has *all* NA/missings for Daily Rows")
-expect_true(all(unique(out$CLI_Composite_Class[out$RowType == "Summary"]) %in% c("High", "Low", "Medium", "Very High")),
+expect_true(all(unique(out$CLI_Composite_Class[out$RowType == "Summary"]) %in% c("High", "Low", "Medium", "Very high")),
              info = "CLI_Composite_Class column has only correct unique values")
 
 ###CLI_Trajectory_P
