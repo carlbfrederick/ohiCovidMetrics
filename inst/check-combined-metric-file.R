@@ -341,7 +341,7 @@ expect_true(any(out$Hosp_PrctVent_Used[out$RowType == "Daily" & out$Region %in% 
             info = "Hosp_PrctVent_Used columns values are scales between 0 and 100 (not 0 and 1).")
 
 ###Hosp_COVID_px_Trajectory
-expect_true(inherits(out$Hosp_COVID_px_Trajectory, 'character'),
+expect_true(inherits(out$Hosp_COVID_px_Trajectory, 'character') | inherits(out$Hosp_COVID_px_Trajectory, 'numeric'),
             info = "Hosp_COVID_px_Trajectory column is 'character' class")
 expect_equal(sum(is.na(out$Hosp_COVID_px_Trajectory[out$RowType == "Summary" & out$Region %in% non_cty])), 0,
              info = "Hosp_COVID_px_Trajectory column has no NA/missings for summary rows for HERC and State")
@@ -364,7 +364,7 @@ expect_true(all(unique(out$Hosp_COVID_px_Trajectory_Class[out$RowType == "Summar
              info = "Hosp_COVID_px_Trajectory_Class column has only correct unique values")
 
 ###Hosp_COVID_ICUpx_Trajectory
-expect_true(inherits(out$Hosp_COVID_ICUpx_Trajectory, 'character'),
+expect_true(inherits(out$Hosp_COVID_ICUpx_Trajectory, 'character' | inherits(out$Hosp_COVID_ICUpx_Trajectory, 'numeric')),
             info = "Hosp_COVID_ICUpx_Trajectory column is 'character' class")
 expect_equal(sum(is.na(out$Hosp_COVID_ICUpx_Trajectory[out$RowType == "Summary" & out$Region %in% non_cty])), 0,
              info = "Hosp_COVID_ICUpx_Trajectory column has no NA/missings for summary rows for HERC and State")
