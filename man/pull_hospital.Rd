@@ -22,6 +22,6 @@ Imports Hospitalization file produced from EM Resource
 }
 \examples{
 \dontrun{
-  pull_hospital("hospdtatafile.csv")
+  pull_hospital("hospdatafile.csv")
 }
 }

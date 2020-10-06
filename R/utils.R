@@ -263,6 +263,7 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' @importFrom dplyr between
 #' @importFrom dplyr if_else
 #' @importFrom tinytest run_test_file
+#' @importFrom lubridate days
 #'
 #' @examples
 #' \dontrun{
@@ -286,7 +287,9 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
     dplyr::mutate_if(is.factor, as.character)
 
   ##ADD FIELD DESCRIBING TIME PERIOD OF DATA
-  out$Data_Period <- paste(format(min(out$Date), "%x"), "-", format(max(hosp$Date), "%x"))
+  out$Data_Period <- paste(format(max(out$Date) - lubridate::days(14), "%x"),
+                           format(max(out$Date) - lubridate::days(1), "%x"),
+                           sep = " - ")
 
   #Force ILI_Moving_Avg to 0 instead of slightly zero
   out <- out %>%
@@ -298,7 +301,7 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
   out <- out %>%
     dplyr::select(Data_Period, Date, Region_ID, Region, RowType,
            Conf_Case_Count, Conf_Case_Burden,
-           Conf_Case_Burden_Class, Conf_Case_Burden_Critical_Flag,
+           Conf_Case_Burden_Class, Conf_Case_Burden_Very_high_Flag,
            Conf_Case_Trajectory, Conf_Case_Trajectory_P, Conf_Case_Trajectory_Class,
            Conf_Case_Composite_Class,
            Testing_Total_Encounters, Testing_Positive_Encounters,
@@ -328,7 +331,8 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
   tdir <- tempdir()
   save(out, file = file.path(tdir, "__tmp_metric_file.RData"))
   file_checks <- tinytest::run_test_file(system.file("check-combined-metric-file.R", package = "ohiCovidMetrics"),
-                                         set_env = list("LOADCOMBOMETRICFILE" = file.path(tdir,  "__tmp_metric_file.RData")))
+                                         set_env = list("LOADCOMBOMETRICFILE" = file.path(tdir,  "__tmp_metric_file.RData"),
+                                                        "ISAPPENDED" = FALSE))
   checks_df <- as.data.frame(file_checks)
   checks_df$info <- sapply(file_checks, function(x) attr(x, which = "info"))
 
@@ -486,7 +490,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     Conf_Case_Count = readr::col_double(),
     Conf_Case_Burden = readr::col_double(),
     Conf_Case_Burden_Class = readr::col_character(),
-    Conf_Case_Burden_Critical_Flag = readr::col_double(),
+    Conf_Case_Burden_Very_high_Flag = readr::col_double(),
     Conf_Case_Trajectory = readr::col_character(),
     Conf_Case_Trajectory_P = readr::col_double(),
     Conf_Case_Trajectory_Class = readr::col_character(),
@@ -550,7 +554,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     Conf_Case_Count_moving_avg = readr::col_double(),
     Conf_Case_Burden = readr::col_double(),
     Conf_Case_Burden_Class = readr::col_character(),
-    Conf_Case_Burden_Critical_Flag = readr::col_double(),
+    Conf_Case_Burden_Very_high_Flag = readr::col_double(),
     Conf_Case_Trajectory = readr::col_character(),
     Conf_Case_Trajectory_P = readr::col_double(),
     Conf_Case_Trajectory_Class = readr::col_character(),
@@ -616,6 +620,10 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     readr::read_csv(existing_combo_file, col_type = colspec_e)
   )
 
+  first_not_na <- function(x, ...) {
+    dplyr::first(x[!is.na(x)], ...)
+  }
+
   ma_tmp <- combo %>%
     dplyr::filter(RowType == "Daily") %>%
     dplyr::mutate(
@@ -632,7 +640,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                Testing_Total_Encounters,
                CLI_Count,
                Conf_Case_Count,
-               ILI_Visits, ILI_Total_Visits), first),
+               ILI_Visits, ILI_Total_Visits), first_not_na),
       .groups = "drop"
     ) %>%
     dplyr::group_by(RowType, Region) %>%
@@ -661,6 +669,9 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
       Conf_Case_Count_moving_avg     = Conf_Case_Count / 7,
       ILI_Moving_Avg                 = 100 * (ILI_Visits / ILI_Total_Visits)
     ) %>%
+    dplyr::mutate(
+      ILI_Moving_Avg = if_else(ILI_Total_Visits == 0 & is.nan(ILI_Moving_Avg), 0, ILI_Moving_Avg)
+    ) %>%
     dplyr::select(RowType, Region, Date,
                   Hosp_Beds_moving_avg,
                   Hosp_ICU_moving_avg,
@@ -686,13 +697,13 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
         ILI_Moving_Avg >= ILI_Threshold ~ "Elevated",
         ILI_Moving_Avg >= ILI_Baseline & ILI_Moving_Avg < ILI_Threshold ~ "Moderate",
         ILI_Moving_Avg <  ILI_Baseline ~ "Low",
-        TRUE ~ "NA"
+        TRUE ~ NA_character_
       )
 
     ) %>%
     dplyr::select(Data_Period, Date, Region_ID, Region, RowType,
                   Conf_Case_Count, Conf_Case_Count_moving_avg, Conf_Case_Burden,
-                  Conf_Case_Burden_Class, Conf_Case_Burden_Critical_Flag,
+                  Conf_Case_Burden_Class, Conf_Case_Burden_Very_high_Flag,
                   Conf_Case_Trajectory, Conf_Case_Trajectory_P, Conf_Case_Trajectory_Class,
                   Conf_Case_Composite_Class,
                   Testing_Total_Encounters, Testing_Tot_Enc_moving_avg, Testing_Positive_Encounters,
@@ -713,10 +724,14 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
 
   tdir <- tempdir()
   save(out, file = file.path(tdir, "__tmp_append_file.RData"))
-  file_checks <- tinytest::run_test_file(system.file("check-appended-file.R", package = "ohiCovidMetrics"),
+  file_checks1 <- tinytest::run_test_file(system.file("check-combined-metric-file.R", package = "ohiCovidMetrics"),
+                                          set_env = list("LOADCOMBOMETRICFILE" = file.path(tdir,  "__tmp_append_file.RData"),
+                                                         "ISAPPENDED" = TRUE))
+  file_checks2 <- tinytest::run_test_file(system.file("check-appended-file.R", package = "ohiCovidMetrics"),
                                          set_env = list("LOADAPPENDEDFILE" = file.path(tdir,  "__tmp_append_file.RData")))
-  checks_df <- as.data.frame(file_checks)
-  checks_df$info <- sapply(file_checks, function(x) attr(x, which = "info"))
+  checks_df <- rbind(as.data.frame(file_checks1), as.data.frame(file_checks2))
+  checks_df$info <- c(sapply(file_checks1, function(x) attr(x, which = "info")),
+                      sapply(file_checks2, function(x) attr(x, which = "info")))
 
   if (sum(!checks_df$result) == 0) {
     message("You are good to go, all file checks passed!")

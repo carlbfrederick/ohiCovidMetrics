@@ -2,7 +2,7 @@
 % Please edit documentation in R/process_metrics.R
 \name{process_testing}
 \alias{process_testing}
-\title{Process the shaped hospital data into a Tableau ready format}
+\title{Process the shaped testing data into a Tableau ready format}
 \usage{
 process_testing(testing_df)
 }
@@ -27,7 +27,7 @@ a Tableau ready data.frame with the following columns:
 }
 }
 \description{
-Process the shaped hospital data into a Tableau ready format
+Process the shaped testing data into a Tableau ready format
 }
 \examples{
 \dontrun{

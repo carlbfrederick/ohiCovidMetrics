@@ -43,7 +43,7 @@
 #' }
 shape_case_data <- function(case_df) {
   #Alter date to reflect date cases were confirmed rather than posted.
-  case_df$post_date = case_df$post_date - lubridate::days(1)
+  case_df$post_date = case_df$post_date
 
   max_date <- max(case_df$post_date)
 
@@ -144,7 +144,7 @@ process_confirmed_cases <- function(case_df) {
       Trajectory = round(.data$Trajectory, 1),
       Trajectory = dplyr::if_else(.data$Trajectory_Class == "No significant change", "N/A",
                                   as.character(.data$Trajectory)),
-      Burden_Critical_Flag = dplyr::if_else(Burden >= 350, 1L, 0L),
+      Burden_Very_high_Flag = dplyr::if_else(Burden >= 350, 1L, 0L),
       Burden = round(.data$Burden, 1),
       RowType = "Summary"
     ) %>%
@@ -155,7 +155,7 @@ process_confirmed_cases <- function(case_df) {
       RowType = .data$RowType,
       Conf_Case_Count = .data$Count,
       Conf_Case_Burden = .data$Burden,
-      Conf_Case_Burden_Critical_Flag = .data$Burden_Critical_Flag,
+      Conf_Case_Burden_Very_high_Flag = .data$Burden_Very_high_Flag,
       Conf_Case_Trajectory = .data$Trajectory,
       Conf_Case_Burden_Class = .data$Burden_Class,
       Conf_Case_Trajectory_Class = .data$Trajectory_Class,
@@ -710,10 +710,11 @@ process_cli <- function(cli_df){
       Trajectory = round(.data$Trajectory, 1),
       Trajectory = dplyr::if_else(.data$Trajectory_Class == "No significant change", "N/A",
                                   as.character(.data$Trajectory)),
-      Burden = round(.data$Burden, 1)
+      Burden = round(.data$Burden, 1),
+      Date = .data$week_end_1 + lubridate::days(1)
     ) %>%
     dplyr::select(
-      Date = .data$week_end_1,
+      Date,
       Region_ID = .data$fips,
       Region = .data$County,
       RowType = .data$RowType,
