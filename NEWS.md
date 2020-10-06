@@ -1,3 +1,30 @@
+# ohiCovidMetrics 0.8.5
+
+The major change in this update is on how we treat dates for confirmed cases.
+Based on stakeholder feedback, we now present daily confirmed case numbers with
+the same date that they are posted with in Historical Data Table and other 
+displays.
+
+## Enhancements
+
+- Changed Burden and Composite labels from 'Critical' to 'Very high' and made
+  capitalization consistent across all labels.
+- Daily confirmed cases will now match dates on the rest of the DHS reporting
+  websites.
+- Streamlined data check tests so that the bulk of the tests in the appended
+  files are not duplicates.
+
+## Breaking Changes
+
+- Merged files now contain 15 rows since we have 2 14-day windows that are off
+  by a day.  This caused many headaches. Also, summary rows are now dated as the
+  maximum date in the data period to ensure there is only one summary row per 
+  geo-unit per data period.
+
+## Bug fixes
+
+- Many, vastly improved tests for data and calculating functions
+
 # ohiCovidMetrics 0.7.9.9
 
 This version corrects a critical bug in the calculation of the trajectory 
@@ -5,7 +32,7 @@ class.
 
 ## Enhancements
 
-- [spot re: testing volume targets]
+- [none so far]
 
 ## Breaking Changes
 
