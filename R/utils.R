@@ -616,6 +616,10 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     readr::read_csv(existing_combo_file, col_type = colspec_e)
   )
 
+  first_not_na <- function(x, ...) {
+    dplyr::first(x[!is.na(x)], ...)
+  }
+
   ma_tmp <- combo %>%
     dplyr::filter(RowType == "Daily") %>%
     dplyr::mutate(
@@ -632,7 +636,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                Testing_Total_Encounters,
                CLI_Count,
                Conf_Case_Count,
-               ILI_Visits, ILI_Total_Visits), first),
+               ILI_Visits, ILI_Total_Visits), first_not_na),
       .groups = "drop"
     ) %>%
     dplyr::group_by(RowType, Region) %>%
@@ -713,10 +717,13 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
 
   tdir <- tempdir()
   save(out, file = file.path(tdir, "__tmp_append_file.RData"))
-  file_checks <- tinytest::run_test_file(system.file("check-appended-file.R", package = "ohiCovidMetrics"),
+  file_checks1 <- tinytest::run_test_file(system.file("check-combined-metric-file.R", package = "ohiCovidMetrics"),
+                                          set_env = list("LOADCOMBOMETRICFILE" = file.path(tdir,  "__tmp_append_file.RData")))
+  file_checks2 <- tinytest::run_test_file(system.file("check-appended-file.R", package = "ohiCovidMetrics"),
                                          set_env = list("LOADAPPENDEDFILE" = file.path(tdir,  "__tmp_append_file.RData")))
-  checks_df <- as.data.frame(file_checks)
-  checks_df$info <- sapply(file_checks, function(x) attr(x, which = "info"))
+  checks_df <- rbind(as.data.frame(file_checks1), as.data.frame(file_checks2))
+  checks_df$info <- c(sapply(file_checks1, function(x) attr(x, which = "info")),
+                      sapply(file_checks2, function(x) attr(x, which = "info")))
 
   if (sum(!checks_df$result) == 0) {
     message("You are good to go, all file checks passed!")
