@@ -24,8 +24,15 @@ library(tinytest)
 
 load(Sys.getenv("LOADCOMBOMETRICFILE"))
 
-out$nocase <- as.Date(out$Data_Period, format = "%m/%d/%Y") - as.Date(out$Date) == 14
-out$noessence <- as.Date(out$Data_Period, format = "%m/%d/%Y") - as.Date(out$Date) == 0 & out$RowType == "Daily"
+isappended <- as.logical(Sys.getenv("ISAPPENDED"))
+
+out <- out %>%
+  group_by(Data_Period) %>%
+  mutate(
+    nocase = max(as.Date(Date)) - as.Date(Date) == 14,
+    noessence = max(as.Date(Date)) - as.Date(Date) == 0 & RowType == "Daily",
+  ) %>%
+  ungroup(.)
 
 #Global Checks ----
 
@@ -131,9 +138,9 @@ expect_equal(sum(is.na(out$Data_Period)), 0,
 expect_equal(length(unique(out$Data_Period)), nrow(out)/1280,
              info = "Data_Period column has the correct number of unique values")
 #the regex patten below matches valid date patterns m/d/202y - m/d/2020y
-expect_true(all(grepl("^([1][0-2]|[1-9])/([1-9]|[1-2][0-9]|3[0-1])/202[0-9]$",
+expect_true(all(grepl("^([1][0-2]|[1-9])/([1-9]|[1-2][0-9]|3[0-1])/202[0-9] - ([1][0-2]|[1-9])/([1-9]|[1-2][0-9]|3[0-1])/202[0-9]$",
                       unique(out$Data_Period))),
-            info = "Data_Period values all conform to the correct pattern (m/d/202y)")
+            info = "Data_Period values all conform to the correct pattern (m/d/202y - m/d/202y)")
 
 ##. . Confirmed Cases ----
 ###Conf_Case_Count
@@ -414,48 +421,50 @@ expect_true(all(dplyr::between(out$Hosp_PrctICU_Used[out$RowType == "Daily" & ou
 expect_true(any(out$Hosp_PrctICU_Used[out$RowType == "Daily" & out$Region %in% non_cty] > 1.0),
             info = "Hosp_PrctICU_Used columns values are scales between 0 and 100 (not 0 and 1).")
 
-###Hosp_Beds_moving_avg
-hosp_ma <- out %>%
-  group_by(Data_Period, Region) %>%
-  mutate(
-    burn_obs = row_number(Date),
-    ma_present = if_else(RowType == "Daily" & Region %in% non_cty & burn_obs > 6 & !noessence, TRUE, FALSE)
-  )
+if (!isappended) {
+  ###Hosp_Beds_moving_avg
+  hosp_ma <- out %>%
+    group_by(Data_Period, Region) %>%
+    mutate(
+      burn_obs = row_number(Date),
+      ma_present = if_else(RowType == "Daily" & Region %in% non_cty & burn_obs > 6 & !noessence, TRUE, FALSE)
+    )
 
-expect_true(inherits(hosp_ma$Hosp_Beds_moving_avg, 'numeric'),
-            info = "Hosp_Beds_moving_avg column is 'numeric' class")
-expect_equal(sum(is.na(hosp_ma$Hosp_Beds_moving_avg[hosp_ma$ma_present])), 0,
-             info = "Hosp_Beds_moving_avg column has all expected nonmissing values")
-expect_equal(sum(!is.na(hosp_ma$Hosp_Beds_moving_avg[!hosp_ma$ma_present])), 0,
-             info = "Hosp_Beds_moving_avg column is always NA/missing when expected")
-expect_true(all(dplyr::between(hosp_ma$Hosp_Beds_moving_avg[hosp_ma$ma_present], left = 0.0, right = 100.0)),
-            info = "Hosp_Beds_moving_avg columns values are all between 0 and 100 inclusive.")
-expect_true(any(hosp_ma$Hosp_Beds_moving_avg[hosp_ma$ma_present] > 1.0),
-            info = "Hosp_Beds_moving_avg columns values are scales between 0 and 100 (not 0 and 1).")
+  expect_true(inherits(hosp_ma$Hosp_Beds_moving_avg, 'numeric'),
+              info = "Hosp_Beds_moving_avg column is 'numeric' class")
+  expect_equal(sum(is.na(hosp_ma$Hosp_Beds_moving_avg[hosp_ma$ma_present])), 0,
+               info = "Hosp_Beds_moving_avg column has all expected nonmissing values")
+  expect_equal(sum(!is.na(hosp_ma$Hosp_Beds_moving_avg[!hosp_ma$ma_present])), 0,
+               info = "Hosp_Beds_moving_avg column is always NA/missing when expected")
+  expect_true(all(dplyr::between(hosp_ma$Hosp_Beds_moving_avg[hosp_ma$ma_present], left = 0.0, right = 100.0)),
+              info = "Hosp_Beds_moving_avg columns values are all between 0 and 100 inclusive.")
+  expect_true(any(hosp_ma$Hosp_Beds_moving_avg[hosp_ma$ma_present] > 1.0),
+              info = "Hosp_Beds_moving_avg columns values are scales between 0 and 100 (not 0 and 1).")
 
-###Hosp_ICU_moving_avg
-expect_true(inherits(hosp_ma$Hosp_ICU_moving_avg, 'numeric'),
-            info = "Hosp_ICU_moving_avg column is 'numeric' class")
-expect_equal(sum(is.na(hosp_ma$Hosp_ICU_moving_avg[hosp_ma$ma_present])), 0,
-             info = "Hosp_ICU_moving_avg column has all expected nonmissing values")
-expect_equal(sum(!is.na(hosp_ma$Hosp_ICU_moving_avg[!hosp_ma$ma_present])), 0,
-             info = "Hosp_ICU_moving_avg column is always NA/missing when expected")
-expect_true(all(dplyr::between(hosp_ma$Hosp_ICU_moving_avg[hosp_ma$ma_present], left = 0.0, right = 100.0)),
-            info = "Hosp_ICU_moving_avg columns values are all between 0 and 100 inclusive.")
-expect_true(any(hosp_ma$Hosp_ICU_moving_avg[hosp_ma$ma_present] > 1.0),
-            info = "Hosp_ICU_moving_avg columns values are scales between 0 and 100 (not 0 and 1).")
+  ###Hosp_ICU_moving_avg
+  expect_true(inherits(hosp_ma$Hosp_ICU_moving_avg, 'numeric'),
+              info = "Hosp_ICU_moving_avg column is 'numeric' class")
+  expect_equal(sum(is.na(hosp_ma$Hosp_ICU_moving_avg[hosp_ma$ma_present])), 0,
+               info = "Hosp_ICU_moving_avg column has all expected nonmissing values")
+  expect_equal(sum(!is.na(hosp_ma$Hosp_ICU_moving_avg[!hosp_ma$ma_present])), 0,
+               info = "Hosp_ICU_moving_avg column is always NA/missing when expected")
+  expect_true(all(dplyr::between(hosp_ma$Hosp_ICU_moving_avg[hosp_ma$ma_present], left = 0.0, right = 100.0)),
+              info = "Hosp_ICU_moving_avg columns values are all between 0 and 100 inclusive.")
+  expect_true(any(hosp_ma$Hosp_ICU_moving_avg[hosp_ma$ma_present] > 1.0),
+              info = "Hosp_ICU_moving_avg columns values are scales between 0 and 100 (not 0 and 1).")
 
-###Hosp_Vent_moving_avg
-expect_true(inherits(hosp_ma$Hosp_Vent_moving_avg, 'numeric'),
-            info = "Hosp_Vent_moving_avg column is 'numeric' class")
-expect_equal(sum(is.na(hosp_ma$Hosp_Vent_moving_avg[hosp_ma$ma_present])), 0,
-             info = "Hosp_Vent_moving_avg column has all expected nonmissing values")
-expect_equal(sum(!is.na(hosp_ma$Hosp_Vent_moving_avg[!hosp_ma$ma_present])), 0,
-             info = "Hosp_Vent_moving_avg column is always NA/missing when expected")
-expect_true(all(dplyr::between(hosp_ma$Hosp_Vent_moving_avg[hosp_ma$ma_present], left = 0.0, right = 100.0)),
-            info = "Hosp_Vent_moving_avg columns values are all between 0 and 100 inclusive.")
-expect_true(any(hosp_ma$Hosp_Vent_moving_avg[hosp_ma$ma_present] > 1.0),
-            info = "Hosp_Vent_moving_avg columns values are scales between 0 and 100 (not 0 and 1).")
+  ###Hosp_Vent_moving_avg
+  expect_true(inherits(hosp_ma$Hosp_Vent_moving_avg, 'numeric'),
+              info = "Hosp_Vent_moving_avg column is 'numeric' class")
+  expect_equal(sum(is.na(hosp_ma$Hosp_Vent_moving_avg[hosp_ma$ma_present])), 0,
+               info = "Hosp_Vent_moving_avg column has all expected nonmissing values")
+  expect_equal(sum(!is.na(hosp_ma$Hosp_Vent_moving_avg[!hosp_ma$ma_present])), 0,
+               info = "Hosp_Vent_moving_avg column is always NA/missing when expected")
+  expect_true(all(dplyr::between(hosp_ma$Hosp_Vent_moving_avg[hosp_ma$ma_present], left = 0.0, right = 100.0)),
+              info = "Hosp_Vent_moving_avg columns values are all between 0 and 100 inclusive.")
+  expect_true(any(hosp_ma$Hosp_Vent_moving_avg[hosp_ma$ma_present] > 1.0),
+              info = "Hosp_Vent_moving_avg columns values are scales between 0 and 100 (not 0 and 1).")
+}
 
 ##. . CLI ----
 ###CLI_Count
@@ -575,36 +584,37 @@ expect_true(all(dplyr::between(out$ILI_Threshold[out$RowType == "Daily" & out$Re
 expect_true(any(out$ILI_Threshold[out$RowType == "Daily" & out$Region != "Florence"] > 1.0),
             info = "ILI_Threshold columns values are scales between 0 and 100 (not 0 and 1).")
 
+if (!isappended) {
+  ###ILI_Moving_Avg
+  ili_ma <- out %>%
+    group_by(Data_Period, Region) %>%
+    mutate(
+      burn_obs = row_number(Date),
+      ma_present = if_else(RowType == "Daily" & burn_obs > 2 & !noessence, TRUE, FALSE)
+    )
 
-###ILI_Moving_Avg
-ili_ma <- out %>%
-  group_by(Data_Period, Region) %>%
-  mutate(
-    burn_obs = row_number(Date),
-    ma_present = if_else(RowType == "Daily" & burn_obs > 2 & !noessence, TRUE, FALSE)
-  )
+  expect_true(inherits(ili_ma$ILI_Moving_Avg, 'numeric'),
+              info = "ILI_Moving_Avg column is 'numeric' class")
+  expect_equal(sum(is.na(ili_ma$ILI_Moving_Avg[ili_ma$ma_present])), 0,
+               info = "ILI_Moving_Avg column has no NA/missings for Daily rows that are first 2 dates of period per geo-unit")
+  expect_equal(sum(!is.na(ili_ma$ILI_Moving_Avg[!ili_ma$ma_present])), 0,
+               info = "ILI_Moving_Avg column has ONLY NA/missings for Summary rows and first 2 dates of period per geo-unit")
+  expect_true(all(dplyr::between(ili_ma$ILI_Moving_Avg[ili_ma$ma_present], left = 0.0, right = 100.0)),
+              info = "ILI_Moving_Avg columns values are all between 0 and 100 inclusive.")
+  expect_true(any(ili_ma$ILI_Moving_Avg[ili_ma$ma_present] > 1.0),
+              info = "ILI_Moving_Avg columns values are scaled between 0 and 100 (not 0 and 1).")
 
-expect_true(inherits(ili_ma$ILI_Moving_Avg, 'numeric'),
-            info = "ILI_Moving_Avg column is 'numeric' class")
-expect_equal(sum(is.na(ili_ma$ILI_Moving_Avg[ili_ma$ma_present])), 0,
-             info = "ILI_Moving_Avg column has no NA/missings for Daily rows that are first 2 dates of period per geo-unit")
-expect_equal(sum(!is.na(ili_ma$ILI_Moving_Avg[!ili_ma$ma_present])), 0,
-             info = "ILI_Moving_Avg column has ONLY NA/missings for Summary rows and first 2 dates of period per geo-unit")
-expect_true(all(dplyr::between(ili_ma$ILI_Moving_Avg[ili_ma$ma_present], left = 0.0, right = 100.0)),
-            info = "ILI_Moving_Avg columns values are all between 0 and 100 inclusive.")
-expect_true(any(ili_ma$ILI_Moving_Avg[ili_ma$ma_present] > 1.0),
-            info = "ILI_Moving_Avg columns values are scaled between 0 and 100 (not 0 and 1).")
-
-###ILI_Status
-expect_true(inherits(ili_ma$ILI_Status, 'character'),
-            info = "ILI_Status column is 'character' class")
-expect_equal(sum(is.na(ili_ma$ILI_Status[ili_ma$ma_present & ili_ma$Region != "Florence"])), 0,
-             info = "ILI_Status column has no NA/missings for Daily rows outside of Florence County and first 2 dates of period per geo-unit")
-expect_equal(sum(!is.na(ili_ma$ILI_Status[ili_ma$RowType == "Summary" | ili_ma$Region == "Florence" | ili_ma$burn_obs <= 2])), 0,
-             info = "ILI_Status column has ONLY NA/missings for Summary rows and Florence County and first 2 dates of period per geo-unit")
-expect_true(all(unique(ili_ma$ILI_Status[ili_ma$ma_present & ili_ma$Region != "Florence"]) %in%
-                  c("Elevated", "Low", "Moderate")),
-            info = "ILI_Status column has only correct unique values")
+  ###ILI_Status
+  expect_true(inherits(ili_ma$ILI_Status, 'character'),
+              info = "ILI_Status column is 'character' class")
+  expect_equal(sum(is.na(ili_ma$ILI_Status[ili_ma$ma_present & ili_ma$Region != "Florence"])), 0,
+               info = "ILI_Status column has no NA/missings for Daily rows outside of Florence County and first 2 dates of period per geo-unit")
+  expect_equal(sum(!is.na(ili_ma$ILI_Status[ili_ma$RowType == "Summary" | ili_ma$Region == "Florence" | ili_ma$burn_obs <= 2])), 0,
+               info = "ILI_Status column has ONLY NA/missings for Summary rows and Florence County and first 2 dates of period per geo-unit")
+  expect_true(all(unique(ili_ma$ILI_Status[ili_ma$ma_present & ili_ma$Region != "Florence"]) %in%
+                    c("Elevated", "Low", "Moderate")),
+              info = "ILI_Status column has only correct unique values")
+}
 
 ##. . Testing Volume Targets----
 ###Testing_Case
