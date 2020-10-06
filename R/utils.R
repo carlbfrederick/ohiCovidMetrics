@@ -331,7 +331,8 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
   tdir <- tempdir()
   save(out, file = file.path(tdir, "__tmp_metric_file.RData"))
   file_checks <- tinytest::run_test_file(system.file("check-combined-metric-file.R", package = "ohiCovidMetrics"),
-                                         set_env = list("LOADCOMBOMETRICFILE" = file.path(tdir,  "__tmp_metric_file.RData")))
+                                         set_env = list("LOADCOMBOMETRICFILE" = file.path(tdir,  "__tmp_metric_file.RData"),
+                                                        "ISAPPENDED" = FALSE))
   checks_df <- as.data.frame(file_checks)
   checks_df$info <- sapply(file_checks, function(x) attr(x, which = "info"))
 
