@@ -843,7 +843,7 @@ clean_cli <- function(cli){
     dplyr::mutate(
       ED_Visit = dplyr::if_else(FacilityType == "Emergency Care", 1L, 0L),
       Non_Resident = dplyr::if_else(grepl("WI_", Region), 0L, 1L),
-      Visit_Date = as.Date(C_Visit_Date_Time, tz = "America/Chicago"),
+      Visit_Date = as.Date(trunc(C_Visit_Date_Time, units = "days")),
       Hx_County = sub("WI_", "", HospitalRegion),
       County = sub("WI_", "", Region)
     ) %>%
@@ -925,7 +925,7 @@ clean_ili <- function(ili) {
     dplyr::mutate(
       ED_Visit = dplyr::if_else(FacilityType == "Emergency Care", 1L, 0L),
       Non_Resident = dplyr::if_else(grepl("WI_", Region), 0L, 1L),
-      Visit_Date = as.Date(C_Visit_Date_Time, tz = "America/Chicago"),
+      Visit_Date = as.Date(trunc(C_Visit_Date_Time, units = "days")),
       County = sub("WI_", "", Region),
       Total_Visits = ifelse(is.na(C_BioSense_ID),0,1),
       ILI_Visits = ifelse(grepl("ILI CCDD v1", CCDDCategory_flat),1,0),

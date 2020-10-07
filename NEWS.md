@@ -1,3 +1,13 @@
+# ohiCovidMetrics 0.8.5.9
+
+Bugfix to more robust way of truncating datetimes into dates.
+
+## Bug fixes
+
+- For ILI and CLI metrics, switched from as.Date(POSIXt, tz = "America/Chicago")
+  to as.Date(trunc(POSIXt, units = "days"))
+
+
 # ohiCovidMetrics 0.8.5
 
 The major change in this update is on how we treat dates for confirmed cases.
