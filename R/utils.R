@@ -316,7 +316,7 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
            Hosp_total_vents, Hosp_num_px_vent, Hosp_PrctVent_Used, Hosp_Vent_moving_avg,
            CLI_Count, CLI_Burden, CLI_Burden_Class,
            CLI_Trajectory, CLI_Trajectory_P, CLI_Trajectory_Class, CLI_Composite_Class,
-           ILI_Total_Visits, ILI_Visits, ILI_Percent, ILI_Moving_Avg,
+           ED_Total_Visits, ED_ILI_Visits, ILI_Percent, ILI_Moving_Avg,
            ILI_Baseline, ILI_Threshold, ILI_Status,
            ED_flag, Mayo_flag)
 
@@ -533,8 +533,8 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     CLI_Trajectory_P = readr::col_double(),
     CLI_Trajectory_Class = readr::col_character(),
     CLI_Composite_Class = readr::col_character(),
-    ILI_Total_Visits = readr::col_double(),
-    ILI_Visits = readr::col_double(),
+    ED_Total_Visits = readr::col_double(),
+    ED_ILI_Visits = readr::col_double(),
     ILI_Percent = readr::col_double(),
     ILI_Moving_Avg = readr::col_double(),
     ILI_Baseline = readr::col_double(),
@@ -602,8 +602,8 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     CLI_Trajectory_P = readr::col_double(),
     CLI_Trajectory_Class = readr::col_character(),
     CLI_Composite_Class = readr::col_character(),
-    ILI_Total_Visits = readr::col_double(),
-    ILI_Visits = readr::col_double(),
+    ED_Total_Visits = readr::col_double(),
+    ED_ILI_Visits = readr::col_double(),
     ILI_Percent = readr::col_double(),
     ILI_Moving_Avg = readr::col_double(),
     ILI_Baseline = readr::col_double(),
@@ -640,7 +640,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                Testing_Total_Encounters,
                CLI_Count,
                Conf_Case_Count,
-               ILI_Visits, ILI_Total_Visits), first_not_na),
+               ED_ILI_Visits, ED_Total_Visits), first_not_na),
       .groups = "drop"
     ) %>%
     dplyr::group_by(RowType, Region) %>%
@@ -654,7 +654,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                       CLI_Count,
                       Conf_Case_Count),
              zoo::rollapply, width = 7, FUN = sum, fill = NA, align = "right"),
-      dplyr::across(c(ILI_Visits, ILI_Total_Visits),
+      dplyr::across(c(ED_ILI_Visits, ED_Total_Visits),
              zoo::rollapply, width = 3, FUN = sum, fill = NA, align = "right")
     ) %>%
     dplyr::mutate(
@@ -667,10 +667,10 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
       Testing_Tot_Enc_moving_avg     = Testing_Total_Encounters / 7,
       CLI_Count_moving_avg           = CLI_Count / 7,
       Conf_Case_Count_moving_avg     = Conf_Case_Count / 7,
-      ILI_Moving_Avg                 = 100 * (ILI_Visits / ILI_Total_Visits)
+      ILI_Moving_Avg                 = 100 * (ED_ILI_Visits / ED_Total_Visits)
     ) %>%
     dplyr::mutate(
-      ILI_Moving_Avg = if_else(ILI_Total_Visits == 0 & is.nan(ILI_Moving_Avg), 0, ILI_Moving_Avg)
+      ILI_Moving_Avg = if_else(ED_Total_Visits == 0 & is.nan(ILI_Moving_Avg), 0, ILI_Moving_Avg)
     ) %>%
     dplyr::select(RowType, Region, Date,
                   Hosp_Beds_moving_avg,
@@ -718,7 +718,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                   Hosp_total_vents, Hosp_num_px_vent, Hosp_PrctVent_Used, Hosp_Vent_moving_avg,
                   CLI_Count, CLI_Count_moving_avg, CLI_Burden, CLI_Burden_Class,
                   CLI_Trajectory, CLI_Trajectory_P, CLI_Trajectory_Class, CLI_Composite_Class,
-                  ILI_Total_Visits, ILI_Visits, ILI_Percent, ILI_Moving_Avg,
+                  ED_Total_Visits, ED_ILI_Visits, ILI_Percent, ILI_Moving_Avg,
                   ILI_Baseline, ILI_Threshold, ILI_Status,
                   ED_flag, Mayo_flag)
 

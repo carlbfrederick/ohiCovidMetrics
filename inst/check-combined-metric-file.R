@@ -532,21 +532,21 @@ expect_true(all(dplyr::between(out$CLI_Trajectory_P[out$RowType == "Summary"], l
             info = "CLI_Trajectory_P columns values are all between 0 and 1 inclusive.")
 
 ##. . ILI ----
-###ILI_Total_Visits
-expect_true(inherits(out$ILI_Total_Visits, 'numeric'),
-            info = "ILI_Total_Visits column is 'numeric' class")
-expect_equal(sum(is.na(out$ILI_Total_Visits[out$RowType == "Daily" & !out$noessence])), 0,
-             info = "ILI_Total_Visits column has no unexpected NA/missings for Daily rows")
-expect_equal(sum(!is.na(out$ILI_Total_Visits[out$RowType == "Summary"])), 0,
-             info = "ILI_Total_Visits column has ONLY NA/missings for Summary rows")
+###ED_Total_Visits
+expect_true(inherits(out$ED_Total_Visits, 'numeric'),
+            info = "ED_Total_Visits column is 'numeric' class")
+expect_equal(sum(is.na(out$ED_Total_Visits[out$RowType == "Daily" & !out$noessence])), 0,
+             info = "ED_Total_Visits column has no unexpected NA/missings for Daily rows")
+expect_equal(sum(!is.na(out$ED_Total_Visits[out$RowType == "Summary"])), 0,
+             info = "ED_Total_Visits column has ONLY NA/missings for Summary rows")
 
-###ILI_Visits
-expect_true(inherits(out$ILI_Visits, 'numeric'),
-            info = "ILI_Visits column is 'numeric' class")
-expect_equal(sum(is.na(out$ILI_Visits[out$RowType == "Daily" & !out$noessence])), 0,
-             info = "ILI_Visits column has no unexpected NA/missings for Daily rows")
-expect_equal(sum(!is.na(out$ILI_Visits[out$RowType == "Summary"])), 0,
-             info = "ILI_Visits column has ONLY NA/missings for Summary rows")
+###ED_ILI_Visits
+expect_true(inherits(out$ED_ILI_Visits, 'numeric'),
+            info = "ED_ILI_Visits column is 'numeric' class")
+expect_equal(sum(is.na(out$ED_ILI_Visits[out$RowType == "Daily" & !out$noessence])), 0,
+             info = "ED_ILI_Visits column has no unexpected NA/missings for Daily rows")
+expect_equal(sum(!is.na(out$ED_ILI_Visits[out$RowType == "Summary"])), 0,
+             info = "ED_ILI_Visits column has ONLY NA/missings for Summary rows")
 
 ###ILI_Percent
 expect_true(inherits(out$ILI_Percent, 'numeric'),

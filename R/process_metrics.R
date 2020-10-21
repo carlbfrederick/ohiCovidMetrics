@@ -793,8 +793,8 @@ shape_ili_data <- function(ili_df) {
 #'   \item{Region_ID}{FIPS Code and/or region identifier}
 #'   \item{Date}{Date of emergency dept visit}
 #'   \item{RowType}{Are row values summary or daily values}
-#'   \item{ILI_Total_Visits}{Total visits to ED}
-#'   \item{ILI_Visits}{Count of ILI ED visits}
+#'   \item{ED_Total_Visits}{Total visits to ED}
+#'   \item{ED_ILI_Visits}{Count of ILI ED visits}
 #'   \item{ILI_Percent}{Percent of ED visits related to ILI}
 #'   \item{ILI_Baseline}{Baseline value for ILI}
 #'   \item{ILI_Threshold}{Threshold value for ILI}
@@ -861,8 +861,8 @@ process_ili <- function(ili_df, ili_threshold_path) {
                   Region_ID,
                   Date,
                   RowType,
-                  ILI_Total_Visits = Total_Visits,
-                  ILI_Visits,
+                  ED_Total_Visits = Total_Visits,
+                  ED_ILI_Visits = ILI_Visits,
                   ILI_Percent = ILI_perc,
                   ILI_Baseline = ILI_baseline,
                   ILI_Threshold = ILI_threshold,
