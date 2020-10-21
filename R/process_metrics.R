@@ -515,7 +515,7 @@ process_testing <- function(testing_df) {
                   Region_ID,
                   RowType,
                   Testing_Positive_Encounters = Positive,
-                  Testing_Nonpositive_Encounters = NotPositive,
+                  Testing_Negative_Encounters = NotPositive,
                   Testing_Total_Encounters = total_specimens,
                   Testing_Percent_Positive = percent_positive,
                   Testing_Incident_Tests = Tests)
@@ -558,7 +558,7 @@ process_testing <- function(testing_df) {
                   Region_ID,
                   RowType,
                   Testing_Positive_Encounters = Positive,
-                  Testing_Nonpositive_Encounters = NotPositive,
+                  Testing_Negative_Encounters = NotPositive,
                   Testing_Total_Encounters = total_specimens,
                   Testing_Percent_Positive = percent_positive,
                   Testing_Composite_Class = testing_composite)

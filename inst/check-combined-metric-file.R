@@ -38,13 +38,13 @@ out <- out %>%
 
 ###all periods have 1200 observation
 expect_true(all(table(out$Data_Period) == 1280),
-            info = "All Periods have 1200 Obs.")
+            info = "All Periods have 1280 Obs.")
 
 ###all periods have 80 summary rows and 1120 daily rows
 expect_true(all(table(out$Data_Period[out$RowType == "Summary"]) == 80),
             info = "All periods have 80 summary rows.")
 expect_true(all(table(out$Data_Period[out$RowType == "Daily"]) == 1200),
-            info = "All periods have 1120 daily rows.")
+            info = "All periods have 1200 daily rows.")
 
 ###all periods have 15 consecutive days
 expect_true(all(out %>%
@@ -215,11 +215,11 @@ expect_true(inherits(out$Testing_Positive_Encounters, 'numeric'),
 expect_equal(sum(is.na(out$Testing_Positive_Encounters[!out$noessence])), 0,
              info = "Testing_Positive_Encounters column has no unexpected NA/missings")
 
-###Testing_Nonpositive_Encounters
-expect_true(inherits(out$Testing_Nonpositive_Encounters, 'numeric'),
-            info = "Testing_Nonpositive_Encounters column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Nonpositive_Encounters[!out$noessence])), 0,
-             info = "Testing_Nonpositive_Encounters column has no unexpected NA/missings")
+###Testing_Negative_Encounters
+expect_true(inherits(out$Testing_Negative_Encounters, 'numeric'),
+            info = "Testing_Negative_Encounters column is 'numeric' class")
+expect_equal(sum(is.na(out$Testing_Negative_Encounters[!out$noessence])), 0,
+             info = "Testing_Negative_Encounters column has no unexpected NA/missings")
 
 ###Testing_Total_Encounters
 expect_true(inherits(out$Testing_Total_Encounters, 'numeric'),

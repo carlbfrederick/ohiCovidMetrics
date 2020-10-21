@@ -184,7 +184,7 @@ if (length(dir(mydir, pattern = "^combined_metrics")) == 0) {
     select(Date, Region_ID, Region, RowType,
            Testing_Total_Encounters = Total,
            Testing_Positive_Encounters = Positives,
-           Testing_Nonpositive_Encounters = NotPositives) %>% 
+           Testing_Negative_Encounters = NotPositives) %>% 
     mutate(
       Testing_Percent_Positive = round(100 * Testing_Positive_Encounters / Testing_Total_Encounters, 1),
       Testing_Composite_Class = dplyr::case_when(
