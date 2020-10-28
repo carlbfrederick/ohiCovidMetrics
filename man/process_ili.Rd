@@ -19,8 +19,8 @@ a Tableau ready data.frame with the following columns:
   \item{Region_ID}{FIPS Code and/or region identifier}
   \item{Date}{Date of emergency dept visit}
   \item{RowType}{Are row values summary or daily values}
-  \item{ILI_Total_Visits}{Total visits to ED}
-  \item{ILI_Visits}{Count of ILI ED visits}
+  \item{ED_Total_Visits}{Total visits to ED}
+  \item{ED_ILI_Visits}{Count of ILI ED visits}
   \item{ILI_Percent}{Percent of ED visits related to ILI}
   \item{ILI_Baseline}{Baseline value for ILI}
   \item{ILI_Threshold}{Threshold value for ILI}
