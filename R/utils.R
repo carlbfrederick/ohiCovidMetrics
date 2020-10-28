@@ -318,13 +318,13 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
            CLI_Trajectory, CLI_Trajectory_P, CLI_Trajectory_Class, CLI_Composite_Class,
            ED_Total_Visits, ED_ILI_Visits, ILI_Percent, ILI_Moving_Avg,
            ILI_Baseline, ILI_Threshold, ILI_Status,
-           ED_flag, Mayo_flag)
+           ED_flag, recent_hospOB_flag)
 
-  ##make sure ED_flag and Mayo_flags are correct
+  ##make sure ED_flag and recent_hospOB_flag are correct
   out <- out %>%
     dplyr::group_by(Region) %>%
     dplyr::mutate(
-      across(c("ED_flag", "Mayo_flag"), ~ first(.x[!is.na(.x)]))
+      across(c("ED_flag", "recent_hospOB_flag"), ~ first(.x[!is.na(.x)]))
     )
 
   #ADD IN SOME BASIC CHECKS/REPORTING SO PEOPLE CAN GET SUMMARY
@@ -541,7 +541,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     ILI_Threshold = readr::col_double(),
     ILI_Status = readr::col_character(),
     ED_flag = readr::col_double(),
-    Mayo_flag = readr::col_double()
+    recent_hospOB_flag = readr::col_double()
   )
 
   colspec_e <- readr::cols(
@@ -610,7 +610,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     ILI_Threshold = readr::col_double(),
     ILI_Status = readr::col_character(),
     ED_flag = readr::col_double(),
-    Mayo_flag = readr::col_double()
+    recent_hospOB_flag = readr::col_double()
   )
 
   #Read and combine files
@@ -720,7 +720,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                   CLI_Trajectory, CLI_Trajectory_P, CLI_Trajectory_Class, CLI_Composite_Class,
                   ED_Total_Visits, ED_ILI_Visits, ILI_Percent, ILI_Moving_Avg,
                   ILI_Baseline, ILI_Threshold, ILI_Status,
-                  ED_flag, Mayo_flag)
+                  ED_flag, recent_hospOB_flag)
 
   tdir <- tempdir()
   save(out, file = file.path(tdir, "__tmp_append_file.RData"))
