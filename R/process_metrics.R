@@ -78,6 +78,8 @@ shape_case_data <- function(case_df) {
 #' Process the shaped confirmed case data.frame into a Tableau ready format
 #'
 #' @param case_df Confirmed case data.frame (e.g. produced by \link{pull_histTable})
+#' @param crit_cat flag indicating whether we want to include a critical category
+#'                 in the output file (DEFAULT FALSE)
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -109,7 +111,7 @@ shape_case_data <- function(case_df) {
 #'
 #' output <- pull_histTable() %>%
 #'   process_confirmed_cases()
-process_confirmed_cases <- function(case_df) {
+process_confirmed_cases <- function(case_df, crit_cat = FALSE) {
   clean_case_df <- shape_case_data(case_df)
 
   out_day <- clean_case_df$daily %>%
@@ -163,6 +165,22 @@ process_confirmed_cases <- function(case_df) {
       Conf_Case_Trajectory_P = .data$Trajectory_P,
       Conf_Case_Trajectory_FDR = .data$Trajectory_FDR
     )
+
+  #Remove Critical category unless it is wanted
+  ccbc_lvl <- levels(out_sum$Conf_Case_Burden_Class)
+  cccc_lvl <- levels(out_sum$Conf_Case_Composite_Class)
+
+  if (!crit_cat) {
+    out_sum <- out_sum %>%
+      dplyr::mutate(
+        Conf_Case_Burden_Class = dplyr::case_when(
+          Conf_Case_Burden_Class == "Critical" ~ ordered(5, levels = 1:6, labels = ccbc_lvl),
+          TRUE ~ Conf_Case_Burden_Class),
+        Conf_Case_Composite_Class = dplyr::case_when(
+          Conf_Case_Composite_Class == "Critical" ~ ordered(4, levels = 1:5, labels = cccc_lvl),
+          TRUE ~ Conf_Case_Composite_Class)
+      )
+  }
 
   dplyr::bind_rows(out_sum, out_day)
 }
@@ -649,6 +667,7 @@ shape_cli_data <- function(cli_df) {
 #'
 #' @param cli_df data.frame produced by \code{\link{pull_essence}} for
 #'               CLI metrics
+#' @inheritParams process_confirmed_cases
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -682,7 +701,7 @@ shape_cli_data <- function(cli_df) {
 #' \dontrun{
 #'   #write me an example
 #' }
-process_cli <- function(cli_df){
+process_cli <- function(cli_df, crit_cat = FALSE){
   clean_cli_df <- shape_cli_data(cli_df)
 
   cli_daily <- clean_cli_df$daily %>%
@@ -732,6 +751,22 @@ process_cli <- function(cli_df){
       CLI_Trajectory_P = .data$Trajectory_P,
       CLI_Trajectory_FDR = .data$Trajectory_FDR
     )
+
+  #Remove Critical category unless it is wanted
+  ccbc_lvl <- levels(out_sum$CLI_Burden_Class)
+  cccc_lvl <- levels(out_sum$CLI_Composite_Class)
+
+  if (!crit_cat) {
+    out_sum <- out_sum %>%
+      dplyr::mutate(
+        CLI_Burden_Class = dplyr::case_when(
+          CLI_Burden_Class == "Critical" ~ ordered(5, levels = 1:6, labels = ccbc_lvl),
+          TRUE ~ CLI_Burden_Class),
+        CLI_Composite_Class = dplyr::case_when(
+          CLI_Composite_Class == "Critical" ~ ordered(4, levels = 1:5, labels = cccc_lvl),
+          TRUE ~ CLI_Composite_Class)
+      )
+  }
 
   dplyr::bind_rows(cli_summary, cli_daily)
 }

@@ -1,3 +1,18 @@
+# ohiCovidMetrics 0.8.8
+
+Updates to column names and testing functions/calculations
+
+## Enhancements
+
+- Changed column output names in preparation for disseminating metric files 
+  via open data portal
+- Changed testing percent positive calculation to be based on latest 7 day 
+  average percent positive and that this is the number the summary output is 
+  based on.
+- Added a critical label to burden and composite classification functions in 
+  preparation for needing this *but right now this ability is overwritten by 
+  'Very high' by default*.
+
 # ohiCovidMetrics 0.8.5.9
 
 Bugfix to more robust way of truncating datetimes into dates.

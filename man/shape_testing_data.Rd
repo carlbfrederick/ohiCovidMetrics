@@ -13,25 +13,24 @@ shape_testing_data(testing_df)
 a list of data.frames. The "summary" data.frame has one row per
 county, state, and HERC region with the following columns
 \describe{
-  \item{RowType}{Are row values summary or daily values}
   \item{Region_ID}{FIPS Code and/or region identifier}
-  \item{Area}{Name of geography}
-  \item{Testing_Volume}{2 week testing volume target}
-  \item{Tests}{Count of Incident Tests}
-  \item{NotPositive}{Count of non-positive specimens}
-  \item{Positive}{Count of positive specimens}
-  \item{resultdateonly}{Date test results came in}
+  \item{Region}{Name of geography}
+  \item{RowType}{Are row values summary or daily values}
+  \item{Positives}{Count of positive specimens}
+  \item{Negatives}{Count of negative specimens}
+  \item{Total}{Positives + Negatives}
+  \item{Date}{Summary Date for 2 week period}
 }
 and the "daily" data.frame has one row per county, state, and HERC region
 per day for the two week period with the following columns
 \describe{
-  \item{resultdateonly}{Date test results came in}
-  \item{Area}{Name of geography}
-  \item{Tests}{Count of Incident Tests}
-  \item{NotPositive}{Count of non-positive specimens}
-  \item{Positive}{Count of positive specimens}
+  \item{Date}{Date test results came in}
   \item{Region_ID}{FIPS Code and/or region identifier}
+  \item{Region}{Name of geography}
   \item{RowType}{Are row values summary or daily values}
+  \item{Positives}{Count of positive specimens}
+  \item{Negatives}{Count of negative specimens}
+  \item{Total}{Positives + Negatives}
 }
 }
 \description{

@@ -4,10 +4,13 @@
 \alias{process_confirmed_cases}
 \title{Process the shaped confirmed case data.frame into a Tableau ready format}
 \usage{
-process_confirmed_cases(case_df)
+process_confirmed_cases(case_df, crit_cat = FALSE)
 }
 \arguments{
 \item{case_df}{Confirmed case data.frame (e.g. produced by \link{pull_histTable})}
+
+\item{crit_cat}{flag indicating whether we want to include a critical category
+in the output file (DEFAULT FALSE)}
 }
 \value{
 a Tableau ready data.frame with the following columns:

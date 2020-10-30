@@ -4,11 +4,14 @@
 \alias{process_cli}
 \title{Process the shaped CLI data into a Tableau ready format}
 \usage{
-process_cli(cli_df)
+process_cli(cli_df, crit_cat = FALSE)
 }
 \arguments{
 \item{cli_df}{data.frame produced by \code{\link{pull_essence}} for
 CLI metrics}
+
+\item{crit_cat}{flag indicating whether we want to include a critical category
+in the output file (DEFAULT FALSE)}
 }
 \value{
 a Tableau ready data.frame with the following columns:
