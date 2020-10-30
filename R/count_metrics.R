@@ -148,7 +148,7 @@ score_burden <- function(curr, prev, pop) {
 #'   \item "Moderately high" is a burden greater than 50 and less than or equal to 100 per 100,000
 #'   \item "High" is a burden greater than 100 and less than or equal to 350 per 100,000
 #'   \item "Very high" is a burden greater than 350 per 100,000
-#'   \item "Critical" is a burden greater than 750 per 100,000
+#'   \item "Critical" is a burden greater than 1,000 per 100,000
 #' }
 #'
 #' @param burden numeric vector as calculated by \code{\link{score_burden}}
@@ -164,7 +164,7 @@ class_burden <- function(burden) {
          ifelse(burden <= 50, 2,
          ifelse(burden <= 100, 3,
          ifelse(burden <= 350, 4,
-         ifelse(burden <= 750, 5, 6)))))
+         ifelse(burden <= 1000, 5, 6)))))
 
   out <- factor(out,
                 levels = 1:6,

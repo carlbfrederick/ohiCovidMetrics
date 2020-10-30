@@ -8,7 +8,7 @@ pop_mh <- 345612L
 pop_m<- 1234567L
 pop_l<- 12345678L
 pop_vh <- 34345L
-pop_c <- 20000L
+pop_c <- 15000L
 
 #score_trajectory ----
 ##. . correct calculation given unit count----
