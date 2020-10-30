@@ -415,25 +415,24 @@ process_hospital <- function(hosp_df) {
 #' @return a list of data.frames. The "summary" data.frame has one row per
 #' county, state, and HERC region with the following columns
 #' \describe{
-#'   \item{RowType}{Are row values summary or daily values}
 #'   \item{Region_ID}{FIPS Code and/or region identifier}
-#'   \item{Area}{Name of geography}
-#'   \item{Testing_Volume}{2 week testing volume target}
-#'   \item{Tests}{Count of Incident Tests}
-#'   \item{NotPositive}{Count of non-positive specimens}
-#'   \item{Positive}{Count of positive specimens}
-#'   \item{resultdateonly}{Date test results came in}
+#'   \item{Region}{Name of geography}
+#'   \item{RowType}{Are row values summary or daily values}
+#'   \item{Positives}{Count of positive specimens}
+#'   \item{Negatives}{Count of negative specimens}
+#'   \item{Total}{Positives + Negatives}
+#'   \item{Date}{Summary Date for 2 week period}
 #' }
 #' and the "daily" data.frame has one row per county, state, and HERC region
 #' per day for the two week period with the following columns
 #' \describe{
-#'   \item{resultdateonly}{Date test results came in}
-#'   \item{Area}{Name of geography}
-#'   \item{Tests}{Count of Incident Tests}
-#'   \item{NotPositive}{Count of non-positive specimens}
-#'   \item{Positive}{Count of positive specimens}
+#'   \item{Date}{Date test results came in}
 #'   \item{Region_ID}{FIPS Code and/or region identifier}
+#'   \item{Region}{Name of geography}
 #'   \item{RowType}{Are row values summary or daily values}
+#'   \item{Positives}{Count of positive specimens}
+#'   \item{Negatives}{Count of negative specimens}
+#'   \item{Total}{Positives + Negatives}
 #' }
 #'
 #' @importFrom lubridate days
@@ -441,28 +440,45 @@ process_hospital <- function(hosp_df) {
 #' @importFrom dplyr mutate
 #' @importFrom dplyr group_by
 #' @importFrom dplyr summarize_if
+#' @importFrom utils data
 #'
 #' @examples
 #' \dontrun{
 #'   #Add examples here
 #' }
 shape_testing_data <- function(testing_df) {
-  max_date <- max(testing_df$resultdateonly)
+  utils::data("county_data")
 
-  testing_daily <- dplyr::filter(testing_df, resultdateonly >= max_date - lubridate::days(13)) %>%
-    dplyr::mutate(RowType = "Daily")
+  max_date <- max(testing_df$resultdate2)
+
+  testing_daily <- dplyr::filter(testing_df, resultdate2 >= max_date - lubridate::days(13)) %>%
+    dplyr::mutate(RowType = "Daily") %>%
+    dplyr::rename(county = Area) %>%
+    dplyr::left_join(county_data, by = "county") %>%
+    dplyr::mutate(
+      fips = dplyr::case_when(
+        county == "Wisconsin" ~ "55",
+        is.na(fips) ~ county,
+        TRUE ~ fips
+      )
+    ) %>%
+    dplyr::rename(Date = resultdate2,
+                  Region = county,
+                  Region_ID = fips) %>%
+    group_by(Date, Region_ID, Region, RowType) %>%
+    summarize(across(c("Positives", "Negatives", "Total"), sum),
+              .groups = "drop")
+
 
   testing_summary <- testing_daily %>%
     dplyr::mutate(
       RowType = "Summary"
     ) %>%
-    dplyr::group_by(RowType, Region_ID, Area, Testing_Volume) %>%
+    dplyr::group_by(Region_ID, Region, RowType) %>%
     dplyr::summarize_if(is.numeric, sum, na.rm = TRUE) %>%
     dplyr::mutate(
-      resultdateonly = max_date
+      Date = max_date
     )
-
-  testing_daily$Testing_Volume <- NULL
 
   out <- list(summary = testing_summary,
               daily = testing_daily)
@@ -507,59 +523,48 @@ process_testing <- function(testing_df) {
 
   test_daily <- clean_testing_df$daily %>%
     dplyr::mutate(
-      total_specimens = NotPositive + Positive,
-      percent_positive = 100 * (Positive / total_specimens),
+      percent_positive = 100 * (Positives / Total),
     ) %>%
-    dplyr::select(Date = resultdateonly,
-                  Region = Area,
+    dplyr::select(Date,
                   Region_ID,
+                  Region,
                   RowType,
-                  Testing_Positive_Encounters = Positive,
-                  Testing_Negative_Encounters = NotPositive,
-                  Testing_Total_Encounters = total_specimens,
-                  Testing_Percent_Positive = percent_positive,
-                  Testing_Incident_Tests = Tests)
+                  Testing_Total_Encounters = Total,
+                  Testing_Positive_Encounters = Positives,
+                  Testing_Negative_Encounters = Negatives,
+                  Testing_Percent_Positive = percent_positive)
+
+  #Calculate 7 day average for summary percent positive
+  pct_pos <- test_daily %>%
+    dplyr::filter(Date >= max(Date) - lubridate::days(6)) %>%
+    dplyr::group_by(Region_ID) %>%
+    dplyr::summarize(
+      percent_positive = 100 * sum(Testing_Positive_Encounters) / sum(Testing_Total_Encounters)
+    )
 
   test_summary <- clean_testing_df$summary %>%
+    dplyr::inner_join(pct_pos, by = "Region_ID") %>%
     dplyr::mutate(
-      total_specimens = NotPositive + Positive,
-      percent_positive = 100 * (Positive / total_specimens),
       percent_positive_class = dplyr::case_when(
         percent_positive >= 10.0                          ~ "High (more than 10% positive)",
         percent_positive >= 5.0 & percent_positive < 10.0 ~ "Moderate (5% to 10% positive)",
         percent_positive >= 0.0 & percent_positive < 5.0  ~ "Low (less than 5% positive)",
         TRUE                                              ~ "ERROR"
       ),
-      percent_volume = 100 * Tests/Testing_Volume,
-      percent_volume_class = dplyr::case_when(
-        percent_volume >= 100.0                         ~ ">= 100% testing goal",
-        percent_volume >= 75.0 & percent_volume < 100.0 ~ ">= 75% & < 100% testing goal",
-        percent_volume >= 0.0 & percent_volume < 75.0   ~ "< 75% testing goal",
-        TRUE                                            ~ "ERROR"
-      ),
       testing_composite = dplyr::case_when(
         percent_positive_class == "Low (less than 5% positive)"   ~ "Low",
         percent_positive_class == "Moderate (5% to 10% positive)" ~ "Medium",
         percent_positive_class == "High (more than 10% positive)" ~ "High",
-        # percent_positive_class == "Low (less than 5% positive)"   & percent_volume_class == ">= 100% testing goal"            ~ "Close to",
-        # percent_positive_class == "Low (less than 5% positive)"   & percent_volume_class == ">= 75% & < 100% testing goal"   ~ "Higher than",
-        # percent_positive_class == "Low (less than 5% positive)"   & percent_volume_class == "< 75% testing goal"             ~ "Substantially Higher than",
-        # percent_positive_class == "Moderate (5% to 10% positive)" & percent_volume_class == ">= 100% testing goal"         ~ "Higher than",
-        # percent_positive_class == "Moderate (5% to 10% positive)" & percent_volume_class == ">= 75% & < 100% testing goal" ~ "Higher than",
-        # percent_positive_class == "Moderate (5% to 10% positive)" & percent_volume_class == "< 75% testing goal"           ~ "Substantially Higher than",
-        # percent_positive_class == "High (more than 10% positive)" & percent_volume_class == ">= 100% testing goal"         ~ "Substantially Higher than",
-        # percent_positive_class == "High (more than 10% positive)" & percent_volume_class == ">= 75% & < 100% testing goal" ~ "Substantially Higher than",
-        # percent_positive_class == "High (more than 10% positive)" & percent_volume_class == "< 75% testing goal"           ~ "Substantially Higher than",
         TRUE                                                      ~ "ERROR"
       )
     ) %>%
-    dplyr::select(Date = resultdateonly,
-                  Region = Area,
+    dplyr::select(Date,
+                  Region,
                   Region_ID,
                   RowType,
-                  Testing_Positive_Encounters = Positive,
-                  Testing_Negative_Encounters = NotPositive,
-                  Testing_Total_Encounters = total_specimens,
+                  Testing_Total_Encounters = Total,
+                  Testing_Positive_Encounters = Positives,
+                  Testing_Negative_Encounters = Negatives,
                   Testing_Percent_Positive = percent_positive,
                   Testing_Composite_Class = testing_composite)
 
