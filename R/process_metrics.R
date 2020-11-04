@@ -757,7 +757,7 @@ process_cli <- function(cli_df, crit_cat = FALSE){
   cccc_lvl <- levels(out_sum$CLI_Composite_Class)
 
   if (!crit_cat) {
-    out_sum <- out_sum %>%
+    cli_summary <- cli_summary %>%
       dplyr::mutate(
         CLI_Burden_Class = dplyr::case_when(
           CLI_Burden_Class == "Critical" ~ ordered(5, levels = 1:6, labels = ccbc_lvl),
