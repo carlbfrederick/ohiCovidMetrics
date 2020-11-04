@@ -753,8 +753,8 @@ process_cli <- function(cli_df, crit_cat = FALSE){
     )
 
   #Remove Critical category unless it is wanted
-  ccbc_lvl <- levels(out_sum$CLI_Burden_Class)
-  cccc_lvl <- levels(out_sum$CLI_Composite_Class)
+  ccbc_lvl <- levels(cli_summary$CLI_Burden_Class)
+  cccc_lvl <- levels(cli_summary$CLI_Composite_Class)
 
   if (!crit_cat) {
     cli_summary <- cli_summary %>%
