@@ -36,7 +36,7 @@ Eventually, this package will contain multiple ways to pull the data depending
 on the user's level of access. In this vignette, we will grab data from the 
 public facing [COVID-19 Historical Data Table](https://data.dhsgis.wi.gov/datasets/covid-19-historical-data-table) via
 an API call with the `pull_histTable()` function which takes no arguments. Note,
-I stopped the time series at 17 June 2020 to be able to comparet the results to the
+I stopped the time series at 17 June 2020 to be able to compare the results to the
 official file prepared by Jeff Bond for the dashboard.
 
 ```{r pull-hist-table}

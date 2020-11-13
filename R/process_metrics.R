@@ -79,7 +79,7 @@ shape_case_data <- function(case_df) {
 #'
 #' @param case_df Confirmed case data.frame (e.g. produced by \link{pull_histTable})
 #' @param crit_cat flag indicating whether we want to include a critical category
-#'                 in the output file (DEFAULT FALSE)
+#'                 in the output file (DEFAULT TRUE)
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -111,7 +111,7 @@ shape_case_data <- function(case_df) {
 #'
 #' output <- pull_histTable() %>%
 #'   process_confirmed_cases()
-process_confirmed_cases <- function(case_df, crit_cat = FALSE) {
+process_confirmed_cases <- function(case_df, crit_cat = TRUE) {
   clean_case_df <- shape_case_data(case_df)
 
   out_day <- clean_case_df$daily %>%
@@ -701,7 +701,7 @@ shape_cli_data <- function(cli_df) {
 #' \dontrun{
 #'   #write me an example
 #' }
-process_cli <- function(cli_df, crit_cat = FALSE){
+process_cli <- function(cli_df, crit_cat = TRUE){
   clean_cli_df <- shape_cli_data(cli_df)
 
   cli_daily <- clean_cli_df$daily %>%
