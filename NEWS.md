@@ -1,4 +1,4 @@
-# ohiCovidMetrics 0.8.8
+# ohiCovidMetrics 0.8.9
 
 Updates to column names and testing functions/calculations
 
