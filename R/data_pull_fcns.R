@@ -35,7 +35,6 @@
 #' @export
 #'
 #' @importFrom sf st_read
-#' @importFrom sf st_set_geometry
 #' @importFrom dplyr group_by
 #' @importFrom dplyr transmute
 #' @importFrom dplyr mutate
@@ -59,9 +58,9 @@
 pull_histTable <- function(end_date = NULL) {
   #Pull down the data
   #REsT API URL
-  api_url <- "https://dhsgis.wi.gov/server/rest/services/DHS_COVID19/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20%27COUNTY%27&outFields=GEOID,GEO,NAME,DATE,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson"
+  api_url <- "https://dhsgis.wi.gov/server/rest/services/DHS_COVID19/COVID19_WI/MapServer/12/query?where=1%3D1&outFields=GEOID,GEO,NAME,DATE,POSITIVE,POS_NEW,NEGATIVE,DEATHS,DTH_NEW,TEST_NEW&outSR=4326&f=json"
   message("Downloading data from DHS ...")
-  hdt <- sf::st_set_geometry(sf::st_read(api_url, quiet = TRUE, stringsAsFactors = FALSE), NULL)
+  hdt <- sf::st_read(api_url, quiet = TRUE, stringsAsFactors = FALSE)
 
   hdt <- dplyr::distinct(hdt)
 
@@ -179,7 +178,7 @@ clean_histTable <- function(hdt, end_date) {
   if (inherits(hdt$post_date, "POSIXt")) {
     hdt$post_date <- as.Date(hdt$post_date, tz = "America/Chicago")
   } else {
-    hdt$post_date <- as.Date(as.POSIXct(hdt$post_date/1000, origin = "1970-01-01 00:00.000 UTC"), tz = "America/Chicago")
+    hdt$post_date <- as.Date(as.POSIXct(as.numeric(hdt$post_date)/1000, origin = "1970-01-01 00:00.000 UTC"), tz = "America/Chicago")
   }
 
   if (!is.null(end_date)) {

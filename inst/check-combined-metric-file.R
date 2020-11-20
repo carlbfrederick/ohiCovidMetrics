@@ -208,7 +208,7 @@ expect_equal(sum(!is.na(out$Conf_Case_Trajectory_P[out$RowType == "Daily"])), 0,
 expect_true(all(dplyr::between(out$Conf_Case_Trajectory_P[out$RowType == "Summary"], left = 0.0, right = 1.0)),
             info = "Conf_Case_Trajectory_P columns values are all between 0 and 1 inclusive.")
 
-##. . Testing/Case Detection ----
+##. . Testing ----
 ###Testing_Positive_Encounters
 expect_true(inherits(out$Testing_Positive_Encounters, 'numeric'),
             info = "Testing_Positive_Encounters column is 'numeric' class")
@@ -615,68 +615,3 @@ if (!isappended) {
                     c("Elevated", "Low", "Moderate")),
               info = "ILI_Status column has only correct unique values")
 }
-
-##. . Testing Volume Targets----
-###Testing_Case
-expect_true(inherits(out$Testing_Case, 'numeric'),
-            info = "Testing_Case column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Case[out$RowType == "Summary"])), 0,
-             info = "Testing_Case column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Case[out$RowType == "Daily"])), 0,
-             info = "Testing_Case column has ONLY NA/missings for Daily rows")
-
-###Testing_ARI
-expect_true(inherits(out$Testing_ARI, 'numeric'),
-            info = "Testing_ARI column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_ARI[out$RowType == "Summary"])), 0,
-             info = "Testing_ARI column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_ARI[out$RowType == "Daily"])), 0,
-             info = "Testing_ARI column has ONLY NA/missings for Daily rows")
-
-###Testing_Case_Gap
-expect_true(inherits(out$Testing_Case_Gap, 'numeric'),
-            info = "Testing_Case_Gap column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Case_Gap[out$RowType == "Summary"])), 0,
-             info = "Testing_Case_Gap column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Case_Gap[out$RowType == "Daily"])), 0,
-             info = "Testing_Case_Gap column has ONLY NA/missings for Daily rows")
-
-###Testing_Target_0.2
-expect_true(inherits(out$Testing_Target_0.2, 'numeric'),
-            info = "Testing_Target_0.2 column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Target_0.2[out$RowType == "Summary"])), 0,
-             info = "Testing_Target_0.2 column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Target_0.2[out$RowType == "Daily"])), 0,
-             info = "Testing_Target_0.2 column has ONLY NA/missings for Daily rows")
-
-###Testing_Target_0.4
-expect_true(inherits(out$Testing_Target_0.4, 'numeric'),
-            info = "Testing_Target_0.4 column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Target_0.4[out$RowType == "Summary"])), 0,
-             info = "Testing_Target_0.4 column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Target_0.4[out$RowType == "Daily"])), 0,
-             info = "Testing_Target_0.4 column has ONLY NA/missings for Daily rows")
-
-###Testing_Target_0.6
-expect_true(inherits(out$Testing_Target_0.6, 'numeric'),
-            info = "Testing_Target_0.6 column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Target_0.6[out$RowType == "Summary"])), 0,
-             info = "Testing_Target_0.6 column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Target_0.6[out$RowType == "Daily"])), 0,
-             info = "Testing_Target_0.6 column has ONLY NA/missings for Daily rows")
-
-###Testing_Target_0.8
-expect_true(inherits(out$Testing_Target_0.8, 'numeric'),
-            info = "Testing_Target_0.8 column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Target_0.8[out$RowType == "Summary"])), 0,
-             info = "Testing_Target_0.8 column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Target_0.8[out$RowType == "Daily"])), 0,
-             info = "Testing_Target_0.8 column has ONLY NA/missings for Daily rows")
-
-###Testing_Target_1
-expect_true(inherits(out$Testing_Target_1, 'numeric'),
-            info = "Testing_Target_1 column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Target_1[out$RowType == "Summary"])), 0,
-             info = "Testing_Target_1 column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Target_1[out$RowType == "Daily"])), 0,
-             info = "Testing_Target_1 column has ONLY NA/missings for Daily rows")

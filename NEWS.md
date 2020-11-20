@@ -4,6 +4,24 @@ Updates to column names and testing functions/calculations
 
 ## Enhancements
 
+- Made "Critical" label the default for CLI and Confirmed cases
+
+## Breaking Changes
+
+- Removed the Testing Targets from the system per decision by the group since
+  our source for some of these numbers is no longer being updated and there
+  are no plans to include things like this in the dashboards.
+  
+## Bug fixes
+
+- Changed API for historical data table again.
+
+# ohiCovidMetrics 0.8.8
+
+Updates to column names and testing functions/calculations
+
+## Enhancements
+
 - Changed column output names in preparation for disseminating metric files 
   via open data portal
 - Changed testing percent positive calculation to be based on latest 7 day 
