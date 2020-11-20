@@ -11,7 +11,16 @@ Updates to column names and testing functions/calculations
 - Removed the Testing Targets from the system per decision by the group since
   our source for some of these numbers is no longer being updated and there
   are no plans to include things like this in the dashboards.
-  
+- Removed the following deprecated functions:
+    - `pull_histTable_SG()`
+    - `OLD_process_confirmed_cases()`
+    - `clean_total_ed()`
+    - `shape_total_ed_data()`
+    - `process_total_ed()`
+    - `rev_cusum_ucl()`
+    - `rev_cusum_lcl()`
+    - `calc_num_tests()`
+    
 ## Bug fixes
 
 - Changed API for historical data table again.
