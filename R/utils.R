@@ -247,7 +247,6 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' @param test     data.frame produced by \code{\link{process_testing}}
 #' @param cli      data.frame produced by \code{\link{process_cli}}
 #' @param ili      data.frame produced by \code{\link{process_ili}}
-#' @param test_targets data.frame produced by \code{process_test_targets}
 #' @param outfile  file name (including path) for output data file
 #'
 #' @return invisibly returns the combined data
@@ -269,7 +268,7 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' \dontrun{
 #'   #add examples to me please,
 #' }
-merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile) {
+merge_metric_files <- function(case, hosp, test, cli, ili, outfile) {
   #Start with Cases and Testing
   out <- dplyr::full_join(case, test, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in Hospitalization
@@ -278,8 +277,6 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
   out <- dplyr::full_join(out, cli, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in ILI
   out <- dplyr::full_join(out, ili, by = c("Date", "Region_ID", "Region", "RowType"))
-  #Add in Testing Targets
-  out <- dplyr::full_join(out, test_targets, by = c("Date", "Region_ID", "Region", "RowType"))
 
   #Any data cleaning necessary?
   ##convert factors to character for file check
@@ -307,8 +304,6 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
            Testing_Total_Encounters, Testing_Positive_Encounters,
            Testing_Negative_Encounters, Testing_Percent_Positive,
            Testing_Composite_Class,
-           Testing_Case, Testing_ARI, Testing_Case_Gap,
-           Testing_Target_0.2, Testing_Target_0.4, Testing_Target_0.6, Testing_Target_0.8, Testing_Target_1,
            Hosp_dailyCOVID_px, Hosp_COVID_px_Trajectory, Hosp_COVID_px_Trajectory_Class,
            Hosp_dailyCOVID_ICUpx, Hosp_COVID_ICUpx_Trajectory, Hosp_COVID_ICUpx_Trajectory_Class,
            Hosp_totalbeds, Hosp_beds_IBA, Hosp_PrctBeds_Used, Hosp_Beds_moving_avg,
@@ -500,14 +495,6 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     Testing_Negative_Encounters = readr::col_double(),
     Testing_Percent_Positive = readr::col_double(),
     Testing_Composite_Class = readr::col_character(),
-    Testing_Case = readr::col_double(),
-    Testing_ARI = readr::col_double(),
-    Testing_Case_Gap = readr::col_double(),
-    Testing_Target_0.2 = readr::col_double(),
-    Testing_Target_0.4 = readr::col_double(),
-    Testing_Target_0.6 = readr::col_double(),
-    Testing_Target_0.8 = readr::col_double(),
-    Testing_Target_1 = readr::col_double(),
     Hosp_dailyCOVID_px = readr::col_double(),
     Hosp_COVID_px_Trajectory = readr::col_character(),
     Hosp_COVID_px_Trajectory_Class = readr::col_character(),
@@ -566,14 +553,6 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     Testing_Percent_Positive = readr::col_double(),
     Testing_Perc_Pos_moving_avg = readr::col_double(),
     Testing_Composite_Class = readr::col_character(),
-    Testing_Case = readr::col_double(),
-    Testing_ARI = readr::col_double(),
-    Testing_Case_Gap = readr::col_double(),
-    Testing_Target_0.2 = readr::col_double(),
-    Testing_Target_0.4 = readr::col_double(),
-    Testing_Target_0.6 = readr::col_double(),
-    Testing_Target_0.8 = readr::col_double(),
-    Testing_Target_1 = readr::col_double(),
     Hosp_dailyCOVID_px = readr::col_double(),
     Hosp_DailyCOVID_PX_moving_avg = readr::col_double(),
     Hosp_COVID_px_Trajectory = readr::col_character(),
@@ -709,8 +688,6 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                   Testing_Total_Encounters, Testing_Tot_Enc_moving_avg, Testing_Positive_Encounters,
                   Testing_Negative_Encounters, Testing_Percent_Positive, Testing_Perc_Pos_moving_avg,
                   Testing_Composite_Class,
-                  Testing_Case, Testing_ARI, Testing_Case_Gap,
-                  Testing_Target_0.2, Testing_Target_0.4, Testing_Target_0.6, Testing_Target_0.8, Testing_Target_1,
                   Hosp_dailyCOVID_px, Hosp_DailyCOVID_PX_moving_avg, Hosp_COVID_px_Trajectory, Hosp_COVID_px_Trajectory_Class,
                   Hosp_dailyCOVID_ICUpx, Hosp_DailyCOVID_ICU_moving_avg, Hosp_COVID_ICUpx_Trajectory, Hosp_COVID_ICUpx_Trajectory_Class,
                   Hosp_totalbeds, Hosp_beds_IBA, Hosp_PrctBeds_Used, Hosp_Beds_moving_avg,
