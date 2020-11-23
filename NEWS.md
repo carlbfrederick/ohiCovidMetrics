@@ -24,6 +24,7 @@ Updates to column names and testing functions/calculations
 ## Bug fixes
 
 - Changed API for historical data table again.
+- Changed "Critical" to "Critically high"
 
 # ohiCovidMetrics 0.8.8
 

@@ -9,8 +9,8 @@ process_confirmed_cases(case_df, crit_cat = TRUE)
 \arguments{
 \item{case_df}{Confirmed case data.frame (e.g. produced by \link{pull_histTable})}
 
-\item{crit_cat}{flag indicating whether we want to include a critical category
-in the output file (DEFAULT TRUE)}
+\item{crit_cat}{flag indicating whether we want to include a Critically high
+category in the output file (DEFAULT TRUE)}
 }
 \value{
 a Tableau ready data.frame with the following columns:

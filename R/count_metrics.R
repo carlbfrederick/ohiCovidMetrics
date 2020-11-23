@@ -148,7 +148,7 @@ score_burden <- function(curr, prev, pop) {
 #'   \item "Moderately high" is a burden greater than 50 and less than or equal to 100 per 100,000
 #'   \item "High" is a burden greater than 100 and less than or equal to 350 per 100,000
 #'   \item "Very high" is a burden greater than 350 per 100,000
-#'   \item "Critical" is a burden greater than 1,000 per 100,000
+#'   \item "Critically high" is a burden greater than 1,000 per 100,000
 #' }
 #'
 #' @param burden numeric vector as calculated by \code{\link{score_burden}}
@@ -169,7 +169,7 @@ class_burden <- function(burden) {
   out <- factor(out,
                 levels = 1:6,
                 labels = c("Low", "Moderate", "Moderately high",
-                           "High", "Very high", "Critical"),
+                           "High", "Very high", "Critically high"),
                 ordered = TRUE)
 
   out
@@ -205,13 +205,13 @@ confirmed_case_composite <- function(traj_class, burd_class) {
     burd_class == "Moderately high" & traj_class > "Shrinking" ~ 3,
     burd_class == "High" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 3,
     burd_class == "Very high" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 4,
-    burd_class == "Critical" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 5,
+    burd_class == "Critically high" & traj_class %in% c("Shrinking", "No significant change", "Growing") ~ 5,
     TRUE ~ NA_real_
   )
 
   out <- factor(out,
                 levels = 1:5,
-                labels = c("Low", "Medium", "High", "Very high", "Critical"),
+                labels = c("Low", "Medium", "High", "Very high", "Critically high"),
                 ordered = TRUE)
 
   out

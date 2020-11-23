@@ -78,8 +78,8 @@ shape_case_data <- function(case_df) {
 #' Process the shaped confirmed case data.frame into a Tableau ready format
 #'
 #' @param case_df Confirmed case data.frame (e.g. produced by \link{pull_histTable})
-#' @param crit_cat flag indicating whether we want to include a critical category
-#'                 in the output file (DEFAULT TRUE)
+#' @param crit_cat flag indicating whether we want to include a Critically high
+#'                 category in the output file (DEFAULT TRUE)
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -166,7 +166,7 @@ process_confirmed_cases <- function(case_df, crit_cat = TRUE) {
       Conf_Case_Trajectory_FDR = .data$Trajectory_FDR
     )
 
-  #Remove Critical category unless it is wanted
+  #Remove Critically high category unless it is wanted
   ccbc_lvl <- levels(out_sum$Conf_Case_Burden_Class)
   cccc_lvl <- levels(out_sum$Conf_Case_Composite_Class)
 
@@ -174,10 +174,10 @@ process_confirmed_cases <- function(case_df, crit_cat = TRUE) {
     out_sum <- out_sum %>%
       dplyr::mutate(
         Conf_Case_Burden_Class = dplyr::case_when(
-          Conf_Case_Burden_Class == "Critical" ~ ordered(5, levels = 1:6, labels = ccbc_lvl),
+          Conf_Case_Burden_Class == "Critically high" ~ ordered(5, levels = 1:6, labels = ccbc_lvl),
           TRUE ~ Conf_Case_Burden_Class),
         Conf_Case_Composite_Class = dplyr::case_when(
-          Conf_Case_Composite_Class == "Critical" ~ ordered(4, levels = 1:5, labels = cccc_lvl),
+          Conf_Case_Composite_Class == "Critically high" ~ ordered(4, levels = 1:5, labels = cccc_lvl),
           TRUE ~ Conf_Case_Composite_Class)
       )
   }
@@ -752,7 +752,7 @@ process_cli <- function(cli_df, crit_cat = TRUE){
       CLI_Trajectory_FDR = .data$Trajectory_FDR
     )
 
-  #Remove Critical category unless it is wanted
+  #Remove Critically high category unless it is wanted
   ccbc_lvl <- levels(cli_summary$CLI_Burden_Class)
   cccc_lvl <- levels(cli_summary$CLI_Composite_Class)
 
@@ -760,10 +760,10 @@ process_cli <- function(cli_df, crit_cat = TRUE){
     cli_summary <- cli_summary %>%
       dplyr::mutate(
         CLI_Burden_Class = dplyr::case_when(
-          CLI_Burden_Class == "Critical" ~ ordered(5, levels = 1:6, labels = ccbc_lvl),
+          CLI_Burden_Class == "Critically high" ~ ordered(5, levels = 1:6, labels = ccbc_lvl),
           TRUE ~ CLI_Burden_Class),
         CLI_Composite_Class = dplyr::case_when(
-          CLI_Composite_Class == "Critical" ~ ordered(4, levels = 1:5, labels = cccc_lvl),
+          CLI_Composite_Class == "Critically high" ~ ordered(4, levels = 1:5, labels = cccc_lvl),
           TRUE ~ CLI_Composite_Class)
       )
   }

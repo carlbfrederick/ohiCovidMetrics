@@ -23,7 +23,7 @@ threshold:
   \item "Moderately high" is a burden greater than 50 and less than or equal to 100 per 100,000
   \item "High" is a burden greater than 100 and less than or equal to 350 per 100,000
   \item "Very high" is a burden greater than 350 per 100,000
-  \item "Critical" is a burden greater than 1,000 per 100,000
+  \item "Critically high" is a burden greater than 1,000 per 100,000
 }
 }
 \examples{

@@ -10,8 +10,8 @@ process_cli(cli_df, crit_cat = TRUE)
 \item{cli_df}{data.frame produced by \code{\link{pull_essence}} for
 CLI metrics}
 
-\item{crit_cat}{flag indicating whether we want to include a critical category
-in the output file (DEFAULT TRUE)}
+\item{crit_cat}{flag indicating whether we want to include a Critically high
+category in the output file (DEFAULT TRUE)}
 }
 \value{
 a Tableau ready data.frame with the following columns:
