@@ -2,6 +2,7 @@
 # ohiCovidMetrics
 
 <!-- badges: start -->
+[![R build status](https://github.com/carlbfrederick/ohiCovidMetrics/workflows/R-CMD-check/badge.svg)](https://github.com/carlbfrederick/ohiCovidMetrics/actions)
 <!-- badges: end -->
 
 The goal of ohiCovidMetrics is to collect all the code for calculating sub-state COVID-19 metrics.
