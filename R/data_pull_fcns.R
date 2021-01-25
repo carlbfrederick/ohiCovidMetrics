@@ -404,15 +404,15 @@ clean_hospital <- function(hosp, end_date) {
   herc_daily <- hosp %>%
     dplyr::group_by(Report_Date, Region) %>%
     dplyr::summarize(
-      totalbeds = sum(Total_Intermediate_Care_Beds
-                      + Total_ICU_Beds
-                      + Total_Neg_Flow_Isolation_Beds
-                      + Total_Medical_Surgical_Beds, na.rm=TRUE),
+      totalbeds = sum(Total_Intermediate_Care_Beds, na.rm=TRUE) +
+                  sum(Total_ICU_Beds, na.rm=TRUE) +
+                  sum(Total_Neg_Flow_Isolation_Beds, na.rm=TRUE) +
+                  sum(Total_Medical_Surgical_Beds, na.rm=TRUE),
 
-      beds_IBA = sum(IBA__Intermediate_Care +
-                       IBA__Medical_Surgical +
-                       IBA__Neg_Flow_Isolation +
-                       IBA__ICU, na.rm=TRUE),
+      beds_IBA = sum(IBA__Intermediate_Care, na.rm=TRUE) +
+                 sum(IBA__Medical_Surgical, na.rm=TRUE) +
+                 sum(IBA__Neg_Flow_Isolation, na.rm=TRUE) +
+                 sum(IBA__ICU, na.rm=TRUE),
 
       dailyCOVID_px = sum(Total___COVID_patients, na.rm=TRUE),
 
