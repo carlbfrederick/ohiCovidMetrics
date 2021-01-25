@@ -1,3 +1,14 @@
+# ohiCovidMetrics 0.8.9.1
+
+## Bug fixes
+
+- Fixed a bug in calculating total hospital beds and immediate beds available. I
+  had been summing across columns and then across rows ... but this meant that
+  if there was one NA in the row, the entire row was NA this silently dropping
+  beds that we have been wanting to count. In technical terms we fixed
+  `sum(col1 + col2 + col3 + col4, na.rm = TRUE)` into 
+  `sum(col1, na.rm=TRUE) + sum(col2, na.rm=TRUE) + sum(col3, na.rm=TRUE) + sum(col4, na.rm=TRUE)` 
+
 # ohiCovidMetrics 0.8.9
 
 Updates to column names and testing functions/calculations
