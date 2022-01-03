@@ -1,3 +1,9 @@
+# ohiCovidMetrics 0.8.9.2
+
+## Enhancements
+
+- Updated population from WISH 2018 to NCHS 2020 estimates 
+
 # ohiCovidMetrics 0.8.9.1
 
 ## Bug fixes

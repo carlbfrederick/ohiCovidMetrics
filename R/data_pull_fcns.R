@@ -20,7 +20,7 @@
 #'     \item{case_daily}{cleaned daily new positive cases from POS_NEW except for the first day which is from POSITIVE}
 #'     \item{test_daily}{cleaned daily new total tests from TEST_NEW except for the first day which is from POSITIve + NEGATIVE}
 #'     \item{death_daily}{cleaned daily new deaths from DTH_NEW except for the first day which is from DEATHS}
-#'     \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#'     \item{pop_2020}{2020 Population from NCHS}
 #'     \item{case_cum}{daily cumulative positive cases calculated from case_daily}
 #'     \item{test_cum}{daily cumulative total tests calculated from test_daily}
 #'     \item{death_cum}{daily cumulative deaths calculated from death_daily}
@@ -94,7 +94,7 @@ pull_histTable <- function(end_date = NULL) {
 #'     \item{case_daily}{cleaned daily new positive cases from POS_NEW except for the first day which is from POSITIVE}
 #'     \item{test_daily}{cleaned daily new total tests from TEST_NEW except for the first day which is from POSITIve + NEGATIVE}
 #'     \item{death_daily}{cleaned daily new deaths from DTH_NEW except for the first day which is from DEATHS}
-#'     \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#'     \item{pop_2020}{2020 Population from NCHS}
 #'     \item{case_cum}{daily cumulative positive cases calculated from case_daily}
 #'     \item{test_cum}{daily cumulative total tests calculated from test_daily}
 #'     \item{death_cum}{daily cumulative deaths calculated from death_daily}
@@ -173,7 +173,7 @@ clean_histTable <- function(hdt, end_date) {
     dplyr::ungroup(.) %>%
     tidyr::complete(tidyr::nesting(fips, geo_type, geo_name), post_date,
                     fill = list(case_daily = 0L, test_daily = 0L, death_daily = 0L)) %>%
-    dplyr::left_join(dplyr::select(county_data, .data$fips, .data$herc_region, .data$pop_2018), by = "fips")
+    dplyr::left_join(dplyr::select(county_data, .data$fips, .data$herc_region, .data$pop_2020), by = "fips")
 
   if (inherits(hdt$post_date, "POSIXt")) {
     hdt$post_date <- as.Date(hdt$post_date, tz = "America/Chicago")
@@ -243,7 +243,7 @@ clean_histTable <- function(hdt, end_date) {
   #Add in HERC and STATE rows
   herc <- hdt %>%
     dplyr::group_by(.data$post_date, .data$herc_region) %>%
-    dplyr::summarize_at(dplyr::vars("case_daily", "test_daily", "death_daily", "pop_2018"), sum) %>%
+    dplyr::summarize_at(dplyr::vars("case_daily", "test_daily", "death_daily", "pop_2020"), sum) %>%
     dplyr::mutate(
       fips = .data$herc_region,
       geo_name = .data$herc_region,
@@ -252,7 +252,7 @@ clean_histTable <- function(hdt, end_date) {
 
   state <- hdt %>%
     dplyr::group_by(.data$post_date) %>%
-    dplyr::summarize_at(dplyr::vars("case_daily", "test_daily", "death_daily", "pop_2018"), sum) %>%
+    dplyr::summarize_at(dplyr::vars("case_daily", "test_daily", "death_daily", "pop_2020"), sum) %>%
     dplyr::mutate(
       fips = "55",
       geo_name = "Wisconsin",
@@ -374,7 +374,7 @@ clean_hospital <- function(hosp, end_date) {
       dailyCOVID_ICUpx = dplyr::if_else(is.na(dailyCOVID_ICUpx), 0, dailyCOVID_ICUpx),
       geo_type = "County"
     ) %>%
-    dplyr::left_join(select(county_data, fips, county, pop_2018, herc_region),
+    dplyr::left_join(select(county_data, fips, county, pop_2020, herc_region),
               by = c("County" = "county")) %>%
     dplyr::ungroup()
 
@@ -855,12 +855,12 @@ clean_cli <- function(cli){
       DailyED = sum(ED_Visit),
       .groups = "drop"
     ) %>%
-    dplyr::full_join(dplyr::select(county_data, County = county, fips, herc_region, pop_2018),
+    dplyr::full_join(dplyr::select(county_data, County = county, fips, herc_region, pop_2020),
                      by = "County") %>%
     tidyr::complete(County, Visit_Date,
                     fill = list("DailyED" = 0L)) %>%
     dplyr::group_by(County) %>%
-    dplyr::mutate(dplyr::across(fips:pop_2018, ~dplyr::first(.x[!is.na(.x)]))) %>%
+    dplyr::mutate(dplyr::across(fips:pop_2020, ~dplyr::first(.x[!is.na(.x)]))) %>%
     dplyr::filter(!is.na(Visit_Date))
 
   #Aggregate to HERC and State and Append
@@ -868,7 +868,7 @@ clean_cli <- function(cli){
     dplyr::group_by(herc_region, Visit_Date) %>%
     dplyr::summarize(
       DailyED = sum(DailyED),
-      pop_2018 = sum(pop_2018),
+      pop_2020 = sum(pop_2020),
       .groups = "drop"
     ) %>%
     dplyr::rename(fips = herc_region) %>%
@@ -880,7 +880,7 @@ clean_cli <- function(cli){
     dplyr::group_by(Visit_Date) %>%
     dplyr::summarize(
       DailyED = sum(DailyED),
-      pop_2018 = sum(pop_2018),
+      pop_2020 = sum(pop_2020),
       .groups = "drop"
     ) %>%
     dplyr::mutate(

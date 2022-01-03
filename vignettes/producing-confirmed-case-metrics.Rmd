@@ -112,7 +112,7 @@ as shown below.
 ```{r metrics-burden}
 burden <- score_burden(curr = hdt_clean$case_weekly_1, 
                        prev = hdt_clean$case_weekly_2,
-                       pop  = hdt_clean$pop_2018)
+                       pop  = hdt_clean$pop_2020)
 
 burden_c <- class_burden(burden)
 ```

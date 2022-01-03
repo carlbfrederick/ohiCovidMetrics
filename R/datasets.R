@@ -8,13 +8,13 @@
 #' \describe{
 #'   \item{fips}{5 digit FIPS county code}
 #'   \item{county}{County name}
-#'   \item{pop_2018}{WISH 2018 population figures}
+#'   \item{pop_2020}{2020 Population from NCHS}
 #'   \item{dph_region}{DPH Region}
 #'   \item{herc_region}{HERC Region}
 #' }
 #'
 #' @source FIPS County codes taken from ACS downloads via \code{\link[tidycensus]{get_acs}}
-#' @source 2018 Population Estimates from WISH
+#' @source 2020 Population from NCHS
 #' @source DPH Regions hand coded from \url{https://www.dhs.wisconsin.gov/lh-depts/counties.htm}
 #' @source HERC Regions hand coded from \url{https://www.dhs.wisconsin.gov/preparedness/healthcare/index.htm}
 #'
