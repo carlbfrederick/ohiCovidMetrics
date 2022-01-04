@@ -1,3 +1,63 @@
+# ohiCovidMetrics 0.8.9.2
+
+## Enhancements
+
+- Updated population from WISH 2018 to NCHS 2020 estimates 
+
+# ohiCovidMetrics 0.8.9.1
+
+## Bug fixes
+
+- Fixed a bug in calculating total hospital beds and immediate beds available. I
+  had been summing across columns and then across rows ... but this meant that
+  if there was one NA in the row, the entire row was NA this silently dropping
+  beds that we have been wanting to count. In technical terms we fixed
+  `sum(col1 + col2 + col3 + col4, na.rm = TRUE)` into 
+  `sum(col1, na.rm=TRUE) + sum(col2, na.rm=TRUE) + sum(col3, na.rm=TRUE) + sum(col4, na.rm=TRUE)` 
+
+# ohiCovidMetrics 0.8.9
+
+Updates to column names and testing functions/calculations
+
+## Enhancements
+
+- Made "Critical" label the default for CLI and Confirmed cases
+
+## Breaking Changes
+
+- Removed the Testing Targets from the system per decision by the group since
+  our source for some of these numbers is no longer being updated and there
+  are no plans to include things like this in the dashboards.
+- Removed the following deprecated functions:
+    - `pull_histTable_SG()`
+    - `OLD_process_confirmed_cases()`
+    - `clean_total_ed()`
+    - `shape_total_ed_data()`
+    - `process_total_ed()`
+    - `rev_cusum_ucl()`
+    - `rev_cusum_lcl()`
+    - `calc_num_tests()`
+    
+## Bug fixes
+
+- Changed API for historical data table again.
+- Changed "Critical" to "Critically high"
+
+# ohiCovidMetrics 0.8.8
+
+Updates to column names and testing functions/calculations
+
+## Enhancements
+
+- Changed column output names in preparation for disseminating metric files 
+  via open data portal
+- Changed testing percent positive calculation to be based on latest 7 day 
+  average percent positive and that this is the number the summary output is 
+  based on.
+- Added a critical label to burden and composite classification functions in 
+  preparation for needing this *but right now this ability is overwritten by 
+  'Very high' by default*.
+
 # ohiCovidMetrics 0.8.5.9
 
 Bugfix to more robust way of truncating datetimes into dates.

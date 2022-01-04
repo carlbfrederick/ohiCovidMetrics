@@ -36,16 +36,16 @@ Eventually, this package will contain multiple ways to pull the data depending
 on the user's level of access. In this vignette, we will grab data from the 
 public facing [COVID-19 Historical Data Table](https://data.dhsgis.wi.gov/datasets/covid-19-historical-data-table) via
 an API call with the `pull_histTable()` function which takes no arguments. Note,
-I stopped the time series at 17 June 2020 to be able to comparet the results to the
+I stopped the time series at 17 June 2020 to be able to compare the results to the
 official file prepared by Jeff Bond for the dashboard.
 
 ```{r pull-hist-table}
-hdt_clean <- pull_histTable(end_date = "2020-06-17") 
+hdt_clean <- pull_histTable(end_date = "2020-09-17") 
 ```
 
 This function does six things: 
 
-1. Imports data from the REST API <https://services1.arcgis.com/ISZ89Z51ft1G16OK/ArcGIS/rest/services/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20'COUNTY'&outFields=GEOID,GEO,NAME,LoadDttm,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson> 
+1. Imports data from the REST API <https://dhsgis.wi.gov/server/rest/services/DHS_COVID19/COVID19_WI/FeatureServer/10/query?where=GEO%20%3D%20%27COUNTY%27&outFields=GEOID,GEO,NAME,DATE,NEGATIVE,POSITIVE,DEATHS,TEST_NEW,POS_NEW,DTH_NEW&outSR=4326&f=geojson> 
    using the `st_read()` function from the {`sf`} package.
 2. Some basic data wrangling to convert the date into the correct format and
    create the daily new confirmed cases time series.[^1]
@@ -112,7 +112,7 @@ as shown below.
 ```{r metrics-burden}
 burden <- score_burden(curr = hdt_clean$case_weekly_1, 
                        prev = hdt_clean$case_weekly_2,
-                       pop  = hdt_clean$pop_2018)
+                       pop  = hdt_clean$pop_2020)
 
 burden_c <- class_burden(burden)
 ```

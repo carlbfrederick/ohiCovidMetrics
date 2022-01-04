@@ -13,14 +13,17 @@ class_burden(burden)
 an ordered factor
 }
 \description{
-Currently, cutoff values are hard coded and adopted straight from
-the ones used in the CDC State Indicators report:
+Currently, the cutoff values are hard coded and adopted straight from
+the ones used in the CDC State Indicators report for the first 3 thresholds
+and from HGHI for the 4th threshold and set arbitrarily for the highest
+threshold:
 \itemize{
   \item "Low" is a burden less than or equal to 10 per 100,000
   \item "Moderate" is a burden greater than 10 and less than or equal to 50 per 100,000
   \item "Moderately high" is a burden greater than 50 and less than or equal to 100 per 100,000
   \item "High" is a burden greater than 100 and less than or equal to 350 per 100,000
   \item "Very high" is a burden greater than 350 per 100,000
+  \item "Critically high" is a burden greater than 1,000 per 100,000
 }
 }
 \examples{

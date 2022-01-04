@@ -247,7 +247,6 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' @param test     data.frame produced by \code{\link{process_testing}}
 #' @param cli      data.frame produced by \code{\link{process_cli}}
 #' @param ili      data.frame produced by \code{\link{process_ili}}
-#' @param test_targets data.frame produced by \code{process_test_targets}
 #' @param outfile  file name (including path) for output data file
 #'
 #' @return invisibly returns the combined data
@@ -269,7 +268,7 @@ fill_dates <- function(df, grouping_vars, date_var) {
 #' \dontrun{
 #'   #add examples to me please,
 #' }
-merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile) {
+merge_metric_files <- function(case, hosp, test, cli, ili, outfile) {
   #Start with Cases and Testing
   out <- dplyr::full_join(case, test, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in Hospitalization
@@ -278,8 +277,6 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
   out <- dplyr::full_join(out, cli, by = c("Date", "Region_ID", "Region", "RowType"))
   #Add in ILI
   out <- dplyr::full_join(out, ili, by = c("Date", "Region_ID", "Region", "RowType"))
-  #Add in Testing Targets
-  out <- dplyr::full_join(out, test_targets, by = c("Date", "Region_ID", "Region", "RowType"))
 
   #Any data cleaning necessary?
   ##convert factors to character for file check
@@ -305,10 +302,8 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
            Conf_Case_Trajectory, Conf_Case_Trajectory_P, Conf_Case_Trajectory_Class,
            Conf_Case_Composite_Class,
            Testing_Total_Encounters, Testing_Positive_Encounters,
-           Testing_Nonpositive_Encounters, Testing_Percent_Positive,
+           Testing_Negative_Encounters, Testing_Percent_Positive,
            Testing_Composite_Class,
-           Testing_Case, Testing_ARI, Testing_Case_Gap,
-           Testing_Target_0.2, Testing_Target_0.4, Testing_Target_0.6, Testing_Target_0.8, Testing_Target_1,
            Hosp_dailyCOVID_px, Hosp_COVID_px_Trajectory, Hosp_COVID_px_Trajectory_Class,
            Hosp_dailyCOVID_ICUpx, Hosp_COVID_ICUpx_Trajectory, Hosp_COVID_ICUpx_Trajectory_Class,
            Hosp_totalbeds, Hosp_beds_IBA, Hosp_PrctBeds_Used, Hosp_Beds_moving_avg,
@@ -316,15 +311,15 @@ merge_metric_files <- function(case, hosp, test, cli, ili, test_targets, outfile
            Hosp_total_vents, Hosp_num_px_vent, Hosp_PrctVent_Used, Hosp_Vent_moving_avg,
            CLI_Count, CLI_Burden, CLI_Burden_Class,
            CLI_Trajectory, CLI_Trajectory_P, CLI_Trajectory_Class, CLI_Composite_Class,
-           ILI_Total_Visits, ILI_Visits, ILI_Percent, ILI_Moving_Avg,
+           ED_Total_Visits, ED_ILI_Visits, ILI_Percent, ILI_Moving_Avg,
            ILI_Baseline, ILI_Threshold, ILI_Status,
-           ED_flag, Mayo_flag)
+           ED_flag, recent_hospOB_flag)
 
-  ##make sure ED_flag and Mayo_flags are correct
+  ##make sure ED_flag and recent_hospOB_flag are correct
   out <- out %>%
     dplyr::group_by(Region) %>%
     dplyr::mutate(
-      across(c("ED_flag", "Mayo_flag"), ~ first(.x[!is.na(.x)]))
+      across(c("ED_flag", "recent_hospOB_flag"), ~ first(.x[!is.na(.x)]))
     )
 
   #ADD IN SOME BASIC CHECKS/REPORTING SO PEOPLE CAN GET SUMMARY
@@ -497,17 +492,9 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     Conf_Case_Composite_Class = readr::col_character(),
     Testing_Total_Encounters = readr::col_double(),
     Testing_Positive_Encounters = readr::col_double(),
-    Testing_Nonpositive_Encounters = readr::col_double(),
+    Testing_Negative_Encounters = readr::col_double(),
     Testing_Percent_Positive = readr::col_double(),
     Testing_Composite_Class = readr::col_character(),
-    Testing_Case = readr::col_double(),
-    Testing_ARI = readr::col_double(),
-    Testing_Case_Gap = readr::col_double(),
-    Testing_Target_0.2 = readr::col_double(),
-    Testing_Target_0.4 = readr::col_double(),
-    Testing_Target_0.6 = readr::col_double(),
-    Testing_Target_0.8 = readr::col_double(),
-    Testing_Target_1 = readr::col_double(),
     Hosp_dailyCOVID_px = readr::col_double(),
     Hosp_COVID_px_Trajectory = readr::col_character(),
     Hosp_COVID_px_Trajectory_Class = readr::col_character(),
@@ -533,15 +520,15 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     CLI_Trajectory_P = readr::col_double(),
     CLI_Trajectory_Class = readr::col_character(),
     CLI_Composite_Class = readr::col_character(),
-    ILI_Total_Visits = readr::col_double(),
-    ILI_Visits = readr::col_double(),
+    ED_Total_Visits = readr::col_double(),
+    ED_ILI_Visits = readr::col_double(),
     ILI_Percent = readr::col_double(),
     ILI_Moving_Avg = readr::col_double(),
     ILI_Baseline = readr::col_double(),
     ILI_Threshold = readr::col_double(),
     ILI_Status = readr::col_character(),
     ED_flag = readr::col_double(),
-    Mayo_flag = readr::col_double()
+    recent_hospOB_flag = readr::col_double()
   )
 
   colspec_e <- readr::cols(
@@ -562,18 +549,10 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     Testing_Total_Encounters = readr::col_double(),
     Testing_Tot_Enc_moving_avg = readr::col_double(),
     Testing_Positive_Encounters = readr::col_double(),
-    Testing_Nonpositive_Encounters = readr::col_double(),
+    Testing_Negative_Encounters = readr::col_double(),
     Testing_Percent_Positive = readr::col_double(),
     Testing_Perc_Pos_moving_avg = readr::col_double(),
     Testing_Composite_Class = readr::col_character(),
-    Testing_Case = readr::col_double(),
-    Testing_ARI = readr::col_double(),
-    Testing_Case_Gap = readr::col_double(),
-    Testing_Target_0.2 = readr::col_double(),
-    Testing_Target_0.4 = readr::col_double(),
-    Testing_Target_0.6 = readr::col_double(),
-    Testing_Target_0.8 = readr::col_double(),
-    Testing_Target_1 = readr::col_double(),
     Hosp_dailyCOVID_px = readr::col_double(),
     Hosp_DailyCOVID_PX_moving_avg = readr::col_double(),
     Hosp_COVID_px_Trajectory = readr::col_character(),
@@ -602,15 +581,15 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
     CLI_Trajectory_P = readr::col_double(),
     CLI_Trajectory_Class = readr::col_character(),
     CLI_Composite_Class = readr::col_character(),
-    ILI_Total_Visits = readr::col_double(),
-    ILI_Visits = readr::col_double(),
+    ED_Total_Visits = readr::col_double(),
+    ED_ILI_Visits = readr::col_double(),
     ILI_Percent = readr::col_double(),
     ILI_Moving_Avg = readr::col_double(),
     ILI_Baseline = readr::col_double(),
     ILI_Threshold = readr::col_double(),
     ILI_Status = readr::col_character(),
     ED_flag = readr::col_double(),
-    Mayo_flag = readr::col_double()
+    recent_hospOB_flag = readr::col_double()
   )
 
   #Read and combine files
@@ -640,7 +619,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                Testing_Total_Encounters,
                CLI_Count,
                Conf_Case_Count,
-               ILI_Visits, ILI_Total_Visits), first_not_na),
+               ED_ILI_Visits, ED_Total_Visits), first_not_na),
       .groups = "drop"
     ) %>%
     dplyr::group_by(RowType, Region) %>%
@@ -654,7 +633,7 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                       CLI_Count,
                       Conf_Case_Count),
              zoo::rollapply, width = 7, FUN = sum, fill = NA, align = "right"),
-      dplyr::across(c(ILI_Visits, ILI_Total_Visits),
+      dplyr::across(c(ED_ILI_Visits, ED_Total_Visits),
              zoo::rollapply, width = 3, FUN = sum, fill = NA, align = "right")
     ) %>%
     dplyr::mutate(
@@ -667,10 +646,10 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
       Testing_Tot_Enc_moving_avg     = Testing_Total_Encounters / 7,
       CLI_Count_moving_avg           = CLI_Count / 7,
       Conf_Case_Count_moving_avg     = Conf_Case_Count / 7,
-      ILI_Moving_Avg                 = 100 * (ILI_Visits / ILI_Total_Visits)
+      ILI_Moving_Avg                 = 100 * (ED_ILI_Visits / ED_Total_Visits)
     ) %>%
     dplyr::mutate(
-      ILI_Moving_Avg = if_else(ILI_Total_Visits == 0 & is.nan(ILI_Moving_Avg), 0, ILI_Moving_Avg)
+      ILI_Moving_Avg = if_else(ED_Total_Visits == 0 & is.nan(ILI_Moving_Avg), 0, ILI_Moving_Avg)
     ) %>%
     dplyr::select(RowType, Region, Date,
                   Hosp_Beds_moving_avg,
@@ -707,10 +686,8 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                   Conf_Case_Trajectory, Conf_Case_Trajectory_P, Conf_Case_Trajectory_Class,
                   Conf_Case_Composite_Class,
                   Testing_Total_Encounters, Testing_Tot_Enc_moving_avg, Testing_Positive_Encounters,
-                  Testing_Nonpositive_Encounters, Testing_Percent_Positive, Testing_Perc_Pos_moving_avg,
+                  Testing_Negative_Encounters, Testing_Percent_Positive, Testing_Perc_Pos_moving_avg,
                   Testing_Composite_Class,
-                  Testing_Case, Testing_ARI, Testing_Case_Gap,
-                  Testing_Target_0.2, Testing_Target_0.4, Testing_Target_0.6, Testing_Target_0.8, Testing_Target_1,
                   Hosp_dailyCOVID_px, Hosp_DailyCOVID_PX_moving_avg, Hosp_COVID_px_Trajectory, Hosp_COVID_px_Trajectory_Class,
                   Hosp_dailyCOVID_ICUpx, Hosp_DailyCOVID_ICU_moving_avg, Hosp_COVID_ICUpx_Trajectory, Hosp_COVID_ICUpx_Trajectory_Class,
                   Hosp_totalbeds, Hosp_beds_IBA, Hosp_PrctBeds_Used, Hosp_Beds_moving_avg,
@@ -718,9 +695,9 @@ append_metric_files <- function(current_combo_file, existing_combo_file, overwri
                   Hosp_total_vents, Hosp_num_px_vent, Hosp_PrctVent_Used, Hosp_Vent_moving_avg,
                   CLI_Count, CLI_Count_moving_avg, CLI_Burden, CLI_Burden_Class,
                   CLI_Trajectory, CLI_Trajectory_P, CLI_Trajectory_Class, CLI_Composite_Class,
-                  ILI_Total_Visits, ILI_Visits, ILI_Percent, ILI_Moving_Avg,
+                  ED_Total_Visits, ED_ILI_Visits, ILI_Percent, ILI_Moving_Avg,
                   ILI_Baseline, ILI_Threshold, ILI_Status,
-                  ED_flag, Mayo_flag)
+                  ED_flag, recent_hospOB_flag)
 
   tdir <- tempdir()
   save(out, file = file.path(tdir, "__tmp_append_file.RData"))

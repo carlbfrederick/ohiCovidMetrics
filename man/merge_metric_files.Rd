@@ -4,7 +4,7 @@
 \alias{merge_metric_files}
 \title{Combine metric data into a single output file}
 \usage{
-merge_metric_files(case, hosp, test, cli, ili, test_targets, outfile)
+merge_metric_files(case, hosp, test, cli, ili, outfile)
 }
 \arguments{
 \item{case}{data.frame produced by \code{\link{process_confirmed_cases}}}
@@ -16,8 +16,6 @@ merge_metric_files(case, hosp, test, cli, ili, test_targets, outfile)
 \item{cli}{data.frame produced by \code{\link{process_cli}}}
 
 \item{ili}{data.frame produced by \code{\link{process_ili}}}
-
-\item{test_targets}{data.frame produced by \code{process_test_targets}}
 
 \item{outfile}{file name (including path) for output data file}
 }

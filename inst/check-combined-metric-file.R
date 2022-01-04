@@ -173,7 +173,7 @@ expect_equal(sum(is.na(out$Conf_Case_Burden_Class[out$RowType == "Summary"])), 0
 expect_equal(sum(!is.na(out$Conf_Case_Burden_Class[out$RowType == "Daily"])), 0,
              info = "Conf_Case_Burden_Class column has *all* NA/missings for Daily Rows")
 expect_true(all(unique(out$Conf_Case_Burden_Class[out$RowType == "Summary"]) %in%
-             c("High", "Low", "Moderate", "Moderately high", "Very high")),
+             c("Critically high", "High", "Low", "Moderate", "Moderately high", "Very high")),
              info = "Conf_Case_Burden_Class column has only correct unique values")
 
 ###Conf_Case_Trajectory_Class
@@ -195,7 +195,7 @@ expect_equal(sum(is.na(out$Conf_Case_Composite_Class[out$RowType == "Summary"]))
 expect_equal(sum(!is.na(out$Conf_Case_Composite_Class[out$RowType == "Daily"])), 0,
              info = "Conf_Case_Composite_Class column has *all* NA/missings for Daily Rows")
 expect_true(all(unique(out$Conf_Case_Composite_Class[out$RowType == "Summary"]) %in%
-             c("High", "Low", "Medium", "Very high")),
+             c("Critically high", "High", "Low", "Medium", "Very high")),
              info = "Conf_Case_Composite_Class column has only correct unique values")
 
 ###Conf_Case_Trajectory_P
@@ -208,18 +208,18 @@ expect_equal(sum(!is.na(out$Conf_Case_Trajectory_P[out$RowType == "Daily"])), 0,
 expect_true(all(dplyr::between(out$Conf_Case_Trajectory_P[out$RowType == "Summary"], left = 0.0, right = 1.0)),
             info = "Conf_Case_Trajectory_P columns values are all between 0 and 1 inclusive.")
 
-##. . Testing/Case Detection ----
+##. . Testing ----
 ###Testing_Positive_Encounters
 expect_true(inherits(out$Testing_Positive_Encounters, 'numeric'),
             info = "Testing_Positive_Encounters column is 'numeric' class")
 expect_equal(sum(is.na(out$Testing_Positive_Encounters[!out$noessence])), 0,
              info = "Testing_Positive_Encounters column has no unexpected NA/missings")
 
-###Testing_Nonpositive_Encounters
-expect_true(inherits(out$Testing_Nonpositive_Encounters, 'numeric'),
-            info = "Testing_Nonpositive_Encounters column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Nonpositive_Encounters[!out$noessence])), 0,
-             info = "Testing_Nonpositive_Encounters column has no unexpected NA/missings")
+###Testing_Negative_Encounters
+expect_true(inherits(out$Testing_Negative_Encounters, 'numeric'),
+            info = "Testing_Negative_Encounters column is 'numeric' class")
+expect_equal(sum(is.na(out$Testing_Negative_Encounters[!out$noessence])), 0,
+             info = "Testing_Negative_Encounters column has no unexpected NA/missings")
 
 ###Testing_Total_Encounters
 expect_true(inherits(out$Testing_Total_Encounters, 'numeric'),
@@ -497,7 +497,7 @@ expect_equal(sum(is.na(out$CLI_Burden_Class[out$RowType == "Summary"])), 0,
 expect_equal(sum(!is.na(out$CLI_Burden_Class[out$RowType == "Daily"])), 0,
              info = "CLI_Burden_Class column has *all* NA/missings for Daily Rows")
 expect_true(all(unique(out$CLI_Burden_Class[out$RowType == "Summary"]) %in%
-             c("High", "Low", "Moderate", "Moderately high", "Very high")),
+             c("Critically high", "High", "Low", "Moderate", "Moderately high", "Very high")),
              info = "CLI_Burden_Class column has only correct unique values")
 
 ###CLI_Trajectory_Class
@@ -518,7 +518,7 @@ expect_equal(sum(is.na(out$CLI_Composite_Class[out$RowType == "Summary"])), 0,
              info = "CLI_Composite_Class column has no NA/missings for Summary Rows")
 expect_equal(sum(!is.na(out$CLI_Composite_Class[out$RowType == "Daily"])), 0,
              info = "CLI_Composite_Class column has *all* NA/missings for Daily Rows")
-expect_true(all(unique(out$CLI_Composite_Class[out$RowType == "Summary"]) %in% c("High", "Low", "Medium", "Very high")),
+expect_true(all(unique(out$CLI_Composite_Class[out$RowType == "Summary"]) %in% c("Critically high", "High", "Low", "Medium", "Very high")),
              info = "CLI_Composite_Class column has only correct unique values")
 
 ###CLI_Trajectory_P
@@ -532,21 +532,21 @@ expect_true(all(dplyr::between(out$CLI_Trajectory_P[out$RowType == "Summary"], l
             info = "CLI_Trajectory_P columns values are all between 0 and 1 inclusive.")
 
 ##. . ILI ----
-###ILI_Total_Visits
-expect_true(inherits(out$ILI_Total_Visits, 'numeric'),
-            info = "ILI_Total_Visits column is 'numeric' class")
-expect_equal(sum(is.na(out$ILI_Total_Visits[out$RowType == "Daily" & !out$noessence])), 0,
-             info = "ILI_Total_Visits column has no unexpected NA/missings for Daily rows")
-expect_equal(sum(!is.na(out$ILI_Total_Visits[out$RowType == "Summary"])), 0,
-             info = "ILI_Total_Visits column has ONLY NA/missings for Summary rows")
+###ED_Total_Visits
+expect_true(inherits(out$ED_Total_Visits, 'numeric'),
+            info = "ED_Total_Visits column is 'numeric' class")
+expect_equal(sum(is.na(out$ED_Total_Visits[out$RowType == "Daily" & !out$noessence])), 0,
+             info = "ED_Total_Visits column has no unexpected NA/missings for Daily rows")
+expect_equal(sum(!is.na(out$ED_Total_Visits[out$RowType == "Summary"])), 0,
+             info = "ED_Total_Visits column has ONLY NA/missings for Summary rows")
 
-###ILI_Visits
-expect_true(inherits(out$ILI_Visits, 'numeric'),
-            info = "ILI_Visits column is 'numeric' class")
-expect_equal(sum(is.na(out$ILI_Visits[out$RowType == "Daily" & !out$noessence])), 0,
-             info = "ILI_Visits column has no unexpected NA/missings for Daily rows")
-expect_equal(sum(!is.na(out$ILI_Visits[out$RowType == "Summary"])), 0,
-             info = "ILI_Visits column has ONLY NA/missings for Summary rows")
+###ED_ILI_Visits
+expect_true(inherits(out$ED_ILI_Visits, 'numeric'),
+            info = "ED_ILI_Visits column is 'numeric' class")
+expect_equal(sum(is.na(out$ED_ILI_Visits[out$RowType == "Daily" & !out$noessence])), 0,
+             info = "ED_ILI_Visits column has no unexpected NA/missings for Daily rows")
+expect_equal(sum(!is.na(out$ED_ILI_Visits[out$RowType == "Summary"])), 0,
+             info = "ED_ILI_Visits column has ONLY NA/missings for Summary rows")
 
 ###ILI_Percent
 expect_true(inherits(out$ILI_Percent, 'numeric'),
@@ -615,68 +615,3 @@ if (!isappended) {
                     c("Elevated", "Low", "Moderate")),
               info = "ILI_Status column has only correct unique values")
 }
-
-##. . Testing Volume Targets----
-###Testing_Case
-expect_true(inherits(out$Testing_Case, 'numeric'),
-            info = "Testing_Case column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Case[out$RowType == "Summary"])), 0,
-             info = "Testing_Case column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Case[out$RowType == "Daily"])), 0,
-             info = "Testing_Case column has ONLY NA/missings for Daily rows")
-
-###Testing_ARI
-expect_true(inherits(out$Testing_ARI, 'numeric'),
-            info = "Testing_ARI column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_ARI[out$RowType == "Summary"])), 0,
-             info = "Testing_ARI column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_ARI[out$RowType == "Daily"])), 0,
-             info = "Testing_ARI column has ONLY NA/missings for Daily rows")
-
-###Testing_Case_Gap
-expect_true(inherits(out$Testing_Case_Gap, 'numeric'),
-            info = "Testing_Case_Gap column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Case_Gap[out$RowType == "Summary"])), 0,
-             info = "Testing_Case_Gap column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Case_Gap[out$RowType == "Daily"])), 0,
-             info = "Testing_Case_Gap column has ONLY NA/missings for Daily rows")
-
-###Testing_Target_0.2
-expect_true(inherits(out$Testing_Target_0.2, 'numeric'),
-            info = "Testing_Target_0.2 column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Target_0.2[out$RowType == "Summary"])), 0,
-             info = "Testing_Target_0.2 column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Target_0.2[out$RowType == "Daily"])), 0,
-             info = "Testing_Target_0.2 column has ONLY NA/missings for Daily rows")
-
-###Testing_Target_0.4
-expect_true(inherits(out$Testing_Target_0.4, 'numeric'),
-            info = "Testing_Target_0.4 column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Target_0.4[out$RowType == "Summary"])), 0,
-             info = "Testing_Target_0.4 column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Target_0.4[out$RowType == "Daily"])), 0,
-             info = "Testing_Target_0.4 column has ONLY NA/missings for Daily rows")
-
-###Testing_Target_0.6
-expect_true(inherits(out$Testing_Target_0.6, 'numeric'),
-            info = "Testing_Target_0.6 column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Target_0.6[out$RowType == "Summary"])), 0,
-             info = "Testing_Target_0.6 column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Target_0.6[out$RowType == "Daily"])), 0,
-             info = "Testing_Target_0.6 column has ONLY NA/missings for Daily rows")
-
-###Testing_Target_0.8
-expect_true(inherits(out$Testing_Target_0.8, 'numeric'),
-            info = "Testing_Target_0.8 column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Target_0.8[out$RowType == "Summary"])), 0,
-             info = "Testing_Target_0.8 column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Target_0.8[out$RowType == "Daily"])), 0,
-             info = "Testing_Target_0.8 column has ONLY NA/missings for Daily rows")
-
-###Testing_Target_1
-expect_true(inherits(out$Testing_Target_1, 'numeric'),
-            info = "Testing_Target_1 column is 'numeric' class")
-expect_equal(sum(is.na(out$Testing_Target_1[out$RowType == "Summary"])), 0,
-             info = "Testing_Target_1 column has no NA/missings for Summary rows")
-expect_equal(sum(!is.na(out$Testing_Target_1[out$RowType == "Daily"])), 0,
-             info = "Testing_Target_1 column has ONLY NA/missings for Daily rows")

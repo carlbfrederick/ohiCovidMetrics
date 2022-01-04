@@ -1,6 +1,6 @@
 Package: ohiCovidMetrics
 Title: Used to calculate sub-state metrics relating to the COVID-19 pandemic
-Version: 0.8.5.9
+Version: 0.8.9.2
 Date: 2020-10-06
 Authors@R: c(
     person(given = "Jeffrey",
@@ -23,6 +23,10 @@ Authors@R: c(
            family = "Palmer",
            role = c("ctb"),
            email = "Kristine.Palmer@dhs.wisconsin.gov"),
+    person(given = "Natalee",
+           family = "Desotell",
+           role = c("ctb"),
+           email = "Natalee.Desotell@dhs.wisconsin.gov"),
     person(given = "Diksha",
            family = "Ramnani",
            role = c("ctb"),

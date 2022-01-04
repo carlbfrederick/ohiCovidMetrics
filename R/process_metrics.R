@@ -10,7 +10,7 @@
 #' \describe{
 #'   \item{fips}{FIPS Code and/or region identifier}
 #'   \item{geo_name}{Name of geography}
-#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#'   \item{pop_2020}{2020 Population from NCHS}
 #'   \item{case_weekly_1}{Total cases for \strong{current} 7 day period}
 #'   \item{case_weekly_2}{Total cases for \strong{prior} 7 day period}
 #'   \item{week_end_1}{End date for \strong{current} 7 day period}
@@ -52,23 +52,23 @@ shape_case_data <- function(case_df) {
     dplyr::select(fips, geo_name, post_date, case_daily)
 
   cases_summary <- case_df %>%
-    dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018) %>%
+    dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2020) %>%
     dplyr::mutate(
       weeknum = rolling_week(date_vector = .data$post_date, end_date = max_date)
     ) %>%
-    dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018, .data$weeknum) %>%
+    dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2020, .data$weeknum) %>%
     dplyr::summarize(
       case_weekly = as.integer(sum(.data$case_daily)),
       week_end = max(.data$post_date),
       .groups = "drop_last"
     ) %>%
     dplyr::filter(.data$weeknum <= 2) %>%
-    tidyr::pivot_wider(id_cols = c("fips", "geo_name", "pop_2018"),
+    tidyr::pivot_wider(id_cols = c("fips", "geo_name", "pop_2020"),
                        values_from = c("case_weekly", "week_end"),
                        names_from = "weeknum")
 
   #Re-type pop to integer
-  cases_summary$pop_2018 <- as.integer(cases_summary$pop_2018)
+  cases_summary$pop_2020 <- as.integer(cases_summary$pop_2020)
 
   list(summary = cases_summary,
        daily = cases_daily)
@@ -78,6 +78,8 @@ shape_case_data <- function(case_df) {
 #' Process the shaped confirmed case data.frame into a Tableau ready format
 #'
 #' @param case_df Confirmed case data.frame (e.g. produced by \link{pull_histTable})
+#' @param crit_cat flag indicating whether we want to include a Critically high
+#'                 category in the output file (DEFAULT TRUE)
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -109,7 +111,7 @@ shape_case_data <- function(case_df) {
 #'
 #' output <- pull_histTable() %>%
 #'   process_confirmed_cases()
-process_confirmed_cases <- function(case_df) {
+process_confirmed_cases <- function(case_df, crit_cat = TRUE) {
   clean_case_df <- shape_case_data(case_df)
 
   out_day <- clean_case_df$daily %>%
@@ -127,7 +129,7 @@ process_confirmed_cases <- function(case_df) {
       Count = .data$case_weekly_1 + .data$case_weekly_2,
       Burden = score_burden(curr = .data$case_weekly_1,
                             prev = .data$case_weekly_2,
-                            pop = .data$pop_2018),
+                            pop = .data$pop_2020),
       Burden_Class = class_burden(.data$Burden),
       Trajectory = score_trajectory(curr = .data$case_weekly_1,
                                     prev = .data$case_weekly_2),
@@ -164,6 +166,22 @@ process_confirmed_cases <- function(case_df) {
       Conf_Case_Trajectory_FDR = .data$Trajectory_FDR
     )
 
+  #Remove Critically high category unless it is wanted
+  ccbc_lvl <- levels(out_sum$Conf_Case_Burden_Class)
+  cccc_lvl <- levels(out_sum$Conf_Case_Composite_Class)
+
+  if (!crit_cat) {
+    out_sum <- out_sum %>%
+      dplyr::mutate(
+        Conf_Case_Burden_Class = dplyr::case_when(
+          Conf_Case_Burden_Class == "Critically high" ~ ordered(5, levels = 1:6, labels = ccbc_lvl),
+          TRUE ~ Conf_Case_Burden_Class),
+        Conf_Case_Composite_Class = dplyr::case_when(
+          Conf_Case_Composite_Class == "Critically high" ~ ordered(4, levels = 1:5, labels = cccc_lvl),
+          TRUE ~ Conf_Case_Composite_Class)
+      )
+  }
+
   dplyr::bind_rows(out_sum, out_day)
 }
 
@@ -178,7 +196,7 @@ process_confirmed_cases <- function(case_df) {
 #'   \item{RowType}{Are row values summary or daily values}
 #'   \item{fips}{FIPS Code and/or region identifier}
 #'   \item{geo_name}{Name of geography}
-#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#'   \item{pop_2020}{2020 Population from NCHS}
 #'   \item{covid_reg_weekly_1}{Hospitalized Covid cases for \strong{current} 7 day period}
 #'   \item{covid_reg_weekly_2}{Hospitalized Covid cases for \strong{prior} 7 day period}
 #'   \item{covid_icu_weekly_1}{ICU Covid cases for \strong{current} 7 day period}
@@ -195,7 +213,7 @@ process_confirmed_cases <- function(case_df) {
 #'   \item{dailyCOVID_ICUpx}{}
 #'   \item{geo_type}{Type of geography - all missing should be removed}
 #'   \item{fips}{FIPS Code and/or region identifier}
-#'   \item{pop_2018}{WISH 2018 population figures}
+#'   \item{pop_2020}{2020 Population from NCHS}
 #'   \item{RowType}{Are row values summary or daily values}
 #'   \item{totalbeds}{Total Beds (ICU, Intermediate, Med/Surg, Neg. Flow)}
 #'   \item{beds_IBA}{Total Immediate Beds Available (ICU, Intermediate, Med/Surg, Neg. Flow)}
@@ -235,19 +253,19 @@ shape_hospital_data <- function(hosp_df) {
 
   hosp_summary <- hosp_df %>%
     dplyr::filter(RowType == "Summary") %>%
-    dplyr::group_by(Run_Date, RowType, fips, County, pop_2018) %>%
+    dplyr::group_by(Run_Date, RowType, fips, County, pop_2020) %>%
     dplyr::arrange(Report_Date) %>%
     dplyr::mutate(
       weeknum = rolling_week(date_vector = Report_Date, end_date = max_date)
     ) %>%
-    dplyr::group_by(Run_Date, RowType, fips, County, pop_2018, weeknum) %>%
+    dplyr::group_by(Run_Date, RowType, fips, County, pop_2020, weeknum) %>%
     dplyr::summarize(
       covid_reg_weekly = as.integer(sum(dailyCOVID_px)),
       covid_icu_weekly = as.integer(sum(dailyCOVID_ICUpx)),
       week_end = max(Report_Date)
     ) %>%
     dplyr::filter(weeknum <= 2) %>%
-    tidyr::pivot_wider(id_cols = c("Run_Date", "RowType", "fips", "County", "pop_2018"),
+    tidyr::pivot_wider(id_cols = c("Run_Date", "RowType", "fips", "County", "pop_2020"),
                        values_from = c("covid_reg_weekly", "covid_icu_weekly", "week_end"),
                        names_from = c("weeknum")) %>%
     dplyr::rename(geo_name = "County")
@@ -415,25 +433,24 @@ process_hospital <- function(hosp_df) {
 #' @return a list of data.frames. The "summary" data.frame has one row per
 #' county, state, and HERC region with the following columns
 #' \describe{
-#'   \item{RowType}{Are row values summary or daily values}
 #'   \item{Region_ID}{FIPS Code and/or region identifier}
-#'   \item{Area}{Name of geography}
-#'   \item{Testing_Volume}{2 week testing volume target}
-#'   \item{Tests}{Count of Incident Tests}
-#'   \item{NotPositive}{Count of non-positive specimens}
-#'   \item{Positive}{Count of positive specimens}
-#'   \item{resultdateonly}{Date test results came in}
+#'   \item{Region}{Name of geography}
+#'   \item{RowType}{Are row values summary or daily values}
+#'   \item{Positives}{Count of positive specimens}
+#'   \item{Negatives}{Count of negative specimens}
+#'   \item{Total}{Positives + Negatives}
+#'   \item{Date}{Summary Date for 2 week period}
 #' }
 #' and the "daily" data.frame has one row per county, state, and HERC region
 #' per day for the two week period with the following columns
 #' \describe{
-#'   \item{resultdateonly}{Date test results came in}
-#'   \item{Area}{Name of geography}
-#'   \item{Tests}{Count of Incident Tests}
-#'   \item{NotPositive}{Count of non-positive specimens}
-#'   \item{Positive}{Count of positive specimens}
+#'   \item{Date}{Date test results came in}
 #'   \item{Region_ID}{FIPS Code and/or region identifier}
+#'   \item{Region}{Name of geography}
 #'   \item{RowType}{Are row values summary or daily values}
+#'   \item{Positives}{Count of positive specimens}
+#'   \item{Negatives}{Count of negative specimens}
+#'   \item{Total}{Positives + Negatives}
 #' }
 #'
 #' @importFrom lubridate days
@@ -441,28 +458,45 @@ process_hospital <- function(hosp_df) {
 #' @importFrom dplyr mutate
 #' @importFrom dplyr group_by
 #' @importFrom dplyr summarize_if
+#' @importFrom utils data
 #'
 #' @examples
 #' \dontrun{
 #'   #Add examples here
 #' }
 shape_testing_data <- function(testing_df) {
-  max_date <- max(testing_df$resultdateonly)
+  utils::data("county_data")
 
-  testing_daily <- dplyr::filter(testing_df, resultdateonly >= max_date - lubridate::days(13)) %>%
-    dplyr::mutate(RowType = "Daily")
+  max_date <- max(testing_df$resultdate2)
+
+  testing_daily <- dplyr::filter(testing_df, resultdate2 >= max_date - lubridate::days(13)) %>%
+    dplyr::mutate(RowType = "Daily") %>%
+    dplyr::rename(county = Area) %>%
+    dplyr::left_join(county_data, by = "county") %>%
+    dplyr::mutate(
+      fips = dplyr::case_when(
+        county == "Wisconsin" ~ "55",
+        is.na(fips) ~ county,
+        TRUE ~ fips
+      )
+    ) %>%
+    dplyr::rename(Date = resultdate2,
+                  Region = county,
+                  Region_ID = fips) %>%
+    group_by(Date, Region_ID, Region, RowType) %>%
+    summarize(across(c("Positives", "Negatives", "Total"), sum),
+              .groups = "drop")
+
 
   testing_summary <- testing_daily %>%
     dplyr::mutate(
       RowType = "Summary"
     ) %>%
-    dplyr::group_by(RowType, Region_ID, Area, Testing_Volume) %>%
+    dplyr::group_by(Region_ID, Region, RowType) %>%
     dplyr::summarize_if(is.numeric, sum, na.rm = TRUE) %>%
     dplyr::mutate(
-      resultdateonly = max_date
+      Date = max_date
     )
-
-  testing_daily$Testing_Volume <- NULL
 
   out <- list(summary = testing_summary,
               daily = testing_daily)
@@ -507,59 +541,48 @@ process_testing <- function(testing_df) {
 
   test_daily <- clean_testing_df$daily %>%
     dplyr::mutate(
-      total_specimens = NotPositive + Positive,
-      percent_positive = 100 * (Positive / total_specimens),
+      percent_positive = 100 * (Positives / Total),
     ) %>%
-    dplyr::select(Date = resultdateonly,
-                  Region = Area,
+    dplyr::select(Date,
                   Region_ID,
+                  Region,
                   RowType,
-                  Testing_Positive_Encounters = Positive,
-                  Testing_Nonpositive_Encounters = NotPositive,
-                  Testing_Total_Encounters = total_specimens,
-                  Testing_Percent_Positive = percent_positive,
-                  Testing_Incident_Tests = Tests)
+                  Testing_Total_Encounters = Total,
+                  Testing_Positive_Encounters = Positives,
+                  Testing_Negative_Encounters = Negatives,
+                  Testing_Percent_Positive = percent_positive)
+
+  #Calculate 7 day average for summary percent positive
+  pct_pos <- test_daily %>%
+    dplyr::filter(Date >= max(Date) - lubridate::days(6)) %>%
+    dplyr::group_by(Region_ID) %>%
+    dplyr::summarize(
+      percent_positive = 100 * sum(Testing_Positive_Encounters) / sum(Testing_Total_Encounters)
+    )
 
   test_summary <- clean_testing_df$summary %>%
+    dplyr::inner_join(pct_pos, by = "Region_ID") %>%
     dplyr::mutate(
-      total_specimens = NotPositive + Positive,
-      percent_positive = 100 * (Positive / total_specimens),
       percent_positive_class = dplyr::case_when(
         percent_positive >= 10.0                          ~ "High (more than 10% positive)",
         percent_positive >= 5.0 & percent_positive < 10.0 ~ "Moderate (5% to 10% positive)",
         percent_positive >= 0.0 & percent_positive < 5.0  ~ "Low (less than 5% positive)",
         TRUE                                              ~ "ERROR"
       ),
-      percent_volume = 100 * Tests/Testing_Volume,
-      percent_volume_class = dplyr::case_when(
-        percent_volume >= 100.0                         ~ ">= 100% testing goal",
-        percent_volume >= 75.0 & percent_volume < 100.0 ~ ">= 75% & < 100% testing goal",
-        percent_volume >= 0.0 & percent_volume < 75.0   ~ "< 75% testing goal",
-        TRUE                                            ~ "ERROR"
-      ),
       testing_composite = dplyr::case_when(
-        percent_positive_class == "Low (less than 5% positive)"   ~ "High",
+        percent_positive_class == "Low (less than 5% positive)"   ~ "Low",
         percent_positive_class == "Moderate (5% to 10% positive)" ~ "Medium",
-        percent_positive_class == "High (more than 10% positive)" ~ "Low",
-        # percent_positive_class == "Low (less than 5% positive)"   & percent_volume_class == ">= 100% testing goal"            ~ "Close to",
-        # percent_positive_class == "Low (less than 5% positive)"   & percent_volume_class == ">= 75% & < 100% testing goal"   ~ "Higher than",
-        # percent_positive_class == "Low (less than 5% positive)"   & percent_volume_class == "< 75% testing goal"             ~ "Substantially Higher than",
-        # percent_positive_class == "Moderate (5% to 10% positive)" & percent_volume_class == ">= 100% testing goal"         ~ "Higher than",
-        # percent_positive_class == "Moderate (5% to 10% positive)" & percent_volume_class == ">= 75% & < 100% testing goal" ~ "Higher than",
-        # percent_positive_class == "Moderate (5% to 10% positive)" & percent_volume_class == "< 75% testing goal"           ~ "Substantially Higher than",
-        # percent_positive_class == "High (more than 10% positive)" & percent_volume_class == ">= 100% testing goal"         ~ "Substantially Higher than",
-        # percent_positive_class == "High (more than 10% positive)" & percent_volume_class == ">= 75% & < 100% testing goal" ~ "Substantially Higher than",
-        # percent_positive_class == "High (more than 10% positive)" & percent_volume_class == "< 75% testing goal"           ~ "Substantially Higher than",
+        percent_positive_class == "High (more than 10% positive)" ~ "High",
         TRUE                                                      ~ "ERROR"
       )
     ) %>%
-    dplyr::select(Date = resultdateonly,
-                  Region = Area,
+    dplyr::select(Date,
+                  Region,
                   Region_ID,
                   RowType,
-                  Testing_Positive_Encounters = Positive,
-                  Testing_Nonpositive_Encounters = NotPositive,
-                  Testing_Total_Encounters = total_specimens,
+                  Testing_Total_Encounters = Total,
+                  Testing_Positive_Encounters = Positives,
+                  Testing_Negative_Encounters = Negatives,
                   Testing_Percent_Positive = percent_positive,
                   Testing_Composite_Class = testing_composite)
 
@@ -589,7 +612,7 @@ process_testing <- function(testing_df) {
 #' \describe{
 #'   \item{fips}{FIPS Code and/or region identifier}
 #'   \item{County}{Name of geography}
-#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#'   \item{pop_2020}{2020 Population from NCHS}
 #'   \item{WeeklyED_1}{Total CLI visits for \strong{current} 7 day period}
 #'   \item{WeeklyED_2}{Total CLI visits for \strong{previous} 7 day period}
 #'   \item{week_end_1}{End date for \strong{current} 7 day period}
@@ -618,18 +641,18 @@ shape_cli_data <- function(cli_df) {
     )
 
   cli_summary <- cli_df %>%
-    dplyr::group_by(fips, County, pop_2018) %>%
+    dplyr::group_by(fips, County, pop_2020) %>%
     dplyr::arrange(Visit_Date) %>%
     dplyr::mutate(
       weeknum = rolling_week(date_vector = Visit_Date, end_date = max_date)
     ) %>%
-    dplyr::group_by(fips, County, pop_2018, weeknum) %>%
+    dplyr::group_by(fips, County, pop_2020, weeknum) %>%
     dplyr::summarize(
       WeeklyED = as.integer(sum(DailyED)),
       week_end = max(Visit_Date)
     ) %>%
     dplyr::filter(weeknum <= 2) %>%
-    tidyr::pivot_wider(id_cols = c("fips", "County", "pop_2018"),
+    tidyr::pivot_wider(id_cols = c("fips", "County", "pop_2020"),
                        values_from = c("WeeklyED", "week_end"),
                        names_from = "weeknum") %>%
     dplyr::mutate(
@@ -644,6 +667,7 @@ shape_cli_data <- function(cli_df) {
 #'
 #' @param cli_df data.frame produced by \code{\link{pull_essence}} for
 #'               CLI metrics
+#' @inheritParams process_confirmed_cases
 #'
 #' @return a Tableau ready data.frame with the following columns:
 #' \describe{
@@ -677,7 +701,7 @@ shape_cli_data <- function(cli_df) {
 #' \dontrun{
 #'   #write me an example
 #' }
-process_cli <- function(cli_df){
+process_cli <- function(cli_df, crit_cat = TRUE){
   clean_cli_df <- shape_cli_data(cli_df)
 
   cli_daily <- clean_cli_df$daily %>%
@@ -688,12 +712,12 @@ process_cli <- function(cli_df){
                   CLI_Count = DailyED)
 
   cli_summary <- dplyr::ungroup(clean_cli_df$summary) %>%
-    dplyr::mutate(dplyr::across(c("WeeklyED_1", "WeeklyED_2", "pop_2018"), as.integer)) %>%
+    dplyr::mutate(dplyr::across(c("WeeklyED_1", "WeeklyED_2", "pop_2020"), as.integer)) %>%
     dplyr::mutate(
       Count = .data$WeeklyED_1 + .data$WeeklyED_2,
       Burden = score_burden(curr = .data$WeeklyED_1,
                             prev = .data$WeeklyED_2,
-                            pop = .data$pop_2018),
+                            pop = .data$pop_2020),
       Burden_Class = class_burden(.data$Burden),
       Trajectory = score_trajectory(curr = .data$WeeklyED_1,
                                     prev = .data$WeeklyED_2),
@@ -727,6 +751,22 @@ process_cli <- function(cli_df){
       CLI_Trajectory_P = .data$Trajectory_P,
       CLI_Trajectory_FDR = .data$Trajectory_FDR
     )
+
+  #Remove Critically high category unless it is wanted
+  ccbc_lvl <- levels(cli_summary$CLI_Burden_Class)
+  cccc_lvl <- levels(cli_summary$CLI_Composite_Class)
+
+  if (!crit_cat) {
+    cli_summary <- cli_summary %>%
+      dplyr::mutate(
+        CLI_Burden_Class = dplyr::case_when(
+          CLI_Burden_Class == "Critically high" ~ ordered(5, levels = 1:6, labels = ccbc_lvl),
+          TRUE ~ CLI_Burden_Class),
+        CLI_Composite_Class = dplyr::case_when(
+          CLI_Composite_Class == "Critically high" ~ ordered(4, levels = 1:5, labels = cccc_lvl),
+          TRUE ~ CLI_Composite_Class)
+      )
+  }
 
   dplyr::bind_rows(cli_summary, cli_daily)
 }
@@ -793,8 +833,8 @@ shape_ili_data <- function(ili_df) {
 #'   \item{Region_ID}{FIPS Code and/or region identifier}
 #'   \item{Date}{Date of emergency dept visit}
 #'   \item{RowType}{Are row values summary or daily values}
-#'   \item{ILI_Total_Visits}{Total visits to ED}
-#'   \item{ILI_Visits}{Count of ILI ED visits}
+#'   \item{ED_Total_Visits}{Total visits to ED}
+#'   \item{ED_ILI_Visits}{Count of ILI ED visits}
 #'   \item{ILI_Percent}{Percent of ED visits related to ILI}
 #'   \item{ILI_Baseline}{Baseline value for ILI}
 #'   \item{ILI_Threshold}{Threshold value for ILI}
@@ -861,8 +901,8 @@ process_ili <- function(ili_df, ili_threshold_path) {
                   Region_ID,
                   Date,
                   RowType,
-                  ILI_Total_Visits = Total_Visits,
-                  ILI_Visits,
+                  ED_Total_Visits = Total_Visits,
+                  ED_ILI_Visits = ILI_Visits,
                   ILI_Percent = ILI_perc,
                   ILI_Baseline = ILI_baseline,
                   ILI_Threshold = ILI_threshold,
