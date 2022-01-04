@@ -10,7 +10,7 @@
 #' \describe{
 #'   \item{fips}{FIPS Code and/or region identifier}
 #'   \item{geo_name}{Name of geography}
-#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#'   \item{pop_2020}{2020 Population from NCHS}
 #'   \item{case_weekly_1}{Total cases for \strong{current} 7 day period}
 #'   \item{case_weekly_2}{Total cases for \strong{prior} 7 day period}
 #'   \item{week_end_1}{End date for \strong{current} 7 day period}
@@ -52,23 +52,23 @@ shape_case_data <- function(case_df) {
     dplyr::select(fips, geo_name, post_date, case_daily)
 
   cases_summary <- case_df %>%
-    dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018) %>%
+    dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2020) %>%
     dplyr::mutate(
       weeknum = rolling_week(date_vector = .data$post_date, end_date = max_date)
     ) %>%
-    dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2018, .data$weeknum) %>%
+    dplyr::group_by(.data$fips, .data$geo_name, .data$pop_2020, .data$weeknum) %>%
     dplyr::summarize(
       case_weekly = as.integer(sum(.data$case_daily)),
       week_end = max(.data$post_date),
       .groups = "drop_last"
     ) %>%
     dplyr::filter(.data$weeknum <= 2) %>%
-    tidyr::pivot_wider(id_cols = c("fips", "geo_name", "pop_2018"),
+    tidyr::pivot_wider(id_cols = c("fips", "geo_name", "pop_2020"),
                        values_from = c("case_weekly", "week_end"),
                        names_from = "weeknum")
 
   #Re-type pop to integer
-  cases_summary$pop_2018 <- as.integer(cases_summary$pop_2018)
+  cases_summary$pop_2020 <- as.integer(cases_summary$pop_2020)
 
   list(summary = cases_summary,
        daily = cases_daily)
@@ -129,7 +129,7 @@ process_confirmed_cases <- function(case_df, crit_cat = TRUE) {
       Count = .data$case_weekly_1 + .data$case_weekly_2,
       Burden = score_burden(curr = .data$case_weekly_1,
                             prev = .data$case_weekly_2,
-                            pop = .data$pop_2018),
+                            pop = .data$pop_2020),
       Burden_Class = class_burden(.data$Burden),
       Trajectory = score_trajectory(curr = .data$case_weekly_1,
                                     prev = .data$case_weekly_2),
@@ -196,7 +196,7 @@ process_confirmed_cases <- function(case_df, crit_cat = TRUE) {
 #'   \item{RowType}{Are row values summary or daily values}
 #'   \item{fips}{FIPS Code and/or region identifier}
 #'   \item{geo_name}{Name of geography}
-#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#'   \item{pop_2020}{2020 Population from NCHS}
 #'   \item{covid_reg_weekly_1}{Hospitalized Covid cases for \strong{current} 7 day period}
 #'   \item{covid_reg_weekly_2}{Hospitalized Covid cases for \strong{prior} 7 day period}
 #'   \item{covid_icu_weekly_1}{ICU Covid cases for \strong{current} 7 day period}
@@ -213,7 +213,7 @@ process_confirmed_cases <- function(case_df, crit_cat = TRUE) {
 #'   \item{dailyCOVID_ICUpx}{}
 #'   \item{geo_type}{Type of geography - all missing should be removed}
 #'   \item{fips}{FIPS Code and/or region identifier}
-#'   \item{pop_2018}{WISH 2018 population figures}
+#'   \item{pop_2020}{2020 Population from NCHS}
 #'   \item{RowType}{Are row values summary or daily values}
 #'   \item{totalbeds}{Total Beds (ICU, Intermediate, Med/Surg, Neg. Flow)}
 #'   \item{beds_IBA}{Total Immediate Beds Available (ICU, Intermediate, Med/Surg, Neg. Flow)}
@@ -253,19 +253,19 @@ shape_hospital_data <- function(hosp_df) {
 
   hosp_summary <- hosp_df %>%
     dplyr::filter(RowType == "Summary") %>%
-    dplyr::group_by(Run_Date, RowType, fips, County, pop_2018) %>%
+    dplyr::group_by(Run_Date, RowType, fips, County, pop_2020) %>%
     dplyr::arrange(Report_Date) %>%
     dplyr::mutate(
       weeknum = rolling_week(date_vector = Report_Date, end_date = max_date)
     ) %>%
-    dplyr::group_by(Run_Date, RowType, fips, County, pop_2018, weeknum) %>%
+    dplyr::group_by(Run_Date, RowType, fips, County, pop_2020, weeknum) %>%
     dplyr::summarize(
       covid_reg_weekly = as.integer(sum(dailyCOVID_px)),
       covid_icu_weekly = as.integer(sum(dailyCOVID_ICUpx)),
       week_end = max(Report_Date)
     ) %>%
     dplyr::filter(weeknum <= 2) %>%
-    tidyr::pivot_wider(id_cols = c("Run_Date", "RowType", "fips", "County", "pop_2018"),
+    tidyr::pivot_wider(id_cols = c("Run_Date", "RowType", "fips", "County", "pop_2020"),
                        values_from = c("covid_reg_weekly", "covid_icu_weekly", "week_end"),
                        names_from = c("weeknum")) %>%
     dplyr::rename(geo_name = "County")
@@ -612,7 +612,7 @@ process_testing <- function(testing_df) {
 #' \describe{
 #'   \item{fips}{FIPS Code and/or region identifier}
 #'   \item{County}{Name of geography}
-#'   \item{pop_2018}{2018 Population Numbers pulled from WISH}
+#'   \item{pop_2020}{2020 Population from NCHS}
 #'   \item{WeeklyED_1}{Total CLI visits for \strong{current} 7 day period}
 #'   \item{WeeklyED_2}{Total CLI visits for \strong{previous} 7 day period}
 #'   \item{week_end_1}{End date for \strong{current} 7 day period}
@@ -641,18 +641,18 @@ shape_cli_data <- function(cli_df) {
     )
 
   cli_summary <- cli_df %>%
-    dplyr::group_by(fips, County, pop_2018) %>%
+    dplyr::group_by(fips, County, pop_2020) %>%
     dplyr::arrange(Visit_Date) %>%
     dplyr::mutate(
       weeknum = rolling_week(date_vector = Visit_Date, end_date = max_date)
     ) %>%
-    dplyr::group_by(fips, County, pop_2018, weeknum) %>%
+    dplyr::group_by(fips, County, pop_2020, weeknum) %>%
     dplyr::summarize(
       WeeklyED = as.integer(sum(DailyED)),
       week_end = max(Visit_Date)
     ) %>%
     dplyr::filter(weeknum <= 2) %>%
-    tidyr::pivot_wider(id_cols = c("fips", "County", "pop_2018"),
+    tidyr::pivot_wider(id_cols = c("fips", "County", "pop_2020"),
                        values_from = c("WeeklyED", "week_end"),
                        names_from = "weeknum") %>%
     dplyr::mutate(
@@ -712,12 +712,12 @@ process_cli <- function(cli_df, crit_cat = TRUE){
                   CLI_Count = DailyED)
 
   cli_summary <- dplyr::ungroup(clean_cli_df$summary) %>%
-    dplyr::mutate(dplyr::across(c("WeeklyED_1", "WeeklyED_2", "pop_2018"), as.integer)) %>%
+    dplyr::mutate(dplyr::across(c("WeeklyED_1", "WeeklyED_2", "pop_2020"), as.integer)) %>%
     dplyr::mutate(
       Count = .data$WeeklyED_1 + .data$WeeklyED_2,
       Burden = score_burden(curr = .data$WeeklyED_1,
                             prev = .data$WeeklyED_2,
-                            pop = .data$pop_2018),
+                            pop = .data$pop_2020),
       Burden_Class = class_burden(.data$Burden),
       Trajectory = score_trajectory(curr = .data$WeeklyED_1,
                                     prev = .data$WeeklyED_2),
